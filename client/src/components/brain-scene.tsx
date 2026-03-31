@@ -1,5 +1,5 @@
 import { useRef, useMemo } from "react";
-import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Float, Environment } from "@react-three/drei";
 import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
@@ -8,16 +8,14 @@ import brainModelUrl from "@assets/brain.stl?url";
 function BrainModel() {
   const groupRef = useRef<THREE.Group>(null);
   const materialRef = useRef<THREE.MeshPhysicalMaterial>(null);
+  const { viewport } = useThree();
 
-  // Load the real brain STL model
   const geometry = useLoader(STLLoader, brainModelUrl);
 
-  // Process geometry
   const processedGeometry = useMemo(() => {
     if (!geometry) return null;
     const geo = geometry.clone();
     geo.computeVertexNormals();
-    // Already centered and scaled during export, but ensure it
     geo.center();
     geo.computeBoundingBox();
     const box = geo.boundingBox!;
@@ -31,55 +29,85 @@ function BrainModel() {
     return geo;
   }, [geometry]);
 
-  // Base rotation to orient brain facing viewer (front-facing, slightly tilted)
-  const baseRotation = useMemo(() => new THREE.Euler(-Math.PI * 0.5, 0, Math.PI), []);
+  // Smooth quaternion for rotation lerp
+  const targetQuat = useRef(new THREE.Quaternion());
+  const currentQuat = useRef(new THREE.Quaternion());
 
-  // Mouse-tracking rotation + subtle iridescence animation
+  // Base orientation: brain upright, frontal lobe facing camera
+  const baseQuat = useMemo(() => {
+    const q = new THREE.Quaternion();
+    const euler = new THREE.Euler(-Math.PI * 0.5, 0, Math.PI, "XYZ");
+    q.setFromEuler(euler);
+    return q;
+  }, []);
+
+  // Initialize current quaternion
+  useMemo(() => {
+    currentQuat.current.copy(baseQuat);
+  }, [baseQuat]);
+
   useFrame(({ pointer, clock }) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y = baseRotation.y + pointer.x * 0.4;
-      groupRef.current.rotation.x = baseRotation.x + pointer.y * 0.15;
-      groupRef.current.rotation.z = baseRotation.z;
-    }
+    if (!groupRef.current) return;
+
+    // Map pointer to 3D direction — brain's front follows cursor
+    const rotY = pointer.x * 0.6;   // yaw: left/right
+    const rotX = -pointer.y * 0.3;  // pitch: up/down
+
+    // Build target rotation: base orientation + cursor offset
+    const offsetEuler = new THREE.Euler(rotX, rotY, 0, "YXZ");
+    const offsetQuat = new THREE.Quaternion().setFromEuler(offsetEuler);
+    targetQuat.current.copy(offsetQuat).multiply(baseQuat);
+
+    // Smoothly slerp toward target
+    currentQuat.current.slerp(targetQuat.current, 0.05);
+    groupRef.current.quaternion.copy(currentQuat.current);
+
+    // Animate iridescence shift for living/wet look
     if (materialRef.current) {
-      materialRef.current.iridescenceIOR = 1.3 + Math.sin(clock.getElapsedTime() * 0.4) * 0.1;
+      const t = clock.getElapsedTime();
+      materialRef.current.iridescenceIOR = 1.3 + Math.sin(t * 0.4) * 0.15;
     }
   });
 
   if (!processedGeometry) return null;
 
   return (
-    <Float speed={1.2} rotationIntensity={0.08} floatIntensity={0.25}>
+    <Float speed={0.8} rotationIntensity={0.03} floatIntensity={0.15}>
       <group ref={groupRef}>
-        {/* Main brain — high-gloss iridescent material */}
+        {/* Primary brain mesh — wet, glossy, iridescent */}
         <mesh geometry={processedGeometry} castShadow receiveShadow>
           <meshPhysicalMaterial
             ref={materialRef}
-            color="#c4b5fd"
+            color="#b07cc8"
             metalness={0.08}
-            roughness={0.04}
+            roughness={0.02}
             clearcoat={1.0}
-            clearcoatRoughness={0.02}
+            clearcoatRoughness={0.01}
+            reflectivity={1.0}
             iridescence={1.0}
             iridescenceIOR={1.3}
-            iridescenceThicknessRange={[100, 900]}
-            sheen={0.6}
-            sheenRoughness={0.25}
-            sheenColor={new THREE.Color("#a78bfa")}
-            envMapIntensity={2.2}
+            iridescenceThicknessRange={[100, 600]}
+            sheen={1.0}
+            sheenRoughness={0.15}
+            sheenColor={new THREE.Color("#8b5cf6")}
+            envMapIntensity={1.5}
             side={THREE.DoubleSide}
+            transparent={false}
           />
         </mesh>
 
-        {/* Subtle inner glow — backface-only emissive shell */}
-        <mesh geometry={processedGeometry} scale={0.99}>
-          <meshStandardMaterial
-            color="#7c3aed"
-            emissive="#6366f1"
-            emissiveIntensity={0.12}
+        {/* Subtle Fresnel rim glow — second pass with emissive backside */}
+        <mesh geometry={processedGeometry}>
+          <meshPhysicalMaterial
+            color="#1a0a2e"
+            emissive="#7c3aed"
+            emissiveIntensity={0.15}
+            metalness={0.0}
+            roughness={1.0}
             transparent
-            opacity={0.25}
+            opacity={0.12}
             side={THREE.BackSide}
+            depthWrite={false}
           />
         </mesh>
 
@@ -99,7 +127,7 @@ function NeuralParticles() {
     for (let i = 0; i < count; i++) {
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.random() * Math.PI;
-      const r = 1.2 + Math.random() * 0.7;
+      const r = 1.2 + Math.random() * 0.5;
       pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       pos[i * 3 + 1] = r * Math.cos(phi) * 0.85;
       pos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta) * 0.7;
@@ -109,9 +137,9 @@ function NeuralParticles() {
 
   useFrame(({ clock }) => {
     if (particlesRef.current) {
-      particlesRef.current.rotation.y = clock.getElapsedTime() * 0.04;
+      particlesRef.current.rotation.y = clock.getElapsedTime() * 0.03;
       const mat = particlesRef.current.material as THREE.PointsMaterial;
-      mat.opacity = 0.2 + Math.sin(clock.getElapsedTime() * 1.5) * 0.12;
+      mat.opacity = 0.18 + Math.sin(clock.getElapsedTime() * 1.2) * 0.08;
     }
   });
 
@@ -127,9 +155,9 @@ function NeuralParticles() {
       </bufferGeometry>
       <pointsMaterial
         size={0.02}
-        color="#a78bfa"
+        color="#c4b5fd"
         transparent
-        opacity={0.3}
+        opacity={0.2}
         sizeAttenuation
         blending={THREE.AdditiveBlending}
         depthWrite={false}
@@ -141,29 +169,34 @@ function NeuralParticles() {
 export default function BrainScene() {
   return (
     <Canvas
-      camera={{ position: [0, 0, 4.2], fov: 42 }}
+      camera={{ position: [0, 0, 4.2], fov: 38 }}
       gl={{
         antialias: true,
         alpha: true,
         powerPreference: "high-performance",
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.3,
+        toneMappingExposure: 1.1,
       }}
       style={{ background: "transparent" }}
       dpr={[1, 2]}
     >
-      {/* Key light — soft warm from top-right */}
-      <directionalLight position={[4, 5, 5]} intensity={1.6} color="#f5f0ff" />
-      {/* Fill — cool indigo from left */}
-      <directionalLight position={[-5, -2, -4]} intensity={0.5} color="#818cf8" />
-      {/* Rim lights for glossy edge highlights */}
-      <pointLight position={[0, 3, 4]} intensity={2.5} color="#a78bfa" distance={12} />
-      <pointLight position={[-3, -1, -3]} intensity={1.0} color="#6366f1" distance={10} />
-      <pointLight position={[3, -2, 2]} intensity={0.6} color="#c4b5fd" distance={8} />
-      {/* Ambient */}
-      <ambientLight intensity={0.25} />
-      {/* Environment for realistic reflections on the glossy surface */}
-      <Environment preset="city" environmentIntensity={0.5} />
+      {/* Key light — warm white from top-right for main specular highlights */}
+      <directionalLight position={[4, 5, 5]} intensity={1.5} color="#fff5f0" />
+      {/* Fill — cool violet from left side */}
+      <directionalLight position={[-5, 0, -2]} intensity={0.5} color="#a78bfa" />
+      {/* Top rim for crown highlights — creates the wet specular band */}
+      <spotLight position={[0, 6, 4]} intensity={3.0} color="#e0d4ff" distance={16} angle={0.6} penumbra={0.5} />
+      {/* Side accent lights for edge definition */}
+      <pointLight position={[-5, 1, 4]} intensity={1.0} color="#818cf8" distance={12} />
+      <pointLight position={[5, -1, 3]} intensity={0.8} color="#c4b5fd" distance={12} />
+      {/* Front fill so facing surface catches light */}
+      <pointLight position={[0, 0, 6]} intensity={0.6} color="#ede9fe" distance={14} />
+      {/* Subtle bottom fill to prevent pitch-black underside */}
+      <pointLight position={[0, -4, 2]} intensity={0.3} color="#7c3aed" distance={10} />
+      {/* Ambient base — keep low for dramatic contrast */}
+      <ambientLight intensity={0.08} />
+      {/* HDR environment for realistic reflections on glossy surface */}
+      <Environment preset="city" environmentIntensity={0.6} />
       <BrainModel />
     </Canvas>
   );
