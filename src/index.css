@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0a0818;
+  --color-surface: #110f24;
+  --color-surface-2: #1a1735;
+  --color-border: #2a2650;
+  --color-text: #e8e4f0;
+  --color-text-dim: #9890b0;
+  --color-text-muted: #6b6388;
+  --color-accent: #8b5cf6;
+  --color-accent-dim: #6d45cc;
+
+  --color-amber: #f59e0b;
+  --color-violet: #8b5cf6;
+  --color-indigo: #6366f1;
+  --color-teal: #14b8a6;
+  --color-emerald: #10b981;
+  --color-cyan: #06b6d4;
+  --color-blue: #3b82f6;
+  --color-red: #ef4444;
+
+  --font-sans: "General Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+}
+
+@font-face {
+  font-family: "General Sans";
+  src: url("https://cdn.fontshare.com/wf/YFLQJSMZLXQXUWXEAKRQ7IK3MQ5BHMLU/67BYHYP3ZFGR47U5L64BT6LDKWXW2DQN/CFSYAJOQGJBGCSDQHSUVNCLJUIBOBFOA.woff2")
+    format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "General Sans";
+  src: url("https://cdn.fontshare.com/wf/P5SPUIR6PXXSKDHQE3YC76HBBFQBQHFV/GZAFO5SCYP3DVVIMQWQ2RJIOY6Q2GGFR/B6PJQNUPDJNE4L6JMCKQIWLHAVHUGFBD.woff2")
+    format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "General Sans";
+  src: url("https://cdn.fontshare.com/wf/MMGNHCFVXBJC5U3VFHCXPVXFPL7SLWZP/SPDSJ4GKXQQWT4VW4WN6JZSGXFLTJFH3/ULQGM5QZWK5CWEVFXZKHMBCQ7GOJSCDZ.woff2")
+    format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "General Sans";
+  src: url("https://cdn.fontshare.com/wf/MQ5IVG6KKDQORLS6TKMJSJYKMWJRTWFP/VZ2YCJCPCB27KYGYHH4AA3BSEOTGTXL6/TQHV5BZ27QZGAAVG3K3KCK2D3P5UUDJ7.woff2")
+    format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+/* Utility to hide scrollbar */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
