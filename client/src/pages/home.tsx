@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, Suspense, lazy } from "react";
+import { useState, useCallback, useEffect, useRef, Suspense, lazy, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Slider } from "@/components/ui/slider";
 import { Card } from "@/components/ui/card";
@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Brain, Eye, Ear, Focus, Database, Search, FileText, Zap,
-  ChevronDown, RotateCcw, Info, Sun, Moon, ArrowDown, Sparkles
+  ChevronDown, RotateCcw, Info, Sun, Moon, ArrowDown, Sparkles,
+  AlertTriangle, Activity, Waves, Volume2, User, Building2, LampDesk
 } from "lucide-react";
-import { STIMULI, runPipeline, type PipelineParams, type StageResult, type Stimulus } from "@/lib/pipeline-engine";
+import { STIMULI, runPipeline, type PipelineParams, type StageResult, type Stimulus, type SubMetric } from "@/lib/pipeline-engine";
 
 const BrainScene = lazy(() => import("@/components/brain-scene"));
 
@@ -30,6 +31,16 @@ const STAGE_COLORS: Record<string, string> = {
   report: "from-blue-400 to-indigo-500",
 };
 
+const STAGE_BAR_COLORS: Record<string, string> = {
+  sensation: "bg-gradient-to-r from-amber-400 to-orange-500",
+  attention: "bg-gradient-to-r from-violet-400 to-purple-500",
+  perception: "bg-gradient-to-r from-indigo-400 to-blue-500",
+  encoding: "bg-gradient-to-r from-teal-400 to-emerald-500",
+  storage: "bg-gradient-to-r from-emerald-400 to-green-500",
+  retrieval: "bg-gradient-to-r from-cyan-400 to-blue-500",
+  report: "bg-gradient-to-r from-blue-400 to-indigo-500",
+};
+
 const STAGE_ACCENT: Record<string, string> = {
   sensation: "text-amber-500 dark:text-amber-400",
   attention: "text-violet-500 dark:text-violet-400",
@@ -38,6 +49,16 @@ const STAGE_ACCENT: Record<string, string> = {
   storage: "text-emerald-500 dark:text-emerald-400",
   retrieval: "text-cyan-500 dark:text-cyan-400",
   report: "text-blue-500 dark:text-blue-400",
+};
+
+const STAGE_BG: Record<string, string> = {
+  sensation: "bg-amber-500/10 border-amber-500/20",
+  attention: "bg-violet-500/10 border-violet-500/20",
+  perception: "bg-indigo-500/10 border-indigo-500/20",
+  encoding: "bg-teal-500/10 border-teal-500/20",
+  storage: "bg-emerald-500/10 border-emerald-500/20",
+  retrieval: "bg-cyan-500/10 border-cyan-500/20",
+  report: "bg-blue-500/10 border-blue-500/20",
 };
 
 const STAGE_GLOW: Record<string, string> = {
@@ -50,106 +71,508 @@ const STAGE_GLOW: Record<string, string> = {
   report: "shadow-blue-500/20",
 };
 
-// ─── Components ───────────────────────────────────────────────────
+// ─── Stimulus Illustrations (SVG-based) ────────────────────────────
 
-function SignalBar({ strength, color }: { strength: number; color: string }) {
+function FaceIllustration({ noise, className }: { noise: number; className?: string }) {
+  const blur = noise * 0.04;
+  const opacity = Math.max(0.4, 1 - noise * 0.006);
   return (
-    <div className="w-full h-2 rounded-full bg-muted/50 overflow-hidden backdrop-blur-sm">
-      <motion.div
-        className={`h-full rounded-full bg-gradient-to-r ${color}`}
-        initial={{ width: 0 }}
-        animate={{ width: `${strength}%` }}
-        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-      />
-    </div>
+    <svg viewBox="0 0 120 120" className={className} style={{ filter: `blur(${blur}px)` }}>
+      {/* Warm lamp glow */}
+      <circle cx="90" cy="30" r="25" fill="url(#lampGlow)" opacity={0.4} />
+      {/* Head */}
+      <ellipse cx="55" cy="60" rx="28" ry="35" fill="#c9a0dc" opacity={opacity} />
+      {/* Eyes */}
+      <ellipse cx="45" cy="52" rx="4" ry="3" fill="#1a1030" opacity={opacity} />
+      <ellipse cx="65" cy="52" rx="4" ry="3" fill="#1a1030" opacity={opacity} />
+      {/* Eyebrows - ambiguous angle */}
+      <path d="M39 46 Q45 43, 51 46" stroke="#1a1030" strokeWidth="1.5" fill="none" opacity={opacity * 0.7} />
+      <path d="M59 46 Q65 43, 71 46" stroke="#1a1030" strokeWidth="1.5" fill="none" opacity={opacity * 0.7} />
+      {/* Ambiguous mouth - could be smile or frown */}
+      <path d="M45 72 Q55 76, 65 72" stroke="#1a1030" strokeWidth="1.8" fill="none" opacity={opacity * 0.8} />
+      {/* Nose */}
+      <path d="M55 56 L52 65 L58 65" stroke="#1a1030" strokeWidth="1" fill="none" opacity={opacity * 0.5} />
+      {/* Hair */}
+      <path d="M27 45 Q30 20, 55 18 Q80 20, 83 45" stroke="#6b4c8a" strokeWidth="3" fill="none" opacity={opacity * 0.6} />
+      <defs>
+        <radialGradient id="lampGlow">
+          <stop offset="0%" stopColor="#fbbf24" />
+          <stop offset="100%" stopColor="#fbbf24" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+    </svg>
   );
 }
 
-function StageCard({ result, index, isExpanded, onToggle }: {
-  result: StageResult;
-  index: number;
-  isExpanded: boolean;
-  onToggle: () => void;
-}) {
-  const Icon = STAGE_ICONS[result.stage] || Brain;
-  const color = STAGE_COLORS[result.stage];
-  const accent = STAGE_ACCENT[result.stage];
-  const glow = STAGE_GLOW[result.stage];
+function StreetIllustration({ noise, className }: { noise: number; className?: string }) {
+  const blur = noise * 0.03;
+  const opacity = Math.max(0.4, 1 - noise * 0.005);
+  return (
+    <svg viewBox="0 0 120 90" className={className} style={{ filter: `blur(${blur}px)` }}>
+      {/* Sky gradient */}
+      <rect width="120" height="55" fill="url(#skyGrad)" opacity={opacity} />
+      {/* Buildings */}
+      <rect x="5" y="15" width="18" height="40" rx="1" fill="#2d1f5e" opacity={opacity * 0.7} />
+      <rect x="8" y="20" width="4" height="4" rx="0.5" fill="#fbbf24" opacity={opacity * 0.5} />
+      <rect x="14" y="25" width="4" height="4" rx="0.5" fill="#fbbf24" opacity={opacity * 0.4} />
+      <rect x="28" y="8" width="22" height="47" rx="1" fill="#1e1545" opacity={opacity * 0.7} />
+      <rect x="31" y="15" width="4" height="4" rx="0.5" fill="#fbbf24" opacity={opacity * 0.5} />
+      <rect x="39" y="12" width="4" height="4" rx="0.5" fill="#fbbf24" opacity={opacity * 0.4} />
+      <rect x="75" y="12" width="20" height="43" rx="1" fill="#251b4d" opacity={opacity * 0.7} />
+      <rect x="100" y="20" width="16" height="35" rx="1" fill="#2d1f5e" opacity={opacity * 0.7} />
+      {/* Road */}
+      <rect y="55" width="120" height="35" fill="#1a1030" opacity={opacity} />
+      {/* Crosswalk */}
+      {[0, 1, 2, 3, 4].map(i => (
+        <rect key={i} x={45 + i * 7} y="60" width="5" height="20" rx="0.5" fill="#f5f5f5" opacity={opacity * 0.4} />
+      ))}
+      {/* Street lamps */}
+      <line x1="25" y1="35" x2="25" y2="55" stroke="#888" strokeWidth="1.5" opacity={opacity * 0.6} />
+      <circle cx="25" cy="34" r="3" fill="#fbbf24" opacity={opacity * 0.8} />
+      <line x1="95" y1="35" x2="95" y2="55" stroke="#888" strokeWidth="1.5" opacity={opacity * 0.6} />
+      <circle cx="95" cy="34" r="3" fill="#fbbf24" opacity={opacity * 0.7} />
+      {/* Figure */}
+      <ellipse cx="60" cy="63" rx="3" ry="4" fill="#a78bfa" opacity={opacity * 0.8} />
+      <line x1="60" y1="67" x2="60" y2="76" stroke="#a78bfa" strokeWidth="1.5" opacity={opacity * 0.8} />
+      <line x1="60" y1="76" x2="57" y2="82" stroke="#a78bfa" strokeWidth="1.2" opacity={opacity * 0.7} />
+      <line x1="60" y1="76" x2="63" y2="82" stroke="#a78bfa" strokeWidth="1.2" opacity={opacity * 0.7} />
+      <defs>
+        <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#4c1d95" />
+          <stop offset="60%" stopColor="#7c3aed" />
+          <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.6" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
 
+function SoundIllustration({ noise, className }: { noise: number; className?: string }) {
+  const blur = noise * 0.02;
+  const opacity = Math.max(0.4, 1 - noise * 0.005);
+  return (
+    <svg viewBox="0 0 120 90" className={className} style={{ filter: `blur(${blur}px)` }}>
+      {/* Wall */}
+      <rect x="55" y="0" width="10" height="90" fill="#374151" opacity={opacity * 0.8} />
+      {/* Left side - speaker */}
+      <circle cx="25" cy="40" r="8" fill="#818cf8" opacity={opacity * 0.3} />
+      <circle cx="25" cy="40" r="5" fill="#a78bfa" opacity={opacity * 0.5} />
+      <circle cx="25" cy="60" r="6" fill="#818cf8" opacity={opacity * 0.2} />
+      <circle cx="25" cy="60" r="4" fill="#a78bfa" opacity={opacity * 0.4} />
+      {/* Sound waves going through wall */}
+      {[0, 1, 2, 3].map(i => (
+        <path key={i}
+          d={`M${40 + i * 3} ${30 + i * 2} Q${43 + i * 3} 45, ${40 + i * 3} ${60 - i * 2}`}
+          stroke="#a78bfa" strokeWidth={2 - i * 0.3} fill="none"
+          opacity={opacity * (0.6 - i * 0.12)}
+        />
+      ))}
+      {/* Right side - attenuated waves */}
+      {[0, 1, 2].map(i => (
+        <path key={i}
+          d={`M${70 + i * 5} ${35 + i} Q${73 + i * 5} 45, ${70 + i * 5} ${55 - i}`}
+          stroke="#c4b5fd" strokeWidth={1.5 - i * 0.3} fill="none"
+          opacity={opacity * (0.35 - i * 0.08)}
+          strokeDasharray={i > 0 ? "3 2" : "none"}
+        />
+      ))}
+      {/* Ear icon on right */}
+      <path d="M95 40 Q102 35, 102 45 Q102 55, 95 50 Q92 47, 95 45 Q97 43, 95 40Z" 
+        fill="#c4b5fd" opacity={opacity * 0.5} />
+    </svg>
+  );
+}
+
+const STIMULUS_ILLUSTRATIONS: Record<string, typeof FaceIllustration> = {
+  face: FaceIllustration,
+  scene: StreetIllustration,
+  sound: SoundIllustration,
+};
+
+// ─── Sub-metric mini bar ─────────────────────────────────────────
+
+function MiniMetricBar({ metric, color, animDelay }: { metric: SubMetric; color: string; animDelay: number }) {
   return (
     <motion.div
-      initial={{ opacity: 0, x: -20 }}
+      initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ delay: animDelay, duration: 0.3 }}
+      className="space-y-1"
     >
-      <div
-        className={`group relative rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm p-4 
-          cursor-pointer transition-all duration-300 hover:bg-card
-          ${isExpanded ? `ring-1 ring-primary/20 shadow-lg ${glow}` : "hover:shadow-md"}`}
-        onClick={onToggle}
-        data-testid={`stage-card-${result.stage}`}
-      >
-        <div className="flex items-center gap-3">
-          <div className={`${accent} transition-transform duration-300 ${isExpanded ? "scale-110" : "group-hover:scale-105"}`}>
-            <Icon className="w-5 h-5" strokeWidth={1.5} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1.5">
-              <h3 className="font-semibold text-sm tracking-tight">{result.label}</h3>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono tabular-nums text-muted-foreground">
-                  {Math.round(result.signalStrength)}%
-                </span>
-                <motion.div
-                  animate={{ rotate: isExpanded ? 180 : 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-                </motion.div>
-              </div>
-            </div>
-            <SignalBar strength={result.signalStrength} color={color} />
-          </div>
-        </div>
-
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="overflow-hidden"
-            >
-              <div className="mt-4 pt-3 border-t border-border/30 space-y-3">
-                <p className="text-sm leading-relaxed text-foreground/80">{result.details}</p>
-                <div className="flex items-start gap-2.5 p-3 rounded-lg bg-primary/5 border border-primary/10">
-                  <Info className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                  <p className="text-xs leading-relaxed text-muted-foreground">{result.concept}</p>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-medium text-muted-foreground">{metric.label}</span>
+        <span className="text-[10px] font-mono tabular-nums text-muted-foreground/70">{Math.round(metric.value)}%</span>
+      </div>
+      <div className="w-full h-1.5 rounded-full bg-muted/40 overflow-hidden">
+        <motion.div
+          className={`h-full rounded-full ${color}`}
+          initial={{ width: 0 }}
+          animate={{ width: `${metric.value}%` }}
+          transition={{ delay: animDelay + 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        />
       </div>
     </motion.div>
   );
 }
 
-function PipelineFlow({ fromStrength, toStrength }: { fromStrength: number; toStrength: number }) {
-  const avg = (fromStrength + toStrength) / 2;
+// ─── Signal Bar (fixed with key-based remount) ───────────────────
+
+function SignalBar({ strength, color, stageKey }: { strength: number; color: string; stageKey: string }) {
   return (
-    <div className="flex justify-center py-0.5">
+    <div className="w-full h-2.5 rounded-full bg-muted/40 overflow-hidden backdrop-blur-sm">
+      <motion.div
+        key={`${stageKey}-${Math.round(strength)}`}
+        className={`h-full rounded-full ${color}`}
+        initial={{ width: 0 }}
+        animate={{ width: `${strength}%` }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      />
+    </div>
+  );
+}
+
+// ─── Feature Flow Tracker ────────────────────────────────────────
+
+function FeatureTracker({ featuresIn, featuresOut }: { featuresIn: string[]; featuresOut: string[] }) {
+  const lost = featuresIn.filter(f => !featuresOut.includes(f));
+  const gained = featuresOut.filter(f => !featuresIn.includes(f));
+  
+  if (lost.length === 0 && gained.length === 0) return null;
+  
+  return (
+    <div className="flex flex-wrap gap-1 mt-2">
+      {lost.map((f, i) => (
+        <span key={`lost-${i}`} className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-400/80 border border-red-500/10 line-through">
+          {f}
+        </span>
+      ))}
+      {gained.map((f, i) => (
+        <span key={`gained-${i}`} className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/10">
+          + {f}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ─── Stage Card ──────────────────────────────────────────────────
+
+function StageCard({ result, index, isExpanded, onToggle, runKey }: {
+  result: StageResult;
+  index: number;
+  isExpanded: boolean;
+  onToggle: () => void;
+  runKey: number;
+}) {
+  const Icon = STAGE_ICONS[result.stage] || Brain;
+  const barColor = STAGE_BAR_COLORS[result.stage];
+  const accent = STAGE_ACCENT[result.stage];
+  const bg = STAGE_BG[result.stage];
+  const glow = STAGE_GLOW[result.stage];
+
+  const strengthLevel = result.signalStrength > 70 ? "high" : result.signalStrength > 40 ? "mid" : "low";
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <div
+        className={`group relative rounded-xl border bg-card/80 backdrop-blur-sm 
+          cursor-pointer transition-all duration-300 hover:bg-card overflow-hidden
+          ${isExpanded ? `ring-1 ring-primary/20 shadow-lg ${glow} border-primary/20` : "border-border/50 hover:shadow-md hover:border-border/80"}`}
+        onClick={onToggle}
+        data-testid={`stage-card-${result.stage}`}
+      >
+        {/* Animated accent bar at top */}
+        <motion.div 
+          className={`h-0.5 ${barColor}`}
+          initial={{ width: 0 }}
+          animate={{ width: `${result.signalStrength}%` }}
+          transition={{ delay: index * 0.06 + 0.2, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+        />
+        
+        <div className="p-4">
+          <div className="flex items-center gap-3">
+            {/* Animated icon with pulse ring */}
+            <div className="relative">
+              <motion.div
+                className={`${accent} transition-transform duration-300 ${isExpanded ? "scale-110" : "group-hover:scale-105"}`}
+                animate={isExpanded ? { scale: [1, 1.15, 1] } : {}}
+                transition={{ duration: 2, repeat: isExpanded ? Infinity : 0 }}
+              >
+                <div className={`w-9 h-9 rounded-lg ${bg} border flex items-center justify-center`}>
+                  <Icon className="w-4.5 h-4.5" strokeWidth={1.5} />
+                </div>
+              </motion.div>
+              {result.warnings.length > 0 && (
+                <motion.div 
+                  className="absolute -top-1 -right-1"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: index * 0.06 + 0.5 }}
+                >
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                </motion.div>
+              )}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-0.5">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-sm tracking-tight">{result.label}</h3>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${
+                    strengthLevel === "high" ? "bg-emerald-500/10 text-emerald-500" :
+                    strengthLevel === "mid" ? "bg-amber-500/10 text-amber-500" :
+                    "bg-red-500/10 text-red-400"
+                  }`}>
+                    {strengthLevel === "high" ? "Strong" : strengthLevel === "mid" ? "Moderate" : "Weak"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <motion.span 
+                    key={`${result.stage}-${runKey}-strength`}
+                    className="text-sm font-mono tabular-nums font-semibold"
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    {Math.round(result.signalStrength)}%
+                  </motion.span>
+                  <motion.div
+                    animate={{ rotate: isExpanded ? 180 : 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                  </motion.div>
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground/70 mb-2">{result.description}</p>
+              <SignalBar strength={result.signalStrength} color={barColor} stageKey={`${result.stage}-${runKey}`} />
+            </div>
+          </div>
+
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="mt-4 pt-3 border-t border-border/30 space-y-4">
+                  {/* Sub-metrics grid */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {result.subMetrics.map((metric, i) => (
+                      <MiniMetricBar 
+                        key={metric.label} 
+                        metric={metric} 
+                        color={barColor} 
+                        animDelay={i * 0.08} 
+                      />
+                    ))}
+                  </div>
+
+                  {/* Details text */}
+                  <p className="text-sm leading-relaxed text-foreground/80">{result.details}</p>
+
+                  {/* Feature tracking */}
+                  <FeatureTracker featuresIn={result.featuresIn} featuresOut={result.featuresOut} />
+
+                  {/* Warnings */}
+                  {result.warnings.length > 0 && (
+                    <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/15">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+                      <p className="text-[11px] text-amber-500/90">{result.warnings.join(". ")}</p>
+                    </div>
+                  )}
+
+                  {/* Concept box */}
+                  <div className="flex items-start gap-2.5 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                    <Info className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <p className="text-xs leading-relaxed text-muted-foreground">{result.concept}</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Pipeline Flow Connector ─────────────────────────────────────
+
+function PipelineFlow({ fromStrength, toStrength, index }: { fromStrength: number; toStrength: number; index: number }) {
+  const avg = (fromStrength + toStrength) / 2;
+  const delta = toStrength - fromStrength;
+  const deltaColor = delta > 5 ? "text-emerald-500" : delta < -10 ? "text-red-400" : "text-muted-foreground/40";
+  
+  return (
+    <div className="flex items-center justify-center py-0.5 gap-2">
       <motion.div
         initial={{ opacity: 0, scaleY: 0 }}
-        animate={{ opacity: 0.15 + (avg / 100) * 0.5, scaleY: 1 }}
-        transition={{ duration: 0.3 }}
-        className="flex flex-col items-center gap-0.5"
+        animate={{ opacity: 0.2 + (avg / 100) * 0.6, scaleY: 1 }}
+        transition={{ delay: index * 0.06 + 0.3, duration: 0.3 }}
+        className="flex flex-col items-center"
       >
         <div className="w-px h-3 bg-gradient-to-b from-primary/40 to-primary/10" />
-        <ChevronDown className="w-3 h-3 text-primary/40" />
+        <motion.div
+          animate={{ y: [0, 2, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <ChevronDown className="w-3 h-3 text-primary/40" />
+        </motion.div>
       </motion.div>
+      {Math.abs(delta) > 3 && (
+        <motion.span 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: index * 0.06 + 0.5 }}
+          className={`text-[9px] font-mono ${deltaColor}`}
+        >
+          {delta > 0 ? "+" : ""}{Math.round(delta)}%
+        </motion.span>
+      )}
     </div>
+  );
+}
+
+// ─── Signal Radar Chart (SVG) ────────────────────────────────────
+
+function SignalRadar({ results }: { results: StageResult[] }) {
+  const cx = 100, cy = 100, r = 75;
+  const n = results.length;
+  
+  const points = results.map((res, i) => {
+    const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+    const dist = (res.signalStrength / 100) * r;
+    return {
+      x: cx + Math.cos(angle) * dist,
+      y: cy + Math.sin(angle) * dist,
+      labelX: cx + Math.cos(angle) * (r + 18),
+      labelY: cy + Math.sin(angle) * (r + 18),
+      strength: res.signalStrength,
+      label: res.label,
+    };
+  });
+  
+  const polyPoints = points.map(p => `${p.x},${p.y}`).join(" ");
+  
+  return (
+    <svg viewBox="0 0 200 200" className="w-full max-w-[220px] mx-auto">
+      {/* Grid rings */}
+      {[0.25, 0.5, 0.75, 1].map(scale => (
+        <circle key={scale} cx={cx} cy={cy} r={r * scale}
+          fill="none" stroke="currentColor" strokeWidth="0.5" className="text-border/30" />
+      ))}
+      {/* Grid lines */}
+      {results.map((_, i) => {
+        const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+        return (
+          <line key={i}
+            x1={cx} y1={cy}
+            x2={cx + Math.cos(angle) * r} y2={cy + Math.sin(angle) * r}
+            stroke="currentColor" strokeWidth="0.5" className="text-border/20"
+          />
+        );
+      })}
+      {/* Data polygon */}
+      <motion.polygon
+        points={polyPoints}
+        fill="url(#radarFill)"
+        stroke="url(#radarStroke)"
+        strokeWidth="2"
+        initial={{ opacity: 0, scale: 0.3 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        style={{ transformOrigin: `${cx}px ${cy}px` }}
+      />
+      {/* Data points */}
+      {points.map((p, i) => (
+        <motion.circle key={i}
+          cx={p.x} cy={p.y} r="3.5"
+          fill="white" stroke="url(#radarStroke)" strokeWidth="1.5"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.3 + i * 0.05, duration: 0.3 }}
+        />
+      ))}
+      {/* Labels */}
+      {points.map((p, i) => (
+        <text key={`label-${i}`}
+          x={p.labelX} y={p.labelY}
+          textAnchor="middle" dominantBaseline="middle"
+          className="fill-muted-foreground text-[7px] font-medium"
+        >
+          {p.label}
+        </text>
+      ))}
+      <defs>
+        <linearGradient id="radarFill" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.15" />
+          <stop offset="100%" stopColor="#6366f1" stopOpacity="0.08" />
+        </linearGradient>
+        <linearGradient id="radarStroke" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#8b5cf6" />
+          <stop offset="100%" stopColor="#6366f1" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+// ─── Stimulus Card ───────────────────────────────────────────────
+
+function StimulusCard({ stimulus, isSelected, onSelect, noise }: {
+  stimulus: Stimulus;
+  isSelected: boolean;
+  onSelect: () => void;
+  noise: number;
+}) {
+  const Illustration = STIMULUS_ILLUSTRATIONS[stimulus.id];
+  
+  return (
+    <motion.button
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      onClick={onSelect}
+      className={`w-full text-left rounded-xl border transition-all duration-300 overflow-hidden ${
+        isSelected
+          ? "border-primary/40 bg-primary/5 shadow-lg shadow-primary/5 ring-1 ring-primary/20"
+          : "border-border/50 bg-card/50 hover:border-primary/20 hover:bg-card/80"
+      }`}
+      data-testid={`stimulus-${stimulus.id}`}
+    >
+      {/* Illustration preview */}
+      {isSelected && Illustration && (
+        <motion.div 
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 80, opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.4 }}
+          className="bg-gradient-to-b from-background/50 to-transparent px-3 pt-2 flex items-center justify-center"
+        >
+          <Illustration noise={noise} className="h-16 w-auto opacity-80" />
+        </motion.div>
+      )}
+      <div className="p-3">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">{stimulus.imageEmoji}</span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold tracking-tight">{stimulus.name}</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground/60 uppercase tracking-wider">
+                {stimulus.modality}
+              </span>
+            </div>
+            <div className="text-[11px] text-muted-foreground leading-snug mt-0.5">{stimulus.description}</div>
+          </div>
+        </div>
+      </div>
+    </motion.button>
   );
 }
 
@@ -185,34 +608,6 @@ function ParamSlider({ label, value, onChange, description, icon: Icon, accentCl
   );
 }
 
-function StimulusCard({ stimulus, isSelected, onSelect }: {
-  stimulus: Stimulus;
-  isSelected: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onSelect}
-      className={`w-full text-left p-3 rounded-xl border transition-all duration-300 ${
-        isSelected
-          ? "border-primary/40 bg-primary/5 shadow-md shadow-primary/5"
-          : "border-border/50 bg-card/50 hover:border-primary/20 hover:bg-card/80"
-      }`}
-      data-testid={`stimulus-${stimulus.id}`}
-    >
-      <div className="flex items-center gap-3">
-        <span className="text-2xl">{stimulus.imageEmoji}</span>
-        <div className="min-w-0">
-          <div className="text-sm font-semibold tracking-tight">{stimulus.name}</div>
-          <div className="text-[11px] text-muted-foreground leading-snug mt-0.5">{stimulus.description}</div>
-        </div>
-      </div>
-    </motion.button>
-  );
-}
-
 // ─── Landing Page ─────────────────────────────────────────────────
 
 function LandingHero({ onEnter }: { onEnter: () => void }) {
@@ -223,14 +618,12 @@ function LandingHero({ onEnter }: { onEnter: () => void }) {
       exit={{ opacity: 0, scale: 1.05 }}
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
     >
-      {/* Animated gradient background */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-[120px] animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-indigo-600/20 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: "1s" }} />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-purple-500/10 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: "2s" }} />
       </div>
 
-      {/* Grid overlay */}
       <div className="absolute inset-0 opacity-[0.03]"
         style={{
           backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
@@ -238,7 +631,6 @@ function LandingHero({ onEnter }: { onEnter: () => void }) {
         }}
       />
 
-      {/* 3D Brain */}
       <div className="relative w-full h-[50vh] max-h-[500px]">
         <Suspense fallback={
           <div className="flex items-center justify-center h-full">
@@ -254,7 +646,6 @@ function LandingHero({ onEnter }: { onEnter: () => void }) {
         </Suspense>
       </div>
 
-      {/* Title */}
       <motion.div
         className="relative text-center z-10 -mt-8"
         initial={{ opacity: 0, y: 30 }}
@@ -290,7 +681,6 @@ function LandingHero({ onEnter }: { onEnter: () => void }) {
         </motion.p>
       </motion.div>
 
-      {/* Enter button */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -313,7 +703,6 @@ function LandingHero({ onEnter }: { onEnter: () => void }) {
         </motion.button>
       </motion.div>
 
-      {/* Bottom hint */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -330,7 +719,7 @@ function LandingHero({ onEnter }: { onEnter: () => void }) {
 
 export default function Home() {
   const [showLanding, setShowLanding] = useState(true);
-  const [isDark, setIsDark] = useState(true); // default dark for the sci theme
+  const [isDark, setIsDark] = useState(true);
   const [selectedStimulus, setSelectedStimulus] = useState<Stimulus>(STIMULI[0]);
   const [params, setParams] = useState<PipelineParams>({
     attentionalFocus: 65,
@@ -342,25 +731,26 @@ export default function Home() {
   const [results, setResults] = useState<StageResult[] | null>(null);
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("pipeline");
+  const [runKey, setRunKey] = useState(0);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
 
-  // Auto-run pipeline whenever params or stimulus change (if a simulation has been run before)
   const hasRun = useRef(false);
   
   const runSimulation = useCallback(() => {
     const pipelineResults = runPipeline(selectedStimulus, params);
     setResults(pipelineResults);
+    setRunKey(k => k + 1);
     hasRun.current = true;
   }, [selectedStimulus, params]);
 
-  // Re-run when sliders change after initial run
   useEffect(() => {
     if (hasRun.current) {
       const pipelineResults = runPipeline(selectedStimulus, params);
       setResults(pipelineResults);
+      setRunKey(k => k + 1);
     }
   }, [params, selectedStimulus]);
 
@@ -375,18 +765,23 @@ export default function Home() {
     setResults(null);
     setExpandedStage(null);
     hasRun.current = false;
+    setRunKey(0);
   }, []);
+
+  // Calculate overall pipeline health
+  const pipelineHealth = results 
+    ? Math.round(results.reduce((sum, r) => sum + r.signalStrength, 0) / results.length)
+    : 0;
+  const totalWarnings = results ? results.reduce((sum, r) => sum + r.warnings.length, 0) : 0;
 
   return (
     <>
-      {/* Landing Page */}
       <AnimatePresence>
         {showLanding && (
           <LandingHero onEnter={() => setShowLanding(false)} />
         )}
       </AnimatePresence>
 
-      {/* Main App */}
       <motion.div
         className="min-h-screen bg-background"
         initial={false}
@@ -489,6 +884,7 @@ export default function Home() {
                           stimulus={s}
                           isSelected={selectedStimulus.id === s.id}
                           onSelect={() => setSelectedStimulus(s)}
+                          noise={params.perceptualNoise}
                         />
                       ))}
                     </div>
@@ -572,15 +968,70 @@ export default function Home() {
                         exit={{ opacity: 0 }}
                         className="space-y-1.5"
                       >
+                        {/* Header with live stats */}
                         <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                              Pipeline Output
-                            </h3>
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                                Pipeline Output
+                              </h3>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Badge variant="outline" className={`text-[10px] font-mono ${
+                                pipelineHealth > 65 ? "border-emerald-500/30 text-emerald-500" :
+                                pipelineHealth > 40 ? "border-amber-500/30 text-amber-500" :
+                                "border-red-500/30 text-red-400"
+                              }`}>
+                                <Activity className="w-3 h-3 mr-1" />
+                                {pipelineHealth}% avg
+                              </Badge>
+                              {totalWarnings > 0 && (
+                                <Badge variant="outline" className="text-[10px] font-mono border-amber-500/30 text-amber-500">
+                                  <AlertTriangle className="w-3 h-3 mr-1" />
+                                  {totalWarnings} alert{totalWarnings > 1 ? "s" : ""}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           <p className="text-[11px] text-muted-foreground/60">Click to expand</p>
                         </div>
+
+                        {/* Stimulus visualization */}
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5 }}
+                          className="mb-4 p-4 rounded-xl bg-gradient-to-r from-violet-500/5 to-indigo-500/5 border border-primary/10"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-24 h-20 rounded-lg bg-background/50 border border-border/30 flex items-center justify-center overflow-hidden">
+                              {(() => {
+                                const Illus = STIMULUS_ILLUSTRATIONS[selectedStimulus.id];
+                                return Illus ? <Illus noise={params.perceptualNoise} className="w-20 h-auto" /> : null;
+                              })()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-lg">{selectedStimulus.imageEmoji}</span>
+                                <h4 className="text-sm font-semibold">{selectedStimulus.name}</h4>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-primary/10 text-primary/80 uppercase tracking-wider">
+                                  {selectedStimulus.modality}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground leading-relaxed">{selectedStimulus.sceneDescription}</p>
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {selectedStimulus.features.map((f, i) => (
+                                  <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground/70">
+                                    {f}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+
+                        {/* Stage cards */}
                         {results.map((result, i) => (
                           <div key={result.stage}>
                             <StageCard
@@ -590,47 +1041,87 @@ export default function Home() {
                               onToggle={() => setExpandedStage(
                                 expandedStage === result.stage ? null : result.stage
                               )}
+                              runKey={runKey}
                             />
                             {i < results.length - 1 && (
                               <PipelineFlow
                                 fromStrength={result.signalStrength}
                                 toStrength={results[i + 1].signalStrength}
+                                index={i}
                               />
                             )}
                           </div>
                         ))}
                         
-                        {/* Summary */}
+                        {/* Summary with radar */}
                         <motion.div
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.7 }}
-                          className="mt-4"
+                          className="mt-6"
                         >
-                          <div className="p-4 rounded-xl bg-gradient-to-r from-violet-500/5 to-indigo-500/5 
+                          <div className="p-5 rounded-xl bg-gradient-to-r from-violet-500/5 to-indigo-500/5 
                             border border-primary/10 backdrop-blur-sm">
-                            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                              Summary
+                            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">
+                              Pipeline Summary
                             </h4>
-                            <p className="text-sm text-muted-foreground leading-relaxed">
-                              Signal entered at <strong className="text-foreground">{Math.round(results[0].signalStrength)}%</strong>
-                              {" → "}emerged at <strong className="text-foreground">{Math.round(results[results.length - 1].signalStrength)}%</strong>.
-                              {" "}
-                              {results[results.length - 1].signalStrength < results[0].signalStrength * 0.5
-                                ? "Significant degradation — cognitive bottlenecks dramatically altered the output."
-                                : results[results.length - 1].signalStrength > results[0].signalStrength * 0.8
-                                  ? "Signal preserved well, but top-down processes may have filled in inaccurate details."
-                                  : "Moderate transformation — each stage shaped the information constructively."
-                              }
-                            </p>
-                            <div className="mt-3 flex flex-wrap gap-1.5">
-                              {results.map((r) => (
-                                <span key={r.stage}
-                                  className="inline-flex items-center gap-1 text-[10px] font-mono tabular-nums 
-                                    px-2 py-0.5 rounded-md bg-muted/50 text-muted-foreground">
-                                  {r.label} {Math.round(r.signalStrength)}%
-                                </span>
-                              ))}
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              {/* Radar chart */}
+                              <div>
+                                <SignalRadar results={results} />
+                              </div>
+                              
+                              {/* Text summary + badges */}
+                              <div className="flex flex-col justify-center space-y-3">
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="p-2.5 rounded-lg bg-background/50 border border-border/30">
+                                    <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider mb-0.5">Input Signal</p>
+                                    <p className="text-lg font-bold tabular-nums">{Math.round(results[0].signalStrength)}%</p>
+                                  </div>
+                                  <div className="p-2.5 rounded-lg bg-background/50 border border-border/30">
+                                    <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider mb-0.5">Output Signal</p>
+                                    <p className="text-lg font-bold tabular-nums">{Math.round(results[results.length - 1].signalStrength)}%</p>
+                                  </div>
+                                  <div className="p-2.5 rounded-lg bg-background/50 border border-border/30">
+                                    <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider mb-0.5">Signal Change</p>
+                                    <p className={`text-lg font-bold tabular-nums ${
+                                      results[results.length - 1].signalStrength >= results[0].signalStrength 
+                                        ? "text-emerald-500" : "text-red-400"
+                                    }`}>
+                                      {results[results.length - 1].signalStrength >= results[0].signalStrength ? "+" : ""}
+                                      {Math.round(results[results.length - 1].signalStrength - results[0].signalStrength)}%
+                                    </p>
+                                  </div>
+                                  <div className="p-2.5 rounded-lg bg-background/50 border border-border/30">
+                                    <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider mb-0.5">Distortions</p>
+                                    <p className={`text-lg font-bold tabular-nums ${
+                                      totalWarnings === 0 ? "text-emerald-500" : "text-amber-500"
+                                    }`}>
+                                      {totalWarnings}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                  {results[results.length - 1].signalStrength < results[0].signalStrength * 0.5
+                                    ? "Significant degradation — cognitive bottlenecks dramatically altered the output."
+                                    : results[results.length - 1].signalStrength > results[0].signalStrength * 0.8
+                                      ? "Signal preserved well, but top-down processes may have filled in inaccurate details."
+                                      : "Moderate transformation — each stage shaped the information constructively."
+                                  }
+                                </p>
+
+                                <div className="flex flex-wrap gap-1.5">
+                                  {results.map((r) => (
+                                    <span key={r.stage}
+                                      className="inline-flex items-center gap-1 text-[10px] font-mono tabular-nums 
+                                        px-2 py-0.5 rounded-md bg-muted/50 text-muted-foreground">
+                                      {r.label} {Math.round(r.signalStrength)}%
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </motion.div>
