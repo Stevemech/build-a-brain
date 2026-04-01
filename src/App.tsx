@@ -910,10 +910,10 @@ function PipelineTab() {
     : null;
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 px-5 py-4 md:px-8 md:py-6 max-w-[1600px] mx-auto">
+    <div className="flex flex-col md:flex-row gap-6 px-6 pt-6 pb-8 md:px-10 md:pt-8 md:pb-10 max-w-[1600px] mx-auto">
       {/* ── LEFT SIDEBAR ── */}
       <aside
-        className="w-full md:w-[370px] flex-shrink-0 space-y-6"
+        className="w-full md:w-[370px] flex-shrink-0 space-y-5 md:max-h-[calc(100vh-80px)] md:overflow-y-auto md:sticky md:top-[56px] no-scrollbar"
         style={{ minWidth: 0 }}
       >
         {/* Stimulus selector */}
@@ -1029,14 +1029,24 @@ function PipelineTab() {
       <main className="flex-1 min-w-0 space-y-5">
         {!results ? (
           <div
-            className="rounded-2xl flex flex-col items-center justify-center text-center py-20 px-6"
-            style={{ background: "var(--color-surface)", border: "1px dashed var(--color-border)" }}
+            className="rounded-2xl flex flex-col items-center justify-center text-center py-24 px-8"
+            style={{
+              background: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
+              minHeight: "400px",
+              boxShadow: "0 4px 32px rgba(0,0,0,0.3)",
+            }}
           >
-            <Brain size={48} color="#2a2650" strokeWidth={1} className="mb-4" />
-            <p className="text-base font-semibold mb-2" style={{ color: "var(--color-text-muted)" }}>
+            <div
+              className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6"
+              style={{ background: "#8b5cf612", border: "1px solid #8b5cf630" }}
+            >
+              <Brain size={36} color="#8b5cf6" strokeWidth={1.5} />
+            </div>
+            <p className="text-lg font-semibold mb-2" style={{ color: "var(--color-text)" }}>
               Pipeline not yet run
             </p>
-            <p className="text-sm max-w-sm" style={{ color: "var(--color-text-muted)" }}>
+            <p className="text-sm max-w-sm" style={{ color: "var(--color-text-dim)" }}>
               Select a stimulus, adjust the brain parameters, then press "Run Pipeline" to simulate how your brain would process this stimulus.
             </p>
           </div>
@@ -1440,7 +1450,7 @@ function NavBar({ activeTab, onTabChange }: NavBarProps) {
 
   return (
     <div
-      className="sticky top-0 z-40 flex items-center px-4 py-3 gap-4"
+      className="sticky top-0 z-40 flex items-center px-6 py-3.5 md:px-10 gap-4"
       style={{
         background: "rgba(10,8,24,0.92)",
         backdropFilter: "blur(12px)",
