@@ -86,3 +86,44 @@ body {
 /* Utility to hide scrollbar */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ─── Particle background animations ─────────────────────────────────────── */
+@keyframes particle-float {
+  0% {
+    transform: translateY(0px) translateX(0px);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-120px) translateX(var(--drift, 20px));
+    opacity: 0;
+  }
+}
+
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  background: #8b5cf6;
+  pointer-events: none;
+  animation: particle-float var(--duration, 6s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+  box-shadow: 0 0 6px #8b5cf6, 0 0 12px #8b5cf640;
+}
+
+/* ─── Animated flow dot (pathway connector) ─────────────────────────────── */
+@keyframes flow-down {
+  0% { transform: translateY(-4px); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateY(28px); opacity: 0; }
+}
+
+.flow-dot {
+  animation: flow-down var(--speed, 1.2s) ease-in-out infinite;
+  animation-delay: var(--dot-delay, 0s);
+}

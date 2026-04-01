@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useCallback } from "react";
+import { lazy, Suspense, useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronDown,
@@ -10,6 +10,10 @@ import {
   RotateCcw,
   Play,
   AlertTriangle,
+  HelpCircle,
+  GitCompare,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import {
   STIMULI,
@@ -83,6 +87,238 @@ const PARAM_META = [
   },
 ];
 
+// ─── Real-world examples per stage ───────────────────────────────────────────
+const STAGE_EXAMPLES: Record<string, string> = {
+  sensation: "Driving in heavy fog — your headlights barely cut through. The raw visual signal is severely degraded before your brain even begins to interpret it.",
+  attention: "The cocktail party effect — in a noisy room, you hear your name mentioned across the room because attention automatically shifts to personally relevant stimuli.",
+  perception: "Eyewitness testimony — two witnesses to the same car accident report different colors for the car because their expectations and viewing angles shaped perception differently.",
+  encoding: "Studying for an exam — simply re-reading notes (shallow/structural) produces weaker memories than explaining concepts in your own words (deep/semantic).",
+  storage: "Childhood memories — some vivid memories from age 5 persist for decades (strong consolidation), while you can't remember what you had for lunch last Tuesday (weak trace).",
+  retrieval: "Walking into a room and forgetting why — the context change eliminated the retrieval cues. Walking back to the original room often restores the memory.",
+  report: "The Mandela Effect — large groups of people confidently 'remember' events that never happened (like Nelson Mandela dying in prison in the 1980s), demonstrating the gap between confidence and accuracy.",
+};
+
+// ─── Presets ──────────────────────────────────────────────────────────────────
+interface Preset {
+  id: string;
+  emoji: string;
+  name: string;
+  description: string;
+  params: PipelineParams;
+  variantB?: PipelineParams;
+  variantBLabel?: string;
+  variantALabel?: string;
+}
+
+const PRESETS: Preset[] = [
+  {
+    id: "noisy-room",
+    emoji: "🔊",
+    name: "The Noisy Room",
+    description: "Signal degradation from high perceptual noise",
+    params: { perceptualNoise: 85, attentionalFocus: 50, priorExpectation: 40, encodingStrength: 30, retrievalCue: 35 },
+  },
+  {
+    id: "biased-observer",
+    emoji: "🕶️",
+    name: "The Biased Observer",
+    description: "Top-down distortion and false memories",
+    params: { perceptualNoise: 15, attentionalFocus: 80, priorExpectation: 90, encodingStrength: 60, retrievalCue: 55 },
+  },
+  {
+    id: "inattentional-blindness",
+    emoji: "👁️",
+    name: "Inattentional Blindness",
+    description: "Attention as gatekeeper — missing the obvious",
+    params: { perceptualNoise: 20, attentionalFocus: 15, priorExpectation: 25, encodingStrength: 50, retrievalCue: 50 },
+  },
+  {
+    id: "deep-vs-shallow",
+    emoji: "📚",
+    name: "Deep vs. Shallow",
+    description: "Toggle between deep and shallow encoding strategies",
+    params: { perceptualNoise: 20, attentionalFocus: 65, priorExpectation: 40, encodingStrength: 90, retrievalCue: 60 },
+    variantB: { perceptualNoise: 20, attentionalFocus: 65, priorExpectation: 40, encodingStrength: 15, retrievalCue: 60 },
+    variantALabel: "Deep (enc=90)",
+    variantBLabel: "Shallow (enc=15)",
+  },
+  {
+    id: "tip-of-tongue",
+    emoji: "💭",
+    name: "Tip of the Tongue",
+    description: "Retrieval failure despite solid encoding",
+    params: { perceptualNoise: 15, attentionalFocus: 75, priorExpectation: 45, encodingStrength: 85, retrievalCue: 15 },
+  },
+];
+
+// ─── Glossary ─────────────────────────────────────────────────────────────────
+const GLOSSARY: Record<string, string> = {
+  "Bottom-up processing": "Processing driven purely by incoming stimulus data, starting from sensory receptors and moving 'up' to the brain",
+  "Top-down processing": "Processing influenced by prior knowledge, expectations, and context — the brain 'predicts' what it will perceive",
+  "Broadbent's Filter Theory": "Attention acts as a single-channel filter that completely blocks unattended information based on physical features",
+  "Treisman's Attenuation Model": "Unattended information is weakened (attenuated) rather than completely blocked",
+  "Inattentional blindness": "Failure to perceive an unexpected stimulus in plain sight when attention is engaged elsewhere",
+  "Gestalt principles": "Rules of perceptual organization (proximity, similarity, closure, continuity) that explain how we group features",
+  "Levels of processing": "Theory that deeper, more meaningful encoding produces stronger memories",
+  "Multi-store model": "Atkinson & Shiffrin's model of three memory stores: sensory, short-term, and long-term",
+  "Encoding specificity": "Memory retrieval is most successful when cues at retrieval match those at encoding",
+  "Reconstructive memory": "Memory is not a recording but a reconstruction, subject to distortion and confabulation",
+  "Signal detection theory": "Framework for understanding how we detect signals against background noise, involving hits, misses, false alarms, and correct rejections",
+  "Misinformation effect": "Post-event information can alter or distort a person's memory of the original event",
+  "Cocktail party effect": "Ability to focus on one conversation while filtering out background noise, yet still detecting personally relevant info",
+  "False memory": "A memory of an event that did not actually occur, often created by suggestion or expectation",
+};
+
+// ─── Quiz questions ───────────────────────────────────────────────────────────
+interface QuizQuestion {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
+
+const QUIZ_QUESTIONS: QuizQuestion[] = [
+  {
+    question: "If you increase Perceptual Noise to 90, what happens to the Sensation signal?",
+    options: [
+      "It increases significantly — noise boosts signal clarity",
+      "It decreases significantly — noise degrades raw signal",
+      "It stays the same — noise only affects later stages",
+      "It fluctuates randomly with no clear pattern",
+    ],
+    correctIndex: 1,
+    explanation: "High perceptual noise directly degrades the raw sensory signal at the Sensation stage. The signal must cut through the noise to be detected, so higher noise means weaker initial signal strength.",
+  },
+  {
+    question: "With Attentional Focus at 10, what cognitive phenomenon is most likely?",
+    options: [
+      "Hyperfocus — extreme concentration on one target",
+      "Sensory overload — too much information simultaneously",
+      "Inattentional blindness — missing obvious stimuli due to lack of attentional gating",
+      "Synesthesia — mixing of sensory signals",
+    ],
+    correctIndex: 2,
+    explanation: "Very low attentional focus means the cognitive system fails to properly gate and amplify incoming signals. This produces inattentional blindness — a failure to notice unexpected stimuli that are in plain sight when attention is directed elsewhere.",
+  },
+  {
+    question: "High Prior Expectations + Low Perceptual Noise — what is the primary risk?",
+    options: [
+      "Signal degradation — noise corrupts the data",
+      "Expectation-driven perception overrides actual sensory data",
+      "Memory extinction — too little noise prevents storage",
+      "Hyper-accurate perception — all features are preserved",
+    ],
+    correctIndex: 1,
+    explanation: "When expectations are high but noise is low, the brain 'sees clearly' but may still override that clarity with its top-down predictions. The perception stage fills in details that match expectations rather than actual stimulus features — a major source of perceptual bias.",
+  },
+  {
+    question: "Encoding Strength at 15 means information is stored at what level?",
+    options: [
+      "Semantic level — deep meaningful connections",
+      "Episodic level — autobiographical narrative",
+      "Shallow/structural level — surface features only",
+      "Procedural level — motor skill encoding",
+    ],
+    correctIndex: 2,
+    explanation: "According to Craik & Lockhart's Levels of Processing theory (1972), low encoding strength corresponds to shallow/structural encoding — processing only surface features like appearance or shape. This produces weak, short-lived memory traces.",
+  },
+  {
+    question: "High encoding strength but low retrieval cue — what phenomenon does this demonstrate?",
+    options: [
+      "Anterograde amnesia — inability to form new memories",
+      "Tip-of-the-tongue phenomenon — retrieval failure despite good encoding",
+      "Source monitoring error — confusing where a memory came from",
+      "Proactive interference — old memories blocking new ones",
+    ],
+    correctIndex: 1,
+    explanation: "When information was encoded deeply (high encoding strength) but retrieval cues are absent or mismatched (low retrieval cue), the memory exists but cannot be accessed — the classic tip-of-the-tongue state. The information is 'in there' but won't surface.",
+  },
+  {
+    question: "If you max out every parameter (all at 100), is the final memory perfectly accurate?",
+    options: [
+      "Yes — maximum parameters guarantee maximum accuracy",
+      "No — high expectations still distort perception even with perfect encoding",
+      "Yes — but only for visual stimuli, not auditory",
+      "No — maximum storage causes interference between memories",
+    ],
+    correctIndex: 1,
+    explanation: "Even with all other parameters maxed out, very high Prior Expectations (100) means the perception stage heavily distorts the signal to match top-down predictions. The memory may be vivid and confident, but it reflects what the brain expected to see, not necessarily what was actually there.",
+  },
+  {
+    question: "Which two parameters most directly affect the quality of the final Report?",
+    options: [
+      "Perceptual Noise + Attentional Focus",
+      "Prior Expectations + Perceptual Noise",
+      "Encoding Strength + Retrieval Cue",
+      "Attentional Focus + Prior Expectations",
+    ],
+    correctIndex: 2,
+    explanation: "The final Report stage synthesizes the stored memory trace (shaped by Encoding Strength) and retrieves it using available cues (Retrieval Cue strength). These two parameters most directly determine whether the memory can be fully and accurately reconstructed at output.",
+  },
+  {
+    question: "Why might someone be very confident in a false memory?",
+    options: [
+      "False memories are always less vivid than real ones",
+      "High expectations filled in perceptual gaps during encoding, which were stored and retrieved as real",
+      "The brain flags false memories with special neural markers",
+      "Confidence is always inversely proportional to accuracy",
+    ],
+    correctIndex: 1,
+    explanation: "When Prior Expectations are high, the perception stage fills in ambiguous details with expected content. These 'filled-in' details are then encoded and stored just like real perceptual data. At retrieval, the brain has no way to distinguish them — leading to high confidence in a memory that was partially or wholly constructed by expectation.",
+  },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GLOSSARY TOOLTIP COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
+function GlossaryTerm({ term, children }: { term: string; children: React.ReactNode }) {
+  const [visible, setVisible] = useState(false);
+  const definition = GLOSSARY[term] ?? GLOSSARY[Object.keys(GLOSSARY).find(k => k.toLowerCase() === term.toLowerCase()) ?? ""];
+  if (!definition) return <>{children}</>;
+
+  return (
+    <span
+      className="relative inline"
+      onMouseEnter={() => setVisible(true)}
+      onMouseLeave={() => setVisible(false)}
+      onFocus={() => setVisible(true)}
+      onBlur={() => setVisible(false)}
+    >
+      <span
+        style={{
+          borderBottom: "1px dashed #8b5cf680",
+          color: "#a78bfa",
+          cursor: "help",
+        }}
+      >
+        {children}
+      </span>
+      <AnimatePresence>
+        {visible && (
+          <motion.div
+            initial={{ opacity: 0, y: 4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-50 left-0 bottom-full mb-2 w-64 rounded-lg p-3 text-[12px] leading-relaxed pointer-events-none"
+            style={{
+              background: "#1a1735",
+              border: "1px solid #8b5cf650",
+              color: "var(--color-text-dim)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px #8b5cf620",
+            }}
+          >
+            <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#8b5cf6" }}>
+              {term}
+            </p>
+            {definition}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </span>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // BRAIN FALLBACK (pulsing glow)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -110,6 +346,43 @@ function BrainFallback() {
         />
         <Brain size={72} color="#a78bfa" strokeWidth={1.5} />
       </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PARTICLE BACKGROUND
+// ─────────────────────────────────────────────────────────────────────────────
+const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
+  id: i,
+  size: 2 + Math.random() * 3,
+  left: 5 + Math.random() * 90,
+  bottom: 5 + Math.random() * 40,
+  duration: 5 + Math.random() * 6,
+  delay: Math.random() * 7,
+  drift: (Math.random() - 0.5) * 50,
+  opacity: 0.15 + Math.random() * 0.25,
+}));
+
+function ParticleBackground() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {PARTICLES.map((p) => (
+        <div
+          key={p.id}
+          className="particle"
+          style={{
+            width: p.size,
+            height: p.size,
+            left: `${p.left}%`,
+            bottom: `${p.bottom}%`,
+            opacity: p.opacity,
+            "--duration": `${p.duration}s`,
+            "--delay": `${p.delay}s`,
+            "--drift": `${p.drift}px`,
+          } as React.CSSProperties}
+        />
+      ))}
     </div>
   );
 }
@@ -241,19 +514,220 @@ function MiniBar({ value, color }: { value: number; color: string }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// STAGE CARD
+// ANIMATED PATHWAY CONNECTOR (flowing dots)
+// ─────────────────────────────────────────────────────────────────────────────
+function PathwayConnector({ fromVal, toVal, color }: { fromVal: number; toVal: number; color: string }) {
+  const delta = Math.round(clamp(toVal) - clamp(fromVal));
+  const sign = delta >= 0 ? "+" : "";
+  const isPositive = delta >= 0;
+  const strength = clamp(toVal) / 100;
+  // Speed inversely proportional to signal — stronger = faster
+  const speedSecs = 2.4 - strength * 1.4; // range ~1s to 2.4s
+  const dotOpacity = 0.3 + strength * 0.6;
+
+  const dots = [0, 1, 2, 3, 4];
+
+  return (
+    <div className="flex items-center justify-center py-0 gap-2" style={{ height: 36, position: "relative" }}>
+      {/* Center animated dots column */}
+      <div className="flex-1 flex items-center justify-center relative" style={{ height: 36 }}>
+        {/* Side lines */}
+        <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 flex items-center justify-center gap-2">
+          <div className="flex-1 h-px" style={{ background: `${color}40` }} />
+          <span
+            className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full z-10 relative"
+            style={{
+              background: isPositive ? "#10b98118" : "#ef444418",
+              color: isPositive ? "#34d399" : "#f87171",
+              border: `1px solid ${isPositive ? "#10b98130" : "#ef444430"}`,
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            {sign}{delta}%
+          </span>
+          <div className="flex-1 h-px" style={{ background: `${color}40` }} />
+        </div>
+
+        {/* Flowing dots */}
+        <div
+          className="absolute flex gap-3 items-start justify-center"
+          style={{ height: 36, width: 80, overflow: "hidden" }}
+        >
+          {dots.map((d) => (
+            <div
+              key={d}
+              className="flow-dot rounded-full flex-shrink-0"
+              style={{
+                width: 4,
+                height: 4,
+                background: color,
+                boxShadow: `0 0 6px ${color}`,
+                opacity: dotOpacity,
+                "--speed": `${speedSecs}s`,
+                "--dot-delay": `${d * (speedSecs / dots.length)}s`,
+              } as React.CSSProperties}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SIGNAL WAVEFORM VISUALIZATION
+// ─────────────────────────────────────────────────────────────────────────────
+function SignalWaveform({ stages }: { stages: StageResult[] }) {
+  const width = 600;
+  const height = 90;
+  const mid = height / 2;
+
+  // Build the waveform path across all stages
+  const buildPath = (): string => {
+    const points: { x: number; y: number }[] = [];
+    const totalPoints = 140;
+
+    for (let i = 0; i <= totalPoints; i++) {
+      const t = i / totalPoints;
+      // Which stage are we in?
+      const stageIdx = Math.min(Math.floor(t * stages.length), stages.length - 1);
+      const stage = stages[stageIdx];
+      const signal = clamp(stage.signalStrength) / 100;
+
+      // Base sine wave
+      const baseFreq = 6;
+      // Noise-derived jaggedness from sensation → the first stage
+      const sensationNoise = 1 - (clamp(stages[0].signalStrength) / 100);
+      const noiseAmp = sensationNoise * 8;
+
+      // Attention = gaps (reduce signal in low-attn stages)
+      const attentionFactor = stageIdx === 1 ? signal : 1;
+
+      // Amplitude scales with signal strength
+      const amplitude = signal * 28 * attentionFactor;
+
+      // Sine oscillation
+      const sine = Math.sin(t * Math.PI * 2 * baseFreq);
+      // Noise jitter (pseudo-random based on i)
+      const jitter = Math.sin(i * 7.3) * noiseAmp * (1 - signal);
+
+      const y = mid - (sine * amplitude + jitter);
+      const x = (i / totalPoints) * width;
+      points.push({ x, y });
+    }
+
+    return points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+  };
+
+  const pathD = buildPath();
+
+  // Build gradient stops per stage
+  const gradientId = "waveform-gradient";
+
+  return (
+    <div
+      className="rounded-xl p-4"
+      style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
+    >
+      <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--color-text-muted)" }}>
+        Signal Waveform
+      </p>
+      <div style={{ overflowX: "auto" }}>
+        <svg viewBox={`0 0 ${width} ${height}`} style={{ width: "100%", minWidth: 280, height: 90 }}>
+          <defs>
+            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+              {STAGE_CONFIG.map((cfg, i) => (
+                <stop
+                  key={cfg.id}
+                  offset={`${(i / (STAGE_CONFIG.length - 1)) * 100}%`}
+                  stopColor={cfg.color}
+                />
+              ))}
+            </linearGradient>
+          </defs>
+
+          {/* Stage dividers */}
+          {STAGE_CONFIG.map((cfg, i) => {
+            const x = (i / STAGE_CONFIG.length) * width;
+            return (
+              <g key={cfg.id}>
+                {i > 0 && (
+                  <line x1={x} y1={0} x2={x} y2={height} stroke={cfg.color} strokeOpacity={0.15} strokeWidth={1} strokeDasharray="3,3" />
+                )}
+                <text
+                  x={x + (width / STAGE_CONFIG.length) / 2}
+                  y={height - 4}
+                  textAnchor="middle"
+                  fontSize={8}
+                  fill={cfg.color}
+                  opacity={0.7}
+                >
+                  {cfg.shortLabel}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Centerline */}
+          <line x1={0} y1={mid} x2={width} y2={mid} stroke="var(--color-border)" strokeWidth={1} opacity={0.4} />
+
+          {/* Waveform */}
+          <motion.path
+            d={pathD}
+            fill="none"
+            stroke={`url(#${gradientId})`}
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 1.2, ease: "easeInOut" }}
+          />
+
+          {/* Signal strength dots at each stage boundary */}
+          {stages.map((s, i) => {
+            const x = ((i + 0.5) / stages.length) * width;
+            const signal = clamp(s.signalStrength) / 100;
+            const r = 3 + signal * 2;
+            const cfg = STAGE_CONFIG[i];
+            return (
+              <circle
+                key={i}
+                cx={x}
+                cy={mid - signal * 24}
+                r={r}
+                fill={cfg.color}
+                opacity={0.85}
+                style={{ transition: "all 0.4s ease" }}
+              />
+            );
+          })}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STAGE CARD (with real-world examples)
 // ─────────────────────────────────────────────────────────────────────────────
 interface StageCardProps {
   stage: StageResult;
   config: (typeof STAGE_CONFIG)[0];
   index: number;
+  // Comparison mode
+  comparisonStage?: StageResult;
+  isComparisonMode?: boolean;
 }
 
-function StageCard({ stage, config, index }: StageCardProps) {
+function StageCard({ stage, config, index, comparisonStage, isComparisonMode }: StageCardProps) {
   const [expanded, setExpanded] = useState(false);
   const clamped = clamp(stage.signalStrength);
   const statusLabel = getStatusLabel(clamped);
   const statusColor = getStatusColor(clamped);
+
+  const compClamped = comparisonStage ? clamp(comparisonStage.signalStrength) : null;
+  const delta = compClamped !== null ? Math.round(compClamped - clamped) : null;
 
   return (
     <motion.div
@@ -295,7 +769,7 @@ function StageCard({ stage, config, index }: StageCardProps) {
           </p>
         </div>
 
-        {/* Score + chevron */}
+        {/* Score + comparison + chevron */}
         <div className="flex items-center gap-3 flex-shrink-0">
           <span
             className="text-lg font-mono font-bold"
@@ -303,15 +777,50 @@ function StageCard({ stage, config, index }: StageCardProps) {
           >
             {Math.round(clamped)}%
           </span>
+          {isComparisonMode && compClamped !== null && delta !== null && (
+            <div className="flex flex-col items-end gap-0.5">
+              <span
+                className="text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded"
+                style={{
+                  background: "#60a5fa18",
+                  color: "#60a5fa",
+                  fontFamily: "var(--font-mono)",
+                }}
+              >
+                B:{Math.round(compClamped)}%
+              </span>
+              <span
+                className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded"
+                style={{
+                  background: delta >= 0 ? "#10b98118" : "#ef444418",
+                  color: delta >= 0 ? "#34d399" : "#f87171",
+                  fontFamily: "var(--font-mono)",
+                }}
+              >
+                {delta >= 0 ? "+" : ""}{delta}%
+              </span>
+            </div>
+          )}
           <div style={{ color: "var(--color-text-muted)" }}>
             {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </div>
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="px-4 pb-3">
+      {/* Progress bars */}
+      <div className="px-4 pb-3 space-y-1.5">
         <SignalBar value={clamped} gradient={config.gradient} />
+        {isComparisonMode && compClamped !== null && (
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-semibold" style={{ color: "#60a5fa", minWidth: 14 }}>B</span>
+            <div className="flex-1">
+              <SignalBar
+                value={compClamped}
+                gradient="linear-gradient(to right, #60a5fa, #93c5fd)"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Expandable details */}
@@ -334,6 +843,21 @@ function StageCard({ stage, config, index }: StageCardProps) {
                   {stage.details}
                 </p>
               </div>
+
+              {/* Real-world example */}
+              {STAGE_EXAMPLES[stage.stage] && (
+                <div
+                  className="p-3 rounded-lg"
+                  style={{ background: `${config.color}0a`, border: `1px solid ${config.color}25` }}
+                >
+                  <p className="text-[11px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: config.color }}>
+                    Real-World Example
+                  </p>
+                  <p className="text-[12px] leading-relaxed italic" style={{ color: "var(--color-text-dim)" }}>
+                    {STAGE_EXAMPLES[stage.stage]}
+                  </p>
+                </div>
+              )}
 
               {/* Concept */}
               <div
@@ -447,35 +971,9 @@ function StageCard({ stage, config, index }: StageCardProps) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NEURAL PATHWAY CONNECTOR
-// ─────────────────────────────────────────────────────────────────────────────
-function PathwayConnector({ fromVal, toVal, color }: { fromVal: number; toVal: number; color: string }) {
-  const delta = Math.round(clamp(toVal) - clamp(fromVal));
-  const sign = delta >= 0 ? "+" : "";
-  const isPositive = delta >= 0;
-  return (
-    <div className="flex items-center justify-center py-1 gap-2">
-      <div className="flex-1 h-px" style={{ background: `${color}40` }} />
-      <span
-        className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full"
-        style={{
-          background: isPositive ? "#10b98118" : "#ef444418",
-          color: isPositive ? "#34d399" : "#f87171",
-          border: `1px solid ${isPositive ? "#10b98130" : "#ef444430"}`,
-          fontFamily: "var(--font-mono)",
-        }}
-      >
-        {sign}{delta}%
-      </span>
-      <div className="flex-1 h-px" style={{ background: `${color}40` }} />
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // RADAR CHART (SVG polygon)
 // ─────────────────────────────────────────────────────────────────────────────
-function RadarChart({ stages }: { stages: StageResult[] }) {
+function RadarChart({ stages, stagesB }: { stages: StageResult[]; stagesB?: StageResult[] }) {
   const cx = 150;
   const cy = 150;
   const r = 90;
@@ -494,12 +992,23 @@ function RadarChart({ stages }: { stages: StageResult[] }) {
     })
     .join(" ");
 
+  const pointStrB = stagesB
+    ? stagesB
+        .map((s, i) => {
+          const angle = angleFor(i);
+          const val = clamp(s.signalStrength) / 100;
+          const px = cx + r * val * Math.cos(angle);
+          const py = cy + r * val * Math.sin(angle);
+          return `${px},${py}`;
+        })
+        .join(" ")
+    : null;
+
   const axisPoints = Array.from({ length: n }, (_, i) => {
     const angle = angleFor(i);
     return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
   });
 
-  // Grid rings at 25%, 50%, 75%, 100%
   const rings = [0.25, 0.5, 0.75, 1.0];
 
   return (
@@ -534,7 +1043,18 @@ function RadarChart({ stages }: { stages: StageResult[] }) {
           opacity={0.5}
         />
       ))}
-      {/* Data polygon */}
+      {/* Set B polygon (if comparison mode) */}
+      {pointStrB && (
+        <polygon
+          points={pointStrB}
+          fill="#60a5fa20"
+          stroke="#60a5fa"
+          strokeWidth={1.5}
+          strokeDasharray="4,2"
+          style={{ transition: "all 0.4s ease" }}
+        />
+      )}
+      {/* Set A (main) data polygon */}
       <polygon
         points={pointStr}
         fill="#8b5cf630"
@@ -542,7 +1062,7 @@ function RadarChart({ stages }: { stages: StageResult[] }) {
         strokeWidth={2}
         style={{ transition: "all 0.4s ease" }}
       />
-      {/* Data points */}
+      {/* Set A data points */}
       {stages.map((s, i) => {
         const angle = angleFor(i);
         const val = clamp(s.signalStrength) / 100;
@@ -700,7 +1220,6 @@ function FeatureSurvivalGrid({ stimulus, stages }: { stimulus: Stimulus; stages:
 // BRAIN HEATMAP SVG
 // ─────────────────────────────────────────────────────────────────────────────
 function BrainHeatmap({ stages }: { stages: StageResult[] }) {
-  // Map stage indices to rough brain regions
   const regionOpacity = (idx: number) => clamp(stages[idx]?.signalStrength ?? 0) / 100;
 
   return (
@@ -712,29 +1231,17 @@ function BrainHeatmap({ stages }: { stages: StageResult[] }) {
         Brain Activity Map
       </p>
       <svg viewBox="0 0 200 180" style={{ width: "100%", maxWidth: 200 }}>
-        {/* Outer brain silhouette */}
         <ellipse cx={100} cy={90} rx={85} ry={78} fill="#1a1735" stroke="#2a2650" strokeWidth={1.5} />
-        {/* Cortex fold shapes for regions */}
-        {/* Occipital (sensation - amber) */}
         <ellipse cx={100} cy={148} rx={40} ry={22} fill={`rgba(245,158,11,${regionOpacity(0) * 0.7})`} style={{ transition: "fill 0.4s" }} />
-        {/* Frontal (attention - violet) */}
         <ellipse cx={100} cy={42} rx={50} ry={30} fill={`rgba(139,92,246,${regionOpacity(1) * 0.7})`} style={{ transition: "fill 0.4s" }} />
-        {/* Temporal (perception - indigo) */}
         <ellipse cx={52} cy={100} rx={30} ry={38} fill={`rgba(99,102,241,${regionOpacity(2) * 0.7})`} style={{ transition: "fill 0.4s" }} />
-        {/* Hippocampus / medial (encoding - teal) */}
         <ellipse cx={148} cy={100} rx={30} ry={38} fill={`rgba(20,184,166,${regionOpacity(3) * 0.7})`} style={{ transition: "fill 0.4s" }} />
-        {/* Central (storage - emerald) */}
         <ellipse cx={100} cy={90} rx={28} ry={28} fill={`rgba(16,185,129,${regionOpacity(4) * 0.7})`} style={{ transition: "fill 0.4s" }} />
-        {/* PFC (retrieval - cyan) */}
         <ellipse cx={78} cy={55} rx={22} ry={18} fill={`rgba(6,182,212,${regionOpacity(5) * 0.7})`} style={{ transition: "fill 0.4s" }} />
-        {/* Output (report - blue) */}
         <ellipse cx={122} cy={55} rx={22} ry={18} fill={`rgba(59,130,246,${regionOpacity(6) * 0.7})`} style={{ transition: "fill 0.4s" }} />
-        {/* Outline again on top */}
         <ellipse cx={100} cy={90} rx={85} ry={78} fill="none" stroke="#2a2650" strokeWidth={1.5} />
-        {/* Brain stem */}
         <rect x={86} y={164} width={28} height={14} rx={6} fill="#1a1735" stroke="#2a2650" strokeWidth={1} />
       </svg>
-      {/* Region labels */}
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-3 w-full">
         {STAGE_CONFIG.map((cfg, i) => (
           <div key={cfg.id} className="flex items-center gap-1.5">
@@ -755,7 +1262,7 @@ function BrainHeatmap({ stages }: { stages: StageResult[] }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // PIPELINE SUMMARY
 // ─────────────────────────────────────────────────────────────────────────────
-function PipelineSummary({ stages }: { stages: StageResult[] }) {
+function PipelineSummary({ stages, stagesB }: { stages: StageResult[]; stagesB?: StageResult[] }) {
   const inputSignal = Math.round(clamp(stages[0]?.signalStrength ?? 0));
   const outputSignal = Math.round(clamp(stages[stages.length - 1]?.signalStrength ?? 0));
   const avgSignal = Math.round(stages.reduce((acc, s) => acc + clamp(s.signalStrength), 0) / stages.length);
@@ -818,7 +1325,7 @@ function PipelineSummary({ stages }: { stages: StageResult[] }) {
 
       {/* Radar chart + summary text */}
       <div className="grid md:grid-cols-2 gap-4 items-center">
-        <RadarChart stages={stages} />
+        <RadarChart stages={stages} stagesB={stagesB} />
         <div className="space-y-3">
           <p className="text-sm leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
             {summaryText}
@@ -862,6 +1369,421 @@ function PipelineSummary({ stages }: { stages: StageResult[] }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PRESETS PANEL
+// ─────────────────────────────────────────────────────────────────────────────
+interface PresetsPanelProps {
+  onApply: (params: PipelineParams) => void;
+}
+
+function PresetsPanel({ onApply }: PresetsPanelProps) {
+  const [open, setOpen] = useState(true);
+  const [activeVariants, setActiveVariants] = useState<Record<string, "A" | "B">>({});
+
+  return (
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
+    >
+      {/* Header */}
+      <button
+        className="w-full flex items-center justify-between px-4 py-3 cursor-pointer"
+        style={{ background: "none", border: "none", color: "inherit" }}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-muted)" }}>
+          ⚡ Quick Experiments
+        </p>
+        <div style={{ color: "var(--color-text-muted)" }}>
+          {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ overflow: "hidden" }}
+          >
+            <div
+              className="px-3 pb-3 space-y-2"
+              style={{ borderTop: "1px solid var(--color-border)" }}
+            >
+              {PRESETS.map((preset) => {
+                const variant = activeVariants[preset.id] ?? "A";
+                const activeParams = variant === "B" && preset.variantB ? preset.variantB : preset.params;
+
+                return (
+                  <div
+                    key={preset.id}
+                    className="rounded-lg p-3"
+                    style={{
+                      background: "var(--color-surface-2)",
+                      border: "1px solid var(--color-border)",
+                    }}
+                  >
+                    {/* Toggle row for Deep vs Shallow */}
+                    {preset.variantB && (
+                      <div className="flex gap-1 mb-2">
+                        <button
+                          onClick={() => setActiveVariants((v) => ({ ...v, [preset.id]: "A" }))}
+                          className="flex-1 py-0.5 rounded text-[10px] font-semibold transition-all"
+                          style={{
+                            background: variant === "A" ? "#8b5cf6" : "transparent",
+                            color: variant === "A" ? "#fff" : "var(--color-text-muted)",
+                            border: variant === "A" ? "none" : "1px solid var(--color-border)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {preset.variantALabel}
+                        </button>
+                        <button
+                          onClick={() => setActiveVariants((v) => ({ ...v, [preset.id]: "B" }))}
+                          className="flex-1 py-0.5 rounded text-[10px] font-semibold transition-all"
+                          style={{
+                            background: variant === "B" ? "#8b5cf6" : "transparent",
+                            color: variant === "B" ? "#fff" : "var(--color-text-muted)",
+                            border: variant === "B" ? "none" : "1px solid var(--color-border)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {preset.variantBLabel}
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex items-start gap-2">
+                      <span className="text-base flex-shrink-0 mt-0.5">{preset.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-semibold mb-0.5" style={{ color: "var(--color-text)" }}>
+                          {preset.name}
+                        </p>
+                        <p className="text-[11px] mb-2" style={{ color: "var(--color-text-muted)" }}>
+                          {preset.description}
+                        </p>
+                        <button
+                          onClick={() => onApply(activeParams)}
+                          className="w-full py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:opacity-90 active:scale-[0.97]"
+                          style={{
+                            background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+                            color: "#fff",
+                            border: "none",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Apply &amp; Run
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QUIZ TAB
+// ─────────────────────────────────────────────────────────────────────────────
+function QuizTab() {
+  const [currentQ, setCurrentQ] = useState(0);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [answers, setAnswers] = useState<(number | null)[]>(Array(QUIZ_QUESTIONS.length).fill(null));
+  const [finished, setFinished] = useState(false);
+
+  const q = QUIZ_QUESTIONS[currentQ];
+  const isAnswered = selected !== null;
+  const isCorrect = selected === q.correctIndex;
+  const score = answers.filter((a, i) => a === QUIZ_QUESTIONS[i].correctIndex).length;
+
+  const handleSelect = (idx: number) => {
+    if (selected !== null) return;
+    setSelected(idx);
+    const newAnswers = [...answers];
+    newAnswers[currentQ] = idx;
+    setAnswers(newAnswers);
+  };
+
+  const handleNext = () => {
+    if (currentQ < QUIZ_QUESTIONS.length - 1) {
+      setCurrentQ((q) => q + 1);
+      setSelected(answers[currentQ + 1]);
+    } else {
+      setFinished(true);
+    }
+  };
+
+  const handleRestart = () => {
+    setCurrentQ(0);
+    setSelected(null);
+    setAnswers(Array(QUIZ_QUESTIONS.length).fill(null));
+    setFinished(false);
+  };
+
+  const getCognitiveMessage = (s: number) => {
+    if (s === 8) return "Perfect score! You're thinking like a cognitive scientist. 🧠";
+    if (s >= 6) return "Strong performance — you've internalized the pipeline well.";
+    if (s >= 4) return "Decent grasp of the core concepts. Revisit the stages you missed.";
+    return "The pipeline has more surprises in store. Explore the simulator and try again!";
+  };
+
+  if (finished) {
+    const pct = Math.round((score / QUIZ_QUESTIONS.length) * 100);
+    const scoreColor = pct >= 75 ? "#10b981" : pct >= 50 ? "#f59e0b" : "#ef4444";
+    return (
+      <div className="max-w-xl mx-auto p-4 md:p-8">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="rounded-2xl p-8 text-center space-y-6"
+          style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
+        >
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto"
+            style={{ background: `${scoreColor}20`, border: `2px solid ${scoreColor}40` }}
+          >
+            <span className="text-3xl font-bold" style={{ color: scoreColor, fontFamily: "var(--font-mono)" }}>
+              {pct}%
+            </span>
+          </div>
+          <div>
+            <h2 className="text-xl font-bold mb-2" style={{ color: "var(--color-text)" }}>
+              Quiz Complete
+            </h2>
+            <p className="text-base font-semibold mb-1" style={{ color: scoreColor }}>
+              {score} / {QUIZ_QUESTIONS.length} correct
+            </p>
+            <p className="text-sm" style={{ color: "var(--color-text-dim)" }}>
+              {getCognitiveMessage(score)}
+            </p>
+          </div>
+
+          {/* Per-question review */}
+          <div className="text-left space-y-2">
+            {QUIZ_QUESTIONS.map((q, i) => {
+              const ans = answers[i];
+              const correct = ans === q.correctIndex;
+              return (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 p-2.5 rounded-lg text-[12px]"
+                  style={{
+                    background: correct ? "#10b98112" : "#ef444412",
+                    border: `1px solid ${correct ? "#10b98130" : "#ef444430"}`,
+                  }}
+                >
+                  {correct
+                    ? <CheckCircle size={14} style={{ color: "#10b981", flexShrink: 0 }} />
+                    : <XCircle size={14} style={{ color: "#ef4444", flexShrink: 0 }} />
+                  }
+                  <span style={{ color: correct ? "#34d399" : "#f87171" }}>Q{i + 1}</span>
+                  <span className="flex-1 truncate" style={{ color: "var(--color-text-dim)" }}>
+                    {q.question.slice(0, 60)}…
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          <button
+            onClick={handleRestart}
+            className="w-full py-3 rounded-xl text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all"
+            style={{
+              background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+              color: "#fff",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            Retake Quiz
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-xl mx-auto p-4 md:p-8 space-y-6">
+      {/* Progress */}
+      <div>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
+            Question {currentQ + 1} of {QUIZ_QUESTIONS.length}
+          </span>
+          <span className="text-[11px] font-mono" style={{ color: "#8b5cf6", fontFamily: "var(--font-mono)" }}>
+            {score} correct so far
+          </span>
+        </div>
+        <div className="rounded-full overflow-hidden" style={{ height: 4, background: "var(--color-surface-2)" }}>
+          <motion.div
+            className="h-full rounded-full"
+            style={{ background: "linear-gradient(to right, #8b5cf6, #6366f1)" }}
+            initial={{ width: 0 }}
+            animate={{ width: `${((currentQ) / QUIZ_QUESTIONS.length) * 100}%` }}
+            transition={{ duration: 0.4 }}
+          />
+        </div>
+      </div>
+
+      {/* Question card */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentQ}
+          initial={{ opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -24 }}
+          transition={{ duration: 0.25 }}
+          className="rounded-2xl p-6 space-y-5"
+          style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
+        >
+          {/* Brain icon */}
+          <div className="flex items-center gap-3">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ background: "#8b5cf620", border: "1px solid #8b5cf630" }}
+            >
+              <HelpCircle size={16} color="#8b5cf6" />
+            </div>
+            <h3 className="text-base font-semibold leading-snug" style={{ color: "var(--color-text)" }}>
+              {q.question}
+            </h3>
+          </div>
+
+          {/* Options */}
+          <div className="space-y-2">
+            {q.options.map((opt, idx) => {
+              let borderColor = "var(--color-border)";
+              let bgColor = "var(--color-surface-2)";
+              let textColor = "var(--color-text-dim)";
+              let icon: React.ReactNode = null;
+
+              if (isAnswered) {
+                if (idx === q.correctIndex) {
+                  borderColor = "#10b98140";
+                  bgColor = "#10b98112";
+                  textColor = "#34d399";
+                  icon = <CheckCircle size={14} style={{ color: "#10b981", flexShrink: 0 }} />;
+                } else if (idx === selected) {
+                  borderColor = "#ef444440";
+                  bgColor = "#ef444412";
+                  textColor = "#f87171";
+                  icon = <XCircle size={14} style={{ color: "#ef4444", flexShrink: 0 }} />;
+                }
+              }
+
+              return (
+                <motion.button
+                  key={idx}
+                  whileHover={!isAnswered ? { scale: 1.01 } : {}}
+                  whileTap={!isAnswered ? { scale: 0.99 } : {}}
+                  onClick={() => handleSelect(idx)}
+                  className="w-full text-left p-3 rounded-xl text-sm leading-snug flex items-start gap-3 transition-all"
+                  style={{
+                    background: bgColor,
+                    border: `1px solid ${borderColor}`,
+                    color: textColor,
+                    cursor: isAnswered ? "default" : "pointer",
+                    outline: "none",
+                  }}
+                >
+                  <span
+                    className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5"
+                    style={{
+                      background: isAnswered && idx === q.correctIndex ? "#10b981" : isAnswered && idx === selected ? "#ef4444" : "var(--color-border)",
+                      color: isAnswered && (idx === q.correctIndex || idx === selected) ? "#fff" : "var(--color-text-muted)",
+                    }}
+                  >
+                    {String.fromCharCode(65 + idx)}
+                  </span>
+                  <span className="flex-1">{opt}</span>
+                  {icon}
+                </motion.button>
+              );
+            })}
+          </div>
+
+          {/* Explanation */}
+          <AnimatePresence>
+            {isAnswered && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                style={{ overflow: "hidden" }}
+              >
+                <div
+                  className="p-4 rounded-xl"
+                  style={{
+                    background: isCorrect ? "#10b98110" : "#ef444410",
+                    border: `1px solid ${isCorrect ? "#10b98130" : "#ef444430"}`,
+                  }}
+                >
+                  <p
+                    className="text-[11px] font-semibold uppercase tracking-wider mb-1.5"
+                    style={{ color: isCorrect ? "#10b981" : "#ef4444" }}
+                  >
+                    {isCorrect ? "✓ Correct!" : "✗ Incorrect"}
+                  </p>
+                  <p className="text-[13px] leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
+                    {q.explanation}
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Next button */}
+          {isAnswered && (
+            <motion.button
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={handleNext}
+              className="w-full py-3 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98]"
+              style={{
+                background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+                color: "#fff",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              {currentQ < QUIZ_QUESTIONS.length - 1 ? "Next Question →" : "See Results"}
+            </motion.button>
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Dot navigation */}
+      <div className="flex justify-center gap-1.5">
+        {QUIZ_QUESTIONS.map((_, i) => {
+          const ans = answers[i];
+          const attempted = ans !== null;
+          const correct = ans === QUIZ_QUESTIONS[i].correctIndex;
+          return (
+            <div
+              key={i}
+              className="rounded-full transition-all"
+              style={{
+                width: i === currentQ ? 20 : 8,
+                height: 8,
+                background: attempted ? (correct ? "#10b981" : "#ef4444") : i === currentQ ? "#8b5cf6" : "var(--color-surface-2)",
+                border: i === currentQ ? "1px solid #8b5cf6" : "none",
+              }}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PIPELINE TAB
 // ─────────────────────────────────────────────────────────────────────────────
 function PipelineTab() {
@@ -870,43 +1792,125 @@ function PipelineTab() {
   const [results, setResults] = useState<StageResult[] | null>(null);
   const [hasRun, setHasRun] = useState(false);
 
+  // Comparison mode state
+  const [comparisonMode, setComparisonMode] = useState(false);
+  const [activeSet, setActiveSet] = useState<"A" | "B">("A");
+  const [paramsA, setParamsA] = useState<PipelineParams>({ ...DEFAULT_PARAMS });
+  const [paramsB, setParamsB] = useState<PipelineParams>({ ...DEFAULT_PARAMS });
+  const [resultsA, setResultsA] = useState<StageResult[] | null>(null);
+  const [resultsB, setResultsB] = useState<StageResult[] | null>(null);
+
   const handleParam = useCallback(
     (key: keyof PipelineParams, val: number) => {
-      setParams((prev) => {
-        const next = { ...prev, [key]: val };
-        if (hasRun) {
-          setResults(runPipeline(selectedStimulus, next));
+      if (comparisonMode) {
+        if (activeSet === "A") {
+          setParamsA((prev) => {
+            const next = { ...prev, [key]: val };
+            if (hasRun) setResultsA(runPipeline(selectedStimulus, next));
+            return next;
+          });
+        } else {
+          setParamsB((prev) => {
+            const next = { ...prev, [key]: val };
+            if (hasRun) setResultsB(runPipeline(selectedStimulus, next));
+            return next;
+          });
         }
-        return next;
-      });
+      } else {
+        setParams((prev) => {
+          const next = { ...prev, [key]: val };
+          if (hasRun) setResults(runPipeline(selectedStimulus, next));
+          return next;
+        });
+      }
     },
-    [hasRun, selectedStimulus]
+    [hasRun, selectedStimulus, comparisonMode, activeSet]
   );
 
   const handleStimulusChange = useCallback(
     (s: Stimulus) => {
       setSelectedStimulus(s);
       if (hasRun) {
-        setResults(runPipeline(s, params));
+        if (comparisonMode) {
+          setResultsA(runPipeline(s, paramsA));
+          setResultsB(runPipeline(s, paramsB));
+        } else {
+          setResults(runPipeline(s, params));
+        }
       }
     },
-    [hasRun, params]
+    [hasRun, params, paramsA, paramsB, comparisonMode]
   );
 
   const handleRun = () => {
-    const r = runPipeline(selectedStimulus, params);
-    setResults(r);
+    if (comparisonMode) {
+      setResultsA(runPipeline(selectedStimulus, paramsA));
+      setResultsB(runPipeline(selectedStimulus, paramsB));
+    } else {
+      setResults(runPipeline(selectedStimulus, params));
+    }
     setHasRun(true);
   };
 
   const handleReset = () => {
     setParams({ ...DEFAULT_PARAMS });
+    setParamsA({ ...DEFAULT_PARAMS });
+    setParamsB({ ...DEFAULT_PARAMS });
     setResults(null);
+    setResultsA(null);
+    setResultsB(null);
     setHasRun(false);
+    setComparisonMode(false);
+    setActiveSet("A");
   };
 
-  const avgScore = results
-    ? Math.round(results.reduce((acc, s) => acc + clamp(s.signalStrength), 0) / results.length)
+  const handleApplyPreset = (presetParams: PipelineParams) => {
+    if (comparisonMode) {
+      if (activeSet === "A") {
+        setParamsA(presetParams);
+        const r = runPipeline(selectedStimulus, presetParams);
+        setResultsA(r);
+        if (!hasRun && paramsB) {
+          setResultsB(runPipeline(selectedStimulus, paramsB));
+        }
+      } else {
+        setParamsB(presetParams);
+        const r = runPipeline(selectedStimulus, presetParams);
+        setResultsB(r);
+        if (!hasRun && paramsA) {
+          setResultsA(runPipeline(selectedStimulus, paramsA));
+        }
+      }
+    } else {
+      setParams(presetParams);
+      setResults(runPipeline(selectedStimulus, presetParams));
+    }
+    setHasRun(true);
+  };
+
+  const toggleComparisonMode = () => {
+    if (!comparisonMode) {
+      // Entering comparison mode — copy current params to A
+      setParamsA({ ...(params) });
+      setParamsB({ ...DEFAULT_PARAMS });
+      if (results) setResultsA(results);
+      setResultsB(runPipeline(selectedStimulus, DEFAULT_PARAMS));
+      if (hasRun) {
+        setResultsA(runPipeline(selectedStimulus, params));
+        setResultsB(runPipeline(selectedStimulus, DEFAULT_PARAMS));
+      }
+    }
+    setComparisonMode((c) => !c);
+    setActiveSet("A");
+  };
+
+  // Current params for sliders
+  const currentParams = comparisonMode ? (activeSet === "A" ? paramsA : paramsB) : params;
+  const displayResultsA = comparisonMode ? resultsA : results;
+  const displayResultsB = comparisonMode ? resultsB : null;
+
+  const avgScore = displayResultsA
+    ? Math.round(displayResultsA.reduce((acc, s) => acc + clamp(s.signalStrength), 0) / displayResultsA.length)
     : null;
 
   return (
@@ -966,19 +1970,62 @@ function PipelineTab() {
 
         {/* Parameters */}
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--color-text-muted)" }}>
-            Brain Parameters
-          </p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-muted)" }}>
+              Brain Parameters
+            </p>
+            {comparisonMode && (
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setActiveSet("A")}
+                  className="px-2 py-0.5 rounded text-[10px] font-semibold"
+                  style={{
+                    background: activeSet === "A" ? "#8b5cf6" : "transparent",
+                    color: activeSet === "A" ? "#fff" : "var(--color-text-muted)",
+                    border: activeSet === "A" ? "none" : "1px solid var(--color-border)",
+                    cursor: "pointer",
+                  }}
+                >
+                  Set A
+                </button>
+                <button
+                  onClick={() => setActiveSet("B")}
+                  className="px-2 py-0.5 rounded text-[10px] font-semibold"
+                  style={{
+                    background: activeSet === "B" ? "#60a5fa" : "transparent",
+                    color: activeSet === "B" ? "#fff" : "var(--color-text-muted)",
+                    border: activeSet === "B" ? "none" : "1px solid var(--color-border)",
+                    cursor: "pointer",
+                  }}
+                >
+                  Set B
+                </button>
+              </div>
+            )}
+          </div>
           <div
             className="rounded-xl p-4"
-            style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
+            style={{
+              background: "var(--color-surface)",
+              border: comparisonMode
+                ? `1px solid ${activeSet === "A" ? "#8b5cf640" : "#60a5fa40"}`
+                : "1px solid var(--color-border)",
+            }}
           >
+            {comparisonMode && (
+              <p
+                className="text-[10px] font-semibold uppercase tracking-wider mb-3 px-1"
+                style={{ color: activeSet === "A" ? "#a78bfa" : "#93c5fd" }}
+              >
+                Editing Set {activeSet}
+              </p>
+            )}
             {PARAM_META.map((meta) => (
               <ParamSlider
                 key={meta.key}
                 label={meta.label}
                 description={meta.description}
-                value={params[meta.key]}
+                value={currentParams[meta.key]}
                 color={meta.color}
                 paramKey={meta.key}
                 onChange={handleParam}
@@ -1023,11 +2070,31 @@ function PipelineTab() {
             Adjust parameters then press Run Pipeline to simulate
           </p>
         )}
+
+        {/* Presets Panel */}
+        <PresetsPanel onApply={handleApplyPreset} />
       </aside>
 
       {/* ── MAIN RESULTS ── */}
       <main className="flex-1 min-w-0 space-y-5">
-        {!results ? (
+        {/* Comparison toggle */}
+        <div className="flex items-center justify-end">
+          <button
+            onClick={toggleComparisonMode}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all hover:opacity-90"
+            style={{
+              background: comparisonMode ? "#8b5cf6" : "var(--color-surface)",
+              color: comparisonMode ? "#fff" : "var(--color-text-muted)",
+              border: comparisonMode ? "none" : "1px solid var(--color-border)",
+              cursor: "pointer",
+            }}
+          >
+            <GitCompare size={13} />
+            {comparisonMode ? "Exit Comparison" : "Compare A vs B"}
+          </button>
+        </div>
+
+        {!displayResultsA ? (
           <div
             className="rounded-2xl flex flex-col items-center justify-center text-center py-24 px-8"
             style={{
@@ -1059,7 +2126,7 @@ function PipelineTab() {
                 style={{ background: "#10b981", boxShadow: "0 0 8px #10b981" }}
               />
               <h2 className="text-sm font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-muted)" }}>
-                Pipeline Output
+                {comparisonMode ? "Pipeline Comparison" : "Pipeline Output"}
               </h2>
               {avgScore !== null && (
                 <span
@@ -1072,6 +2139,12 @@ function PipelineTab() {
                 >
                   avg {avgScore}%
                 </span>
+              )}
+              {comparisonMode && (
+                <div className="flex items-center gap-2 text-[11px]">
+                  <span className="px-2 py-0.5 rounded font-semibold" style={{ background: "#8b5cf620", color: "#a78bfa" }}>A: purple</span>
+                  <span className="px-2 py-0.5 rounded font-semibold" style={{ background: "#60a5fa20", color: "#93c5fd" }}>B: blue</span>
+                </div>
               )}
             </div>
 
@@ -1115,10 +2188,13 @@ function PipelineTab() {
               </div>
             </div>
 
+            {/* Signal Waveform */}
+            <SignalWaveform stages={displayResultsA} />
+
             {/* Heatmap + Feature Survival */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <BrainHeatmap stages={results} />
-              <FeatureSurvivalGrid stimulus={selectedStimulus} stages={results} />
+              <BrainHeatmap stages={displayResultsA} />
+              <FeatureSurvivalGrid stimulus={selectedStimulus} stages={displayResultsA} />
             </div>
 
             {/* Stage cards + connectors */}
@@ -1127,20 +2203,22 @@ function PipelineTab() {
                 Cognitive Stages
               </p>
               <div className="space-y-0">
-                {results.map((stage, i) => {
+                {displayResultsA.map((stage, i) => {
                   const cfg = STAGE_CONFIG.find((c) => c.id === stage.stage) ?? STAGE_CONFIG[i];
+                  const compStage = displayResultsB ? displayResultsB[i] : undefined;
                   return (
                     <div key={stage.stage}>
                       <StageCard
                         stage={stage}
                         config={cfg}
                         index={i}
-
+                        comparisonStage={compStage}
+                        isComparisonMode={comparisonMode}
                       />
-                      {i < results.length - 1 && (
+                      {i < displayResultsA.length - 1 && (
                         <PathwayConnector
                           fromVal={stage.signalStrength}
-                          toVal={results[i + 1].signalStrength}
+                          toVal={displayResultsA[i + 1].signalStrength}
                           color={STAGE_CONFIG[i + 1].color}
                         />
                       )}
@@ -1151,7 +2229,10 @@ function PipelineTab() {
             </div>
 
             {/* Summary */}
-            <PipelineSummary stages={results} />
+            <PipelineSummary
+              stages={displayResultsA}
+              stagesB={displayResultsB ?? undefined}
+            />
           </>
         )}
       </main>
@@ -1228,6 +2309,18 @@ const LEARN_SECTIONS = [
   },
 ];
 
+// Refs that have glossary entries (case-insensitive matching)
+const GLOSSARY_REFS: Record<string, string> = {
+  "Broadbent's Filter Theory": "Broadbent's Filter Theory",
+  "Treisman's Attenuation Model": "Treisman's Attenuation Model",
+  "Cocktail Party Effect": "Cocktail party effect",
+  "Inattentional Blindness": "Inattentional blindness",
+  "Gestalt Principles": "Gestalt principles",
+  "Encoding Specificity": "Encoding specificity",
+  "Misinformation Effect": "Misinformation effect",
+  "False Memories (Loftus)": "False memory",
+};
+
 function LearnTab() {
   return (
     <div className="max-w-3xl mx-auto p-4 md:p-8 space-y-8">
@@ -1243,12 +2336,12 @@ function LearnTab() {
       {/* Key concepts highlight */}
       <div className="grid sm:grid-cols-2 gap-3">
         {[
-          { label: "Bottom-Up Processing", desc: "Driven by stimulus features — pure sensation flowing upward through the system without prior influence.", color: "#f59e0b" },
-          { label: "Top-Down Processing", desc: "Driven by prior knowledge and expectations — your brain predicts what it will perceive before perceiving it.", color: "#6366f1" },
+          { label: "Bottom-up processing", desc: "Driven by stimulus features — pure sensation flowing upward through the system without prior influence.", color: "#f59e0b" },
+          { label: "Top-down processing", desc: "Driven by prior knowledge and expectations — your brain predicts what it will perceive before perceiving it.", color: "#6366f1" },
           { label: "Broadbent's Filter Theory", desc: "Attention acts as a single-channel filter that blocks out all but one input stream based on physical characteristics.", color: "#8b5cf6" },
-          { label: "Levels of Processing", desc: "Deeper, more meaningful encoding creates stronger, more durable memory traces than shallow structural analysis.", color: "#14b8a6" },
-          { label: "Encoding Specificity", desc: "Memory retrieval is best when cues at retrieval match the context present at the time of encoding.", color: "#06b6d4" },
-          { label: "Memory as Reconstruction", desc: "We don't replay memories like videos — we rebuild them from fragments, influenced by subsequent experiences.", color: "#3b82f6" },
+          { label: "Levels of processing", desc: "Deeper, more meaningful encoding creates stronger, more durable memory traces than shallow structural analysis.", color: "#14b8a6" },
+          { label: "Encoding specificity", desc: "Memory retrieval is best when cues at retrieval match the context present at the time of encoding.", color: "#06b6d4" },
+          { label: "Reconstructive memory", desc: "We don't replay memories like videos — we rebuild them from fragments, influenced by subsequent experiences.", color: "#3b82f6" },
         ].map((c) => (
           <div
             key={c.label}
@@ -1256,7 +2349,7 @@ function LearnTab() {
             style={{ background: `${c.color}0d`, border: `1px solid ${c.color}28` }}
           >
             <p className="text-sm font-semibold mb-1" style={{ color: c.color }}>
-              {c.label}
+              <GlossaryTerm term={c.label}>{c.label}</GlossaryTerm>
             </p>
             <p className="text-[12px] leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
               {c.desc}
@@ -1311,15 +2404,19 @@ function LearnTab() {
                 Key Terms
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {s.refs.map((r) => (
-                  <span
-                    key={r}
-                    className="text-[11px] px-2.5 py-1 rounded-full"
-                    style={{ background: "var(--color-surface-2)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
-                  >
-                    {r}
-                  </span>
-                ))}
+                {s.refs.map((r) => {
+                  const glossaryKey = GLOSSARY_REFS[r] ?? r;
+                  const hasGlossary = !!(GLOSSARY[glossaryKey] || GLOSSARY[Object.keys(GLOSSARY).find(k => k.toLowerCase() === glossaryKey.toLowerCase()) ?? ""]);
+                  return (
+                    <span
+                      key={r}
+                      className="text-[11px] px-2.5 py-1 rounded-full"
+                      style={{ background: "var(--color-surface-2)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
+                    >
+                      {hasGlossary ? <GlossaryTerm term={glossaryKey}>{r}</GlossaryTerm> : r}
+                    </span>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -1363,7 +2460,7 @@ function AboutTab() {
         {
           title: "How to Use It",
           color: "#f59e0b",
-          body: "1. Select a stimulus (Ambiguous Face, Street Scene, or Muffled Conversation). 2. Set your brain parameters — try extreme values first to see the effects. 3. Press 'Run Pipeline'. 4. Explore each stage card by clicking to expand details. 5. After the first run, slider changes update results in real time.",
+          body: "1. Select a stimulus (Ambiguous Face, Street Scene, or Muffled Conversation). 2. Set your brain parameters — try extreme values first to see the effects. 3. Press 'Run Pipeline'. 4. Explore each stage card by clicking to expand details. 5. After the first run, slider changes update results in real time. 6. Use Quick Experiments presets to jump to famous cognitive scenarios.",
         },
       ].map((section) => (
         <div
@@ -1425,7 +2522,7 @@ function AboutTab() {
       </div>
 
       <p className="text-[11px] text-center pb-4" style={{ color: "var(--color-text-muted)" }}>
-        Built for PSYC 203 · Cognitive Psychology · Interactive Simulator v2.0
+        Built for PSYC 203 · Cognitive Psychology · Interactive Simulator v3.0
       </p>
     </div>
   );
@@ -1434,7 +2531,7 @@ function AboutTab() {
 // ─────────────────────────────────────────────────────────────────────────────
 // STICKY NAV BAR
 // ─────────────────────────────────────────────────────────────────────────────
-type Tab = "pipeline" | "learn" | "about";
+type Tab = "pipeline" | "learn" | "quiz" | "about";
 
 interface NavBarProps {
   activeTab: Tab;
@@ -1445,6 +2542,7 @@ function NavBar({ activeTab, onTabChange }: NavBarProps) {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "pipeline", label: "Pipeline", icon: <Zap size={14} /> },
     { id: "learn", label: "Learn", icon: <BookOpen size={14} /> },
+    { id: "quiz", label: "Quiz", icon: <HelpCircle size={14} /> },
     { id: "about", label: "About", icon: <Info size={14} /> },
   ];
 
@@ -1503,7 +2601,7 @@ function NavBar({ activeTab, onTabChange }: NavBarProps) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HERO SECTION
+// HERO SECTION (with particle background)
 // ─────────────────────────────────────────────────────────────────────────────
 function HeroSection() {
   const scrollToSimulator = () => {
@@ -1518,6 +2616,9 @@ function HeroSection() {
         background: "radial-gradient(ellipse 80% 60% at 50% 40%, #2a0a4e 0%, #150d30 35%, #0a0818 70%)",
       }}
     >
+      {/* Particle background */}
+      <ParticleBackground />
+
       {/* Ambient glow */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -1603,6 +2704,7 @@ function SimulatorSection() {
         >
           {activeTab === "pipeline" && <PipelineTab />}
           {activeTab === "learn" && <LearnTab />}
+          {activeTab === "quiz" && <QuizTab />}
           {activeTab === "about" && <AboutTab />}
         </motion.div>
       </AnimatePresence>
@@ -1614,6 +2716,10 @@ function SimulatorSection() {
 // ROOT APP
 // ─────────────────────────────────────────────────────────────────────────────
 export default function App() {
+  // Suppress unused import warnings
+  void useRef;
+  void useEffect;
+
   return (
     <div style={{ background: "var(--color-bg)", color: "var(--color-text)" }}>
       <HeroSection />
