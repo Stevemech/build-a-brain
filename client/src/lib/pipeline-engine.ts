@@ -234,7 +234,7 @@ export function runPipeline(stimulus: Stimulus, params: PipelineParams): StageRe
   });
 
   // Stage 5: STORAGE — Memory consolidation
-  const storageStrength = encodingResult * 0.7 + (100 - params.perceptualNoise * 0.3);
+  const storageStrength = encodingResult * 0.7 + (100 - params.perceptualNoise) * 0.3;
   const storageResult = Math.min(100, Math.max(5, storageStrength));
 
   const consolidation = Math.round(Math.min(100, encodingResult * 0.8 + 10));

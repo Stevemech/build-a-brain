@@ -237,12 +237,13 @@ const STIMULUS_ILLUSTRATIONS: Record<string, typeof FaceIllustration> = {
 // ─── CSS-Transition Progress Bar (THE FIX) ────────────────────────
 
 function SignalBar({ strength, color }: { strength: number; color: string }) {
+  const clamped = Math.min(100, Math.max(0, strength));
   return (
-    <div className="w-full h-2.5 rounded-full bg-muted/40 overflow-hidden backdrop-blur-sm">
+    <div className="w-full h-3 rounded-full bg-muted/50 overflow-hidden backdrop-blur-sm">
       <div
         className={`h-full rounded-full ${color}`}
         style={{
-          width: `${strength}%`,
+          width: `${clamped}%`,
           transition: "width 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       />
@@ -253,17 +254,18 @@ function SignalBar({ strength, color }: { strength: number; color: string }) {
 // ─── Sub-metric mini bar (CSS transition) ─────────────────────────
 
 function MiniMetricBar({ metric, color }: { metric: SubMetric; color: string }) {
+  const clamped = Math.min(100, Math.max(0, metric.value));
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-medium text-muted-foreground">{metric.label}</span>
-        <span className="text-[10px] font-mono tabular-nums text-muted-foreground/70">{Math.round(metric.value)}%</span>
+        <span className="text-[11px] font-medium text-muted-foreground">{metric.label}</span>
+        <span className="text-[11px] font-mono tabular-nums text-muted-foreground/70">{Math.round(clamped)}%</span>
       </div>
-      <div className="w-full h-1.5 rounded-full bg-muted/40 overflow-hidden">
+      <div className="w-full h-2 rounded-full bg-muted/50 overflow-hidden">
         <div
           className={`h-full rounded-full ${color}`}
           style={{
-            width: `${metric.value}%`,
+            width: `${clamped}%`,
             transition: "width 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         />
@@ -290,7 +292,7 @@ function BrainHeatmap({ results }: { results: StageResult[] }) {
 
   return (
     <div className="relative">
-      <svg viewBox="0 0 200 175" className="w-full max-w-[180px] mx-auto">
+      <svg viewBox="0 0 200 175" className="w-full max-w-[200px] mx-auto">
         {/* Brain outline */}
         <ellipse cx="100" cy="85" rx="85" ry="80"
           fill="none" stroke="currentColor" strokeWidth="1.5"
@@ -355,8 +357,8 @@ function FeatureSurvivalTracker({ results, stimulus }: { results: StageResult[];
   const stageLabels = results.map(r => r.label[0]); // S, A, P, E, S, R, R
 
   return (
-    <div className="space-y-1.5">
-      <h5 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+    <div className="space-y-2">
+      <h5 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
         Feature Survival
       </h5>
       {allFeatures.map((feature, fi) => {
@@ -365,8 +367,8 @@ function FeatureSurvivalTracker({ results, stimulus }: { results: StageResult[];
           f.includes(feature) || feature.includes(f.split(" ")[0])
         ));
         return (
-          <div key={fi} className="flex items-center gap-1.5">
-            <span className="text-[9px] text-muted-foreground/70 w-20 truncate shrink-0" title={feature}>
+          <div key={fi} className="flex items-center gap-2">
+            <span className="text-[10px] text-muted-foreground/80 w-24 truncate shrink-0" title={feature}>
               {feature}
             </span>
             <div className="flex gap-0.5 flex-1">
@@ -377,15 +379,15 @@ function FeatureSurvivalTracker({ results, stimulus }: { results: StageResult[];
                 return (
                   <div
                     key={si}
-                    className="h-3 flex-1 rounded-sm"
+                    className="h-4 flex-1 rounded-sm"
                     style={{
                       backgroundColor: isOut
-                        ? `${STAGE_HEX[r.stage]}40`
+                        ? `${STAGE_HEX[r.stage]}50`
                         : isIn && !isOut
-                          ? "#ef444430"
+                          ? "#ef444440"
                           : wasModified
-                            ? "#f59e0b30"
-                            : "rgba(128,128,128,0.08)",
+                            ? "#f59e0b40"
+                            : "rgba(128,128,128,0.1)",
                       transition: "background-color 0.3s ease",
                     }}
                     title={`${r.label}: ${isOut ? "survived" : isIn ? "lost" : "n/a"}`}
@@ -397,18 +399,18 @@ function FeatureSurvivalTracker({ results, stimulus }: { results: StageResult[];
         );
       })}
       {/* Legend */}
-      <div className="flex gap-3 mt-1 pt-1 border-t border-border/20">
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-sm bg-emerald-500/30" />
-          <span className="text-[8px] text-muted-foreground/50">Survived</span>
+      <div className="flex gap-4 mt-2 pt-2 border-t border-border/20">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-sm bg-emerald-500/40" />
+          <span className="text-[9px] text-muted-foreground/60">Survived</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-sm bg-red-500/30" />
-          <span className="text-[8px] text-muted-foreground/50">Lost</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-sm bg-red-500/40" />
+          <span className="text-[9px] text-muted-foreground/60">Lost</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-sm bg-gray-500/10" />
-          <span className="text-[8px] text-muted-foreground/50">N/A</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-sm bg-gray-500/15" />
+          <span className="text-[9px] text-muted-foreground/60">N/A</span>
         </div>
       </div>
     </div>
@@ -535,7 +537,7 @@ function NeuralPathway({ fromStrength, toStrength, fromStage, toStage }: {
 // ─── Signal Radar Chart (SVG, CSS transitions) ───────────────────
 
 function SignalRadar({ results }: { results: StageResult[] }) {
-  const cx = 100, cy = 100, r = 75;
+  const cx = 130, cy = 130, r = 75;
   const n = results.length;
 
   const points = results.map((res, i) => {
@@ -544,8 +546,8 @@ function SignalRadar({ results }: { results: StageResult[] }) {
     return {
       x: cx + Math.cos(angle) * dist,
       y: cy + Math.sin(angle) * dist,
-      labelX: cx + Math.cos(angle) * (r + 18),
-      labelY: cy + Math.sin(angle) * (r + 18),
+      labelX: cx + Math.cos(angle) * (r + 30),
+      labelY: cy + Math.sin(angle) * (r + 30),
       strength: res.signalStrength,
       label: res.label,
     };
@@ -554,7 +556,7 @@ function SignalRadar({ results }: { results: StageResult[] }) {
   const polyPoints = points.map(p => `${p.x},${p.y}`).join(" ");
 
   return (
-    <svg viewBox="0 0 200 200" className="w-full max-w-[220px] mx-auto">
+    <svg viewBox="0 0 260 260" className="w-full max-w-[260px] mx-auto">
       {/* Grid rings */}
       {[0.25, 0.5, 0.75, 1].map(scale => (
         <circle key={scale} cx={cx} cy={cy} r={r * scale}
@@ -592,7 +594,7 @@ function SignalRadar({ results }: { results: StageResult[] }) {
         <text key={`label-${i}`}
           x={p.labelX} y={p.labelY}
           textAnchor="middle" dominantBaseline="middle"
-          className="fill-muted-foreground text-[7px] font-medium"
+          className="fill-muted-foreground text-[9px] font-medium"
         >
           {p.label}
         </text>
@@ -647,9 +649,10 @@ function StageCard({ result, index, isExpanded, onToggle, snapshotResult }: {
   const accent = STAGE_ACCENT[result.stage];
   const bg = STAGE_BG[result.stage];
   const glow = STAGE_GLOW[result.stage];
-  const animatedStrength = useAnimatedNumber(result.signalStrength);
+  const clampedStrength = Math.min(100, result.signalStrength);
+  const animatedStrength = useAnimatedNumber(clampedStrength);
 
-  const strengthLevel = result.signalStrength > 70 ? "high" : result.signalStrength > 40 ? "mid" : "low";
+  const strengthLevel = clampedStrength > 70 ? "high" : clampedStrength > 40 ? "mid" : "low";
   const snapshotDelta = snapshotResult ? Math.round(result.signalStrength - snapshotResult.signalStrength) : null;
 
   return (
@@ -667,9 +670,9 @@ function StageCard({ result, index, isExpanded, onToggle, snapshotResult }: {
       >
         {/* Animated accent bar at top - CSS transition */}
         <div
-          className={`h-0.5 ${barColor}`}
+          className={`h-1 ${barColor}`}
           style={{
-            width: `${result.signalStrength}%`,
+            width: `${Math.min(100, result.signalStrength)}%`,
             transition: "width 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         />
@@ -724,7 +727,7 @@ function StageCard({ result, index, isExpanded, onToggle, snapshotResult }: {
 
               {/* Main bar + optional snapshot comparison */}
               <div className="space-y-1">
-                <SignalBar strength={result.signalStrength} color={barColor} />
+                <SignalBar strength={clampedStrength} color={barColor} />
                 {snapshotResult && (
                   <div className="w-full h-1.5 rounded-full bg-muted/40 overflow-hidden">
                     <div
@@ -1053,7 +1056,7 @@ export default function Home() {
 
   // Calculate overall pipeline health
   const pipelineHealth = results
-    ? Math.round(results.reduce((sum, r) => sum + r.signalStrength, 0) / results.length)
+    ? Math.min(100, Math.round(results.reduce((sum, r) => sum + Math.min(100, r.signalStrength), 0) / results.length))
     : 0;
   const totalWarnings = results ? results.reduce((sum, r) => sum + r.warnings.length, 0) : 0;
   const animatedHealth = useAnimatedNumber(pipelineHealth);
@@ -1411,11 +1414,11 @@ export default function Home() {
                                 <div className="grid grid-cols-2 gap-2">
                                   <div className="p-2.5 rounded-lg bg-background/50 border border-border/30">
                                     <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider mb-0.5">Input Signal</p>
-                                    <p className="text-lg font-bold tabular-nums">{Math.round(results[0].signalStrength)}%</p>
+                                    <p className="text-lg font-bold tabular-nums">{Math.min(100, Math.round(results[0].signalStrength))}%</p>
                                   </div>
                                   <div className="p-2.5 rounded-lg bg-background/50 border border-border/30">
                                     <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider mb-0.5">Output Signal</p>
-                                    <p className="text-lg font-bold tabular-nums">{Math.round(results[results.length - 1].signalStrength)}%</p>
+                                    <p className="text-lg font-bold tabular-nums">{Math.min(100, Math.round(results[results.length - 1].signalStrength))}%</p>
                                   </div>
                                   <div className="p-2.5 rounded-lg bg-background/50 border border-border/30">
                                     <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider mb-0.5">Signal Change</p>
@@ -1475,7 +1478,7 @@ export default function Home() {
                                     <span key={r.stage}
                                       className="inline-flex items-center gap-1 text-[10px] font-mono tabular-nums 
                                         px-2 py-0.5 rounded-md bg-muted/50 text-muted-foreground">
-                                      {r.label} {Math.round(r.signalStrength)}%
+                                      {r.label} {Math.min(100, Math.round(r.signalStrength))}%
                                     </span>
                                   ))}
                                 </div>
