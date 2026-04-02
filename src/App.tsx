@@ -10,10 +10,9 @@ import {
   RotateCcw,
   Play,
   AlertTriangle,
-  HelpCircle,
   GitCompare,
-  CheckCircle,
-  XCircle,
+  Lightbulb,
+  Quote,
 } from "lucide-react";
 import {
   STIMULI,
@@ -168,105 +167,6 @@ const GLOSSARY: Record<string, string> = {
   "Cocktail party effect": "Ability to focus on one conversation while filtering out background noise, yet still detecting personally relevant info",
   "False memory": "A memory of an event that did not actually occur, often created by suggestion or expectation",
 };
-
-// ─── Quiz questions ───────────────────────────────────────────────────────────
-interface QuizQuestion {
-  question: string;
-  options: string[];
-  correctIndex: number;
-  explanation: string;
-}
-
-const QUIZ_QUESTIONS: QuizQuestion[] = [
-  {
-    question: "If you increase Perceptual Noise to 90, what happens to the Sensation signal?",
-    options: [
-      "It increases significantly — noise boosts signal clarity",
-      "It decreases significantly — noise degrades raw signal",
-      "It stays the same — noise only affects later stages",
-      "It fluctuates randomly with no clear pattern",
-    ],
-    correctIndex: 1,
-    explanation: "High perceptual noise directly degrades the raw sensory signal at the Sensation stage. The signal must cut through the noise to be detected, so higher noise means weaker initial signal strength.",
-  },
-  {
-    question: "With Attentional Focus at 10, what cognitive phenomenon is most likely?",
-    options: [
-      "Hyperfocus — extreme concentration on one target",
-      "Sensory overload — too much information simultaneously",
-      "Inattentional blindness — missing obvious stimuli due to lack of attentional gating",
-      "Synesthesia — mixing of sensory signals",
-    ],
-    correctIndex: 2,
-    explanation: "Very low attentional focus means the cognitive system fails to properly gate and amplify incoming signals. This produces inattentional blindness — a failure to notice unexpected stimuli that are in plain sight when attention is directed elsewhere.",
-  },
-  {
-    question: "High Prior Expectations + Low Perceptual Noise — what is the primary risk?",
-    options: [
-      "Signal degradation — noise corrupts the data",
-      "Expectation-driven perception overrides actual sensory data",
-      "Memory extinction — too little noise prevents storage",
-      "Hyper-accurate perception — all features are preserved",
-    ],
-    correctIndex: 1,
-    explanation: "When expectations are high but noise is low, the brain 'sees clearly' but may still override that clarity with its top-down predictions. The perception stage fills in details that match expectations rather than actual stimulus features — a major source of perceptual bias.",
-  },
-  {
-    question: "Encoding Strength at 15 means information is stored at what level?",
-    options: [
-      "Semantic level — deep meaningful connections",
-      "Episodic level — autobiographical narrative",
-      "Shallow/structural level — surface features only",
-      "Procedural level — motor skill encoding",
-    ],
-    correctIndex: 2,
-    explanation: "According to Craik & Lockhart's Levels of Processing theory (1972), low encoding strength corresponds to shallow/structural encoding — processing only surface features like appearance or shape. This produces weak, short-lived memory traces.",
-  },
-  {
-    question: "High encoding strength but low retrieval cue — what phenomenon does this demonstrate?",
-    options: [
-      "Anterograde amnesia — inability to form new memories",
-      "Tip-of-the-tongue phenomenon — retrieval failure despite good encoding",
-      "Source monitoring error — confusing where a memory came from",
-      "Proactive interference — old memories blocking new ones",
-    ],
-    correctIndex: 1,
-    explanation: "When information was encoded deeply (high encoding strength) but retrieval cues are absent or mismatched (low retrieval cue), the memory exists but cannot be accessed — the classic tip-of-the-tongue state. The information is 'in there' but won't surface.",
-  },
-  {
-    question: "If you max out every parameter (all at 100), is the final memory perfectly accurate?",
-    options: [
-      "Yes — maximum parameters guarantee maximum accuracy",
-      "No — high expectations still distort perception even with perfect encoding",
-      "Yes — but only for visual stimuli, not auditory",
-      "No — maximum storage causes interference between memories",
-    ],
-    correctIndex: 1,
-    explanation: "Even with all other parameters maxed out, very high Prior Expectations (100) means the perception stage heavily distorts the signal to match top-down predictions. The memory may be vivid and confident, but it reflects what the brain expected to see, not necessarily what was actually there.",
-  },
-  {
-    question: "Which two parameters most directly affect the quality of the final Report?",
-    options: [
-      "Perceptual Noise + Attentional Focus",
-      "Prior Expectations + Perceptual Noise",
-      "Encoding Strength + Retrieval Cue",
-      "Attentional Focus + Prior Expectations",
-    ],
-    correctIndex: 2,
-    explanation: "The final Report stage synthesizes the stored memory trace (shaped by Encoding Strength) and retrieves it using available cues (Retrieval Cue strength). These two parameters most directly determine whether the memory can be fully and accurately reconstructed at output.",
-  },
-  {
-    question: "Why might someone be very confident in a false memory?",
-    options: [
-      "False memories are always less vivid than real ones",
-      "High expectations filled in perceptual gaps during encoding, which were stored and retrieved as real",
-      "The brain flags false memories with special neural markers",
-      "Confidence is always inversely proportional to accuracy",
-    ],
-    correctIndex: 1,
-    explanation: "When Prior Expectations are high, the perception stage fills in ambiguous details with expected content. These 'filled-in' details are then encoded and stored just like real perceptual data. At retrieval, the brain has no way to distinguish them — leading to high confidence in a memory that was partially or wholly constructed by expectation.",
-  },
-];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GLOSSARY TOOLTIP COMPONENT
@@ -702,11 +602,85 @@ function SignalWaveform({ stages }: { stages: StageResult[] }) {
               />
             );
           })}
+
+          {/* Peak/Trough annotations */}
+          {(() => {
+            const sortedBySignal = [...stages].map((s, i) => ({ s, i })).sort((a, b) => b.s.signalStrength - a.s.signalStrength);
+            const peakEntry = sortedBySignal[0];
+            const troughEntry = sortedBySignal[sortedBySignal.length - 1];
+            const peakX = ((peakEntry.i + 0.5) / stages.length) * width;
+            const peakSignal = clamp(peakEntry.s.signalStrength) / 100;
+            const troughX = ((troughEntry.i + 0.5) / stages.length) * width;
+            const troughSignal = clamp(troughEntry.s.signalStrength) / 100;
+            const peakCfg = STAGE_CONFIG[peakEntry.i];
+            const troughCfg = STAGE_CONFIG[troughEntry.i];
+
+            return (
+              <g>
+                {/* Peak label */}
+                <rect
+                  x={Math.min(peakX - 30, width - 70)}
+                  y={mid - peakSignal * 24 - 20}
+                  width={68}
+                  height={14}
+                  rx={4}
+                  fill={`${peakCfg.color}22`}
+                  stroke={peakCfg.color}
+                  strokeOpacity={0.4}
+                  strokeWidth={0.5}
+                />
+                <text
+                  x={Math.min(peakX - 30, width - 70) + 4}
+                  y={mid - peakSignal * 24 - 10}
+                  fontSize={7.5}
+                  fill={peakCfg.color}
+                  fontWeight={600}
+                >
+                  Peak {Math.round(clamp(peakEntry.s.signalStrength))}% ({peakCfg.shortLabel})
+                </text>
+
+                {/* Trough label */}
+                <rect
+                  x={Math.min(troughX - 36, width - 78)}
+                  y={mid - troughSignal * 24 + 6}
+                  width={74}
+                  height={14}
+                  rx={4}
+                  fill={`${troughCfg.color}22`}
+                  stroke={troughCfg.color}
+                  strokeOpacity={0.4}
+                  strokeWidth={0.5}
+                />
+                <text
+                  x={Math.min(troughX - 36, width - 78) + 4}
+                  y={mid - troughSignal * 24 + 16}
+                  fontSize={7.5}
+                  fill={troughCfg.color}
+                  fontWeight={600}
+                >
+                  Trough {Math.round(clamp(troughEntry.s.signalStrength))}% ({troughCfg.shortLabel})
+                </text>
+              </g>
+            );
+          })()}
         </svg>
       </div>
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STAGE PARAMETER DRIVERS
+// ─────────────────────────────────────────────────────────────────────────────
+const STAGE_DRIVERS = {
+  sensation:  "Perceptual Noise (primary) — higher noise degrades the raw sensory signal before any interpretation",
+  attention:  "Attentional Focus (primary) — controls the width of the cognitive spotlight and how many features are gated through",
+  perception: "Prior Expectations (primary), Sensation signal (secondary) — top-down predictions blend with incoming feature data",
+  encoding:   "Encoding Strength (primary), Perception quality (secondary) — determines depth from shallow structural to deep semantic",
+  storage:    "Encoding quality (primary), Perceptual Noise (secondary) — a weak trace will crumble regardless of storage capacity",
+  retrieval:  "Retrieval Cue (primary), Storage quality (secondary) — the cue unlocks access; without it, even good traces stay hidden",
+  report:     "All preceding stages (cumulative) — every distortion compounds here; confidence and fidelity can diverge dramatically",
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STAGE CARD (with real-world examples)
@@ -808,7 +782,7 @@ function StageCard({ stage, config, index, comparisonStage, isComparisonMode }: 
       </div>
 
       {/* Progress bars */}
-      <div className="px-4 pb-3 space-y-1.5">
+      <div className="px-4 pb-2 space-y-1.5">
         <SignalBar value={clamped} gradient={config.gradient} />
         {isComparisonMode && compClamped !== null && (
           <div className="flex items-center gap-2">
@@ -821,6 +795,24 @@ function StageCard({ stage, config, index, comparisonStage, isComparisonMode }: 
             </div>
           </div>
         )}
+      </div>
+
+      {/* Animated Stage Transition Indicator */}
+      <div className="px-4 pb-3 flex items-center gap-2">
+        <div
+          className={clamped >= 70 ? "pulse-strong" : clamped >= 40 ? "pulse-moderate" : "pulse-weak"}
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: clamped >= 70 ? "#10b981" : clamped >= 40 ? "#f59e0b" : "#ef4444",
+            color: clamped >= 70 ? "#10b981" : clamped >= 40 ? "#f59e0b" : "#ef4444",
+            flexShrink: 0,
+          }}
+        />
+        <span className="text-[11px]" style={{ color: clamped >= 70 ? "#10b981" : clamped >= 40 ? "#f59e0b" : "#ef4444" }}>
+          {clamped >= 70 ? "Strong signal" : clamped >= 40 ? "Moderate signal" : "Weak signal"}
+        </span>
       </div>
 
       {/* Expandable details */}
@@ -837,8 +829,19 @@ function StageCard({ stage, config, index, comparisonStage, isComparisonMode }: 
               className="px-4 pb-4 space-y-4"
               style={{ borderTop: "1px solid var(--color-border)" }}
             >
+              {/* Parameter Impact — What Drives This Stage */}
+              <div
+                className="mt-3 px-3 py-2 rounded-lg flex items-start gap-2"
+                style={{ background: `${config.color}0a`, border: `1px solid ${config.color}20` }}
+              >
+                <span className="text-[10px] font-semibold uppercase tracking-wider flex-shrink-0 mt-0.5" style={{ color: config.color }}>Driven by</span>
+                <p className="text-[12px]" style={{ color: "var(--color-text-dim)" }}>
+                  {STAGE_DRIVERS[stage.stage as keyof typeof STAGE_DRIVERS] ?? "All pipeline parameters"}
+                </p>
+              </div>
+
               {/* Description */}
-              <div className="pt-3">
+              <div>
                 <p className="text-sm leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
                   {stage.details}
                 </p>
@@ -1323,6 +1326,97 @@ function PipelineSummary({ stages, stagesB }: { stages: StageResult[]; stagesB?:
         ))}
       </div>
 
+      {/* Confidence vs Accuracy Gauge */}
+      {(() => {
+        const reportStage = stages.find(s => s.stage === "report");
+        const confidenceSub = reportStage?.subMetrics?.find(m => m.label.toLowerCase().includes("confidence"));
+        const fidelitySub = reportStage?.subMetrics?.find(m => m.label.toLowerCase().includes("fidelity") || m.label.toLowerCase().includes("accuracy"));
+        const confidence = Math.round(clamp(confidenceSub?.value ?? outputSignal));
+        const fidelity = Math.round(clamp(fidelitySub?.value ?? outputSignal * 0.85));
+        const diff = confidence - fidelity;
+        const calibrationLabel = diff > 15 ? "⚠ False Memory Risk" : diff < -10 ? "Underconfident — memory is better than perceived" : "✓ Well-Calibrated";
+        const calibrationColor = diff > 15 ? "#ef4444" : diff < -10 ? "#06b6d4" : "#10b981";
+
+        // SVG arc helper
+        const arcPath = (cx: number, cy: number, r: number, startDeg: number, endDeg: number) => {
+          const toRad = (d: number) => (d - 90) * Math.PI / 180;
+          const x1 = cx + r * Math.cos(toRad(startDeg));
+          const y1 = cy + r * Math.sin(toRad(startDeg));
+          const x2 = cx + r * Math.cos(toRad(endDeg));
+          const y2 = cy + r * Math.sin(toRad(endDeg));
+          const large = endDeg - startDeg > 180 ? 1 : 0;
+          return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`;
+        };
+
+        const confAngle = (confidence / 100) * 270; // 0-270 degree sweep
+        const fidelAngle = (fidelity / 100) * 270;
+
+        return (
+          <div
+            className="rounded-xl p-4"
+            style={{ background: "var(--color-surface-2)", border: "1px solid var(--color-border)" }}
+          >
+            <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--color-text-muted)" }}>
+              Confidence vs. Accuracy
+            </p>
+            <div className="flex items-center gap-6">
+              <div className="flex-shrink-0">
+                <svg viewBox="0 0 120 120" style={{ width: 120, height: 120 }}>
+                  {/* Background tracks */}
+                  <path d={arcPath(60, 60, 46, -45, 225)} fill="none" stroke="#2a265022" strokeWidth={8} strokeLinecap="round" />
+                  <path d={arcPath(60, 60, 32, -45, 225)} fill="none" stroke="#2a265022" strokeWidth={8} strokeLinecap="round" />
+                  {/* Fidelity arc (inner) */}
+                  {fidelAngle > 0 && (
+                    <motion.path
+                      d={arcPath(60, 60, 32, -45, -45 + fidelAngle)}
+                      fill="none"
+                      stroke="#10b981"
+                      strokeWidth={8}
+                      strokeLinecap="round"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 1, delay: 0.3 }}
+                    />
+                  )}
+                  {/* Confidence arc (outer) */}
+                  {confAngle > 0 && (
+                    <motion.path
+                      d={arcPath(60, 60, 46, -45, -45 + confAngle)}
+                      fill="none"
+                      stroke="#8b5cf6"
+                      strokeWidth={8}
+                      strokeLinecap="round"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 1 }}
+                    />
+                  )}
+                  {/* Center text */}
+                  <text x="60" y="56" textAnchor="middle" fontSize={14} fontWeight={700} fill="#e8e4f0">{confidence}%</text>
+                  <text x="60" y="70" textAnchor="middle" fontSize={8} fill="#8b8aaa">conf.</text>
+                </svg>
+              </div>
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: "#8b5cf6" }} />
+                  <span className="text-[12px]" style={{ color: "var(--color-text-dim)" }}>Confidence: <strong style={{ color: "#8b5cf6" }}>{confidence}%</strong></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: "#10b981" }} />
+                  <span className="text-[12px]" style={{ color: "var(--color-text-dim)" }}>Fidelity: <strong style={{ color: "#10b981" }}>{fidelity}%</strong></span>
+                </div>
+                <div
+                  className="text-[11px] font-semibold px-2 py-1 rounded-lg mt-2"
+                  style={{ background: `${calibrationColor}15`, color: calibrationColor, border: `1px solid ${calibrationColor}30` }}
+                >
+                  {calibrationLabel}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Radar chart + summary text */}
       <div className="grid md:grid-cols-2 gap-4 items-center">
         <RadarChart stages={stages} stagesB={stagesB} />
@@ -1489,297 +1583,207 @@ function PresetsPanel({ onApply }: PresetsPanelProps) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// QUIZ TAB
+// PIPELINE INFORMATION FLOW DIAGRAM (mini circles)
 // ─────────────────────────────────────────────────────────────────────────────
-function QuizTab() {
-  const [currentQ, setCurrentQ] = useState(0);
-  const [selected, setSelected] = useState<number | null>(null);
-  const [answers, setAnswers] = useState<(number | null)[]>(Array(QUIZ_QUESTIONS.length).fill(null));
-  const [finished, setFinished] = useState(false);
-
-  const q = QUIZ_QUESTIONS[currentQ];
-  const isAnswered = selected !== null;
-  const isCorrect = selected === q.correctIndex;
-  const score = answers.filter((a, i) => a === QUIZ_QUESTIONS[i].correctIndex).length;
-
-  const handleSelect = (idx: number) => {
-    if (selected !== null) return;
-    setSelected(idx);
-    const newAnswers = [...answers];
-    newAnswers[currentQ] = idx;
-    setAnswers(newAnswers);
-  };
-
-  const handleNext = () => {
-    if (currentQ < QUIZ_QUESTIONS.length - 1) {
-      setCurrentQ((q) => q + 1);
-      setSelected(answers[currentQ + 1]);
-    } else {
-      setFinished(true);
-    }
-  };
-
-  const handleRestart = () => {
-    setCurrentQ(0);
-    setSelected(null);
-    setAnswers(Array(QUIZ_QUESTIONS.length).fill(null));
-    setFinished(false);
-  };
-
-  const getCognitiveMessage = (s: number) => {
-    if (s === 8) return "Perfect score! You're thinking like a cognitive scientist. 🧠";
-    if (s >= 6) return "Strong performance — you've internalized the pipeline well.";
-    if (s >= 4) return "Decent grasp of the core concepts. Revisit the stages you missed.";
-    return "The pipeline has more surprises in store. Explore the simulator and try again!";
-  };
-
-  if (finished) {
-    const pct = Math.round((score / QUIZ_QUESTIONS.length) * 100);
-    const scoreColor = pct >= 75 ? "#10b981" : pct >= 50 ? "#f59e0b" : "#ef4444";
-    return (
-      <div className="max-w-xl mx-auto p-4 md:p-8">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="rounded-2xl p-8 text-center space-y-6"
-          style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
-        >
-          <div
-            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto"
-            style={{ background: `${scoreColor}20`, border: `2px solid ${scoreColor}40` }}
-          >
-            <span className="text-3xl font-bold" style={{ color: scoreColor, fontFamily: "var(--font-mono)" }}>
-              {pct}%
-            </span>
-          </div>
-          <div>
-            <h2 className="text-xl font-bold mb-2" style={{ color: "var(--color-text)" }}>
-              Quiz Complete
-            </h2>
-            <p className="text-base font-semibold mb-1" style={{ color: scoreColor }}>
-              {score} / {QUIZ_QUESTIONS.length} correct
-            </p>
-            <p className="text-sm" style={{ color: "var(--color-text-dim)" }}>
-              {getCognitiveMessage(score)}
-            </p>
-          </div>
-
-          {/* Per-question review */}
-          <div className="text-left space-y-2">
-            {QUIZ_QUESTIONS.map((q, i) => {
-              const ans = answers[i];
-              const correct = ans === q.correctIndex;
-              return (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 p-2.5 rounded-lg text-[12px]"
-                  style={{
-                    background: correct ? "#10b98112" : "#ef444412",
-                    border: `1px solid ${correct ? "#10b98130" : "#ef444430"}`,
-                  }}
-                >
-                  {correct
-                    ? <CheckCircle size={14} style={{ color: "#10b981", flexShrink: 0 }} />
-                    : <XCircle size={14} style={{ color: "#ef4444", flexShrink: 0 }} />
-                  }
-                  <span style={{ color: correct ? "#34d399" : "#f87171" }}>Q{i + 1}</span>
-                  <span className="flex-1 truncate" style={{ color: "var(--color-text-dim)" }}>
-                    {q.question.slice(0, 60)}…
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          <button
-            onClick={handleRestart}
-            className="w-full py-3 rounded-xl text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all"
-            style={{
-              background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
-              color: "#fff",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            Retake Quiz
-          </button>
-        </motion.div>
-      </div>
-    );
-  }
+function PipelineFlowDiagram({ stages }: { stages: StageResult[] }) {
+  const minSize = 12;
+  const maxSize = 28;
 
   return (
-    <div className="max-w-xl mx-auto p-4 md:p-8 space-y-6">
-      {/* Progress */}
-      <div>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
-            Question {currentQ + 1} of {QUIZ_QUESTIONS.length}
-          </span>
-          <span className="text-[11px] font-mono" style={{ color: "#8b5cf6", fontFamily: "var(--font-mono)" }}>
-            {score} correct so far
-          </span>
-        </div>
-        <div className="rounded-full overflow-hidden" style={{ height: 4, background: "var(--color-surface-2)" }}>
-          <motion.div
-            className="h-full rounded-full"
-            style={{ background: "linear-gradient(to right, #8b5cf6, #6366f1)" }}
-            initial={{ width: 0 }}
-            animate={{ width: `${((currentQ) / QUIZ_QUESTIONS.length) * 100}%` }}
-            transition={{ duration: 0.4 }}
-          />
-        </div>
-      </div>
+    <div
+      className="rounded-xl p-4"
+      style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
+    >
+      <p className="text-[11px] font-semibold uppercase tracking-wider mb-4" style={{ color: "var(--color-text-muted)" }}>
+        Pipeline Overview
+      </p>
+      <div className="flex items-center justify-between gap-1 overflow-x-auto pb-1">
+        {stages.map((s, i) => {
+          const cfg = STAGE_CONFIG[i];
+          const signal = clamp(s.signalStrength) / 100;
+          const size = minSize + signal * (maxSize - minSize);
+          const nextSignal = i < stages.length - 1 ? clamp(stages[i + 1].signalStrength) / 100 : null;
+          const lineThickness = nextSignal !== null ? Math.max(1, nextSignal * 4) : 0;
 
-      {/* Question card */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentQ}
-          initial={{ opacity: 0, x: 24 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -24 }}
-          transition={{ duration: 0.25 }}
-          className="rounded-2xl p-6 space-y-5"
-          style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
-        >
-          {/* Brain icon */}
-          <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ background: "#8b5cf620", border: "1px solid #8b5cf630" }}
-            >
-              <HelpCircle size={16} color="#8b5cf6" />
-            </div>
-            <h3 className="text-base font-semibold leading-snug" style={{ color: "var(--color-text)" }}>
-              {q.question}
-            </h3>
-          </div>
-
-          {/* Options */}
-          <div className="space-y-2">
-            {q.options.map((opt, idx) => {
-              let borderColor = "var(--color-border)";
-              let bgColor = "var(--color-surface-2)";
-              let textColor = "var(--color-text-dim)";
-              let icon: React.ReactNode = null;
-
-              if (isAnswered) {
-                if (idx === q.correctIndex) {
-                  borderColor = "#10b98140";
-                  bgColor = "#10b98112";
-                  textColor = "#34d399";
-                  icon = <CheckCircle size={14} style={{ color: "#10b981", flexShrink: 0 }} />;
-                } else if (idx === selected) {
-                  borderColor = "#ef444440";
-                  bgColor = "#ef444412";
-                  textColor = "#f87171";
-                  icon = <XCircle size={14} style={{ color: "#ef4444", flexShrink: 0 }} />;
-                }
-              }
-
-              return (
-                <motion.button
-                  key={idx}
-                  whileHover={!isAnswered ? { scale: 1.01 } : {}}
-                  whileTap={!isAnswered ? { scale: 0.99 } : {}}
-                  onClick={() => handleSelect(idx)}
-                  className="w-full text-left p-3 rounded-xl text-sm leading-snug flex items-start gap-3 transition-all"
-                  style={{
-                    background: bgColor,
-                    border: `1px solid ${borderColor}`,
-                    color: textColor,
-                    cursor: isAnswered ? "default" : "pointer",
-                    outline: "none",
-                  }}
-                >
-                  <span
-                    className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5"
-                    style={{
-                      background: isAnswered && idx === q.correctIndex ? "#10b981" : isAnswered && idx === selected ? "#ef4444" : "var(--color-border)",
-                      color: isAnswered && (idx === q.correctIndex || idx === selected) ? "#fff" : "var(--color-text-muted)",
-                    }}
-                  >
-                    {String.fromCharCode(65 + idx)}
-                  </span>
-                  <span className="flex-1">{opt}</span>
-                  {icon}
-                </motion.button>
-              );
-            })}
-          </div>
-
-          {/* Explanation */}
-          <AnimatePresence>
-            {isAnswered && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.25 }}
-                style={{ overflow: "hidden" }}
-              >
-                <div
-                  className="p-4 rounded-xl"
-                  style={{
-                    background: isCorrect ? "#10b98110" : "#ef444410",
-                    border: `1px solid ${isCorrect ? "#10b98130" : "#ef444430"}`,
-                  }}
-                >
-                  <p
-                    className="text-[11px] font-semibold uppercase tracking-wider mb-1.5"
-                    style={{ color: isCorrect ? "#10b981" : "#ef4444" }}
-                  >
-                    {isCorrect ? "✓ Correct!" : "✗ Incorrect"}
-                  </p>
-                  <p className="text-[13px] leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
-                    {q.explanation}
-                  </p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Next button */}
-          {isAnswered && (
-            <motion.button
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              onClick={handleNext}
-              className="w-full py-3 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98]"
-              style={{
-                background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
-                color: "#fff",
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              {currentQ < QUIZ_QUESTIONS.length - 1 ? "Next Question →" : "See Results"}
-            </motion.button>
-          )}
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Dot navigation */}
-      <div className="flex justify-center gap-1.5">
-        {QUIZ_QUESTIONS.map((_, i) => {
-          const ans = answers[i];
-          const attempted = ans !== null;
-          const correct = ans === QUIZ_QUESTIONS[i].correctIndex;
           return (
-            <div
-              key={i}
-              className="rounded-full transition-all"
-              style={{
-                width: i === currentQ ? 20 : 8,
-                height: 8,
-                background: attempted ? (correct ? "#10b981" : "#ef4444") : i === currentQ ? "#8b5cf6" : "var(--color-surface-2)",
-                border: i === currentQ ? "1px solid #8b5cf6" : "none",
-              }}
-            />
+            <div key={cfg.id} className="flex items-center gap-1 flex-shrink-0">
+              <div className="flex flex-col items-center gap-1">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: i * 0.07, type: "spring", stiffness: 200 }}
+                  style={{
+                    width: size,
+                    height: size,
+                    borderRadius: "50%",
+                    background: `${cfg.color}30`,
+                    border: `2px solid ${cfg.color}`,
+                    boxShadow: `0 0 ${signal * 12}px ${cfg.color}50`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.4s ease",
+                  }}
+                />
+                <span className="text-[9px] font-semibold" style={{ color: cfg.color }}>{cfg.shortLabel}</span>
+                <span className="text-[9px] font-mono" style={{ color: "var(--color-text-muted)" }}>{Math.round(clamp(s.signalStrength))}%</span>
+              </div>
+              {nextSignal !== null && (
+                <div
+                  className="flex-shrink-0 rounded-full mb-4"
+                  style={{
+                    width: 20,
+                    height: Math.max(1, lineThickness),
+                    background: `${STAGE_CONFIG[i + 1].color}60`,
+                    transition: "all 0.4s ease",
+                  }}
+                />
+              )}
+            </div>
           );
         })}
       </div>
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DISTORTION TRACKER
+// ─────────────────────────────────────────────────────────────────────────────
+function DistortionTracker({ stages }: { stages: StageResult[] }) {
+  const segments = stages.map((s, i) => {
+    const curr = clamp(s.signalStrength);
+    const prev = i === 0 ? curr : clamp(stages[i - 1].signalStrength);
+    const delta = curr - prev;
+    let status: "distortion" | "minor" | "enhanced" | "preserved";
+    let color: string;
+    let label: string;
+    if (delta > 2) { status = "enhanced"; color = "#10b981"; label = "+" + Math.round(delta) + "%"; }
+    else if (delta >= -10) { status = "minor"; color = "#f59e0b"; label = Math.round(delta) + "%"; }
+    else { status = "distortion"; color = "#ef4444"; label = Math.round(delta) + "%"; }
+    if (Math.abs(delta) <= 1) { status = "preserved"; color = "#6366f1"; label = "~0%"; }
+    return { ...STAGE_CONFIG[i], delta, status, color, label, signal: curr };
+  });
+
+  const peakStage = [...stages].sort((a, b) => b.signalStrength - a.signalStrength)[0];
+  const troughStage = [...stages].sort((a, b) => a.signalStrength - b.signalStrength)[0];
+  const biggestDrop = segments.reduce((worst, seg) => seg.delta < worst.delta ? seg : worst, segments[0]);
+  const peakCfg = STAGE_CONFIG.find(c => c.id === peakStage.stage)!;
+  const troughCfg = STAGE_CONFIG.find(c => c.id === troughStage.stage)!;
+
+  return (
+    <div
+      className="rounded-xl p-4 space-y-3"
+      style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
+    >
+      <div className="flex items-center gap-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
+          Distortion Tracker
+        </p>
+        <Info size={11} style={{ color: "var(--color-text-muted)" }} />
+      </div>
+
+      {/* Horizontal bar segments */}
+      <div className="flex rounded-lg overflow-hidden" style={{ height: 36 }}>
+        {segments.map((seg, i) => (
+          <motion.div
+            key={seg.id}
+            initial={{ opacity: 0, scaleY: 0 }}
+            animate={{ opacity: 1, scaleY: 1 }}
+            transition={{ delay: i * 0.08, duration: 0.3 }}
+            className="flex-1 flex flex-col items-center justify-center relative"
+            title={`${seg.label} — ${seg.id}`}
+            style={{ background: `${seg.color}22`, borderRight: i < segments.length - 1 ? "1px solid #0a0818" : "none" }}
+          >
+            <span className="text-[9px] font-bold" style={{ color: seg.color }}>{seg.shortLabel}</span>
+            <span className="text-[8px] font-mono" style={{ color: seg.color }}>{seg.label}</span>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-3">
+        {([{color:"#10b981",label:"Enhancement"},{color:"#6366f1",label:"Preserved"},{color:"#f59e0b",label:"Minor Loss"},{color:"#ef4444",label:"Distortion"}] as const).map(item => (
+          <div key={item.label} className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-sm" style={{ background: item.color }} />
+            <span className="text-[10px]" style={{ color: "var(--color-text-muted)" }}>{item.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Narration */}
+      <p className="text-[12px] leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
+        Signal was strongest at <strong style={{ color: peakCfg.color }}>{peakCfg.label}</strong> ({Math.round(clamp(peakStage.signalStrength))}%) and weakest at <strong style={{ color: troughCfg.color }}>{troughCfg.label}</strong> ({Math.round(clamp(troughStage.signalStrength))}%). The biggest drop occurred at <strong style={{ color: biggestDrop.color }}>{biggestDrop.label}</strong> ({biggestDrop.label}).
+      </p>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCENARIO NARRATION
+// ─────────────────────────────────────────────────────────────────────────────
+function ScenarioNarration({ params }: { params: PipelineParams }) {
+  const sentences: string[] = [];
+
+  if (params.perceptualNoise > 70) {
+    sentences.push("The signal arrived muddied — like trying to read a sign through heavy rain.");
+  } else if (params.perceptualNoise < 20) {
+    sentences.push("The signal came through crystal clear — every feature sharp and distinct from the start.");
+  }
+
+  if (params.attentionalFocus < 30) {
+    sentences.push("Your attention wandered, casting a wide but shallow net across the incoming features.");
+  } else if (params.attentionalFocus > 80) {
+    sentences.push("Attention narrowed to a laser-sharp spotlight — deep focus on fewer features, everything else fading to the periphery.");
+  }
+
+  if (params.priorExpectation > 70) {
+    sentences.push("Strong expectations painted over the ambiguities, filling gaps with what the brain predicted — not what was actually there.");
+  } else if (params.priorExpectation < 20) {
+    sentences.push("With almost no prior expectations, the brain processed features purely on their own terms — raw, unfiltered data-driven perception.");
+  }
+
+  if (params.encodingStrength < 30) {
+    sentences.push("The memory trace was written in pencil, not ink — faint and fading before the page was even turned.");
+  } else if (params.encodingStrength > 75) {
+    sentences.push("Deep semantic encoding wove the information into existing knowledge structures — durable and richly connected.");
+  }
+
+  if (params.retrievalCue < 30) {
+    sentences.push("Reaching for the memory felt like groping in a dark room — the information exists but the light switch is missing.");
+  } else if (params.retrievalCue > 75) {
+    sentences.push("Strong retrieval cues unlocked the memory cleanly — context matched encoding, and the trace surfaced readily.");
+  }
+
+  if (sentences.length === 0) {
+    sentences.push("Balanced parameters produced a textbook cognitive pipeline — moderate signal, moderate attention, moderate memory quality.");
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="rounded-xl p-4"
+      style={{ background: "var(--color-surface)", border: "1px solid #8b5cf625" }}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
+          style={{ background: "#8b5cf615", border: "1px solid #8b5cf630" }}
+        >
+          <Quote size={14} color="#8b5cf6" />
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#8b5cf6" }}>
+            Cognitive Story
+          </p>
+          <p className="text-[13px] leading-relaxed italic" style={{ color: "var(--color-text-dim)" }}>
+            {sentences.join(" ")}
+          </p>
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -2148,6 +2152,9 @@ function PipelineTab() {
               )}
             </div>
 
+            {/* Pipeline Flow Overview */}
+            <PipelineFlowDiagram stages={displayResultsA} />
+
             {/* Current stimulus card */}
             <div
               className="rounded-xl p-4"
@@ -2188,8 +2195,14 @@ function PipelineTab() {
               </div>
             </div>
 
+            {/* Scenario Narration */}
+            <ScenarioNarration params={comparisonMode ? (activeSet === "A" ? paramsA : paramsB) : params} />
+
             {/* Signal Waveform */}
             <SignalWaveform stages={displayResultsA} />
+
+            {/* Distortion Tracker */}
+            <DistortionTracker stages={displayResultsA} />
 
             {/* Heatmap + Feature Survival */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2321,6 +2334,41 @@ const GLOSSARY_REFS: Record<string, string> = {
   "False Memories (Loftus)": "False memory",
 };
 
+// Try-It prompts per stage
+const TRY_IT_PROMPTS: Record<string, string> = {
+  Sensation: "Try setting Perceptual Noise to 90 and watch how the Sensation signal drops. Then lower it to 10 — notice how many more features survive?",
+  Attention: "Set Attentional Focus to 15 to see inattentional blindness in action. Then try 90 — notice how the spotlight narrows and fewer features make it through?",
+  Perception: "Max out Prior Expectations to 95 and watch how perception \u2018fills in\u2019 ambiguous features. Then drop it to 5 to see purely data-driven perception.",
+  Encoding: "Compare encoding at 90 (deep semantic) vs. 15 (shallow structural) — use the \u2018Deep vs. Shallow\u2019 preset to see the dramatic difference in memory quality.",
+  Storage: "Run the pipeline with low encoding (15) and watch the Storage trace crumble. Then try high encoding (90) — the hippocampal consolidation kicks in.",
+  Retrieval: "Use the \u2018Tip of the Tongue\u2019 preset — high encoding but low retrieval cue. The memory is \u2018in there\u2019 but won\u2019t surface. Then increase the cue to 80.",
+  Report: "Use the \u2018Biased Observer\u2019 preset — notice the Report shows HIGH confidence but potentially LOW fidelity. This is exactly how false memories form.",
+};
+
+// Myths vs Reality data
+const MYTHS = [
+  {
+    myth: "Memory works like a video camera",
+    reality: "Memory is reconstructive — every recall is a re-creation that can be altered by expectations, context, and post-event information (Bartlett, 1932; Loftus, 1979).",
+  },
+  {
+    myth: "We perceive the world exactly as it is",
+    reality: "Perception is heavily shaped by top-down processing. Your brain fills in gaps, resolves ambiguity using expectations, and sometimes creates features that aren\u2019t there (Gregory, 1970).",
+  },
+  {
+    myth: "Attention means we just need to \u2018try harder\u2019",
+    reality: "Attention is a limited-capacity resource with a physical bottleneck. You literally cannot attend to everything — Broadbent (1958) showed this is a structural limitation, not a motivational one.",
+  },
+  {
+    myth: "Confident memories are accurate memories",
+    reality: "Confidence and accuracy are surprisingly independent. Loftus & Palmer (1974) showed that leading questions can create vivid but entirely false memories that people report with high confidence.",
+  },
+  {
+    myth: "Studying = memorizing",
+    reality: "Craik & Lockhart (1972) showed that HOW you process information matters more than HOW LONG. One minute of deep semantic processing beats an hour of rote repetition.",
+  },
+];
+
 function LearnTab() {
   return (
     <div className="max-w-3xl mx-auto p-4 md:p-8 space-y-8">
@@ -2356,6 +2404,43 @@ function LearnTab() {
             </p>
           </div>
         ))}
+      </div>
+
+      {/* Myths vs Reality section */}
+      <div>
+        <h3 className="text-lg font-bold mb-4" style={{ color: "var(--color-text)" }}>
+          Common Myths About Memory &amp; Perception
+        </h3>
+        <div className="space-y-3">
+          {MYTHS.map((item, i) => (
+            <div
+              key={i}
+              className="rounded-xl overflow-hidden"
+              style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
+            >
+              <div
+                className="flex items-start gap-3 px-4 py-3"
+                style={{ borderLeft: "4px solid #ef4444" }}
+              >
+                <span className="text-base flex-shrink-0 mt-0.5" style={{ color: "#ef4444" }}>&#10007;</span>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: "#f87171" }}>Myth</p>
+                  <p className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>{item.myth}</p>
+                </div>
+              </div>
+              <div
+                className="flex items-start gap-3 px-4 py-3"
+                style={{ borderLeft: "4px solid #10b981", borderTop: "1px solid var(--color-border)" }}
+              >
+                <span className="text-base flex-shrink-0 mt-0.5" style={{ color: "#10b981" }}>&#10003;</span>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: "#34d399" }}>Reality</p>
+                  <p className="text-sm leading-relaxed" style={{ color: "var(--color-text-dim)" }}>{item.reality}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Stage sections */}
@@ -2419,9 +2504,86 @@ function LearnTab() {
                 })}
               </div>
             </div>
+
+            {/* Try It Yourself box */}
+            {TRY_IT_PROMPTS[s.title] && (
+              <div
+                className="flex items-start gap-3 p-3 rounded-lg"
+                style={{
+                  background: "linear-gradient(135deg, #8b5cf608, #6366f108)",
+                  border: "1px solid #8b5cf635",
+                  boxShadow: "inset 0 0 0 1px #6366f120",
+                }}
+              >
+                <div
+                  className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center"
+                  style={{ background: "#8b5cf618", border: "1px solid #8b5cf630" }}
+                >
+                  <Lightbulb size={13} color="#a78bfa" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: "#a78bfa" }}>
+                    Try It in the Pipeline
+                  </p>
+                  <p className="text-[12px] leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
+                    {TRY_IT_PROMPTS[s.title]}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       ))}
+
+      {/* PSYC 203 Module Integration section */}
+      <div
+        className="rounded-xl p-5 space-y-4"
+        style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
+      >
+        <div>
+          <h3 className="text-base font-bold mb-1" style={{ color: "var(--color-text)" }}>
+            Connecting the Dots: PSYC 203 Module Integration
+          </h3>
+          <p className="text-[13px]" style={{ color: "var(--color-text-dim)" }}>
+            How the simulator maps to your course modules
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div
+            className="p-4 rounded-xl"
+            style={{ background: "#f59e0b0d", border: "1px solid #f59e0b28", borderLeft: "4px solid #f59e0b" }}
+          >
+            <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: "#f59e0b" }}>
+              Module 3: Sensation &amp; Perception
+            </p>
+            <p className="text-[13px] leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
+              The simulator&apos;s first three stages — Sensation, Attention, and Perception — directly model the concepts from Module 3. The Perceptual Noise slider demonstrates signal detection theory. The Prior Expectations slider shows the interplay between bottom-up and top-down processing. The pipeline shows that perception is not passive reception but active construction.
+            </p>
+          </div>
+          <div
+            className="p-4 rounded-xl"
+            style={{ background: "#14b8a60d", border: "1px solid #14b8a628", borderLeft: "4px solid #14b8a6" }}
+          >
+            <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: "#14b8a6" }}>
+              Module 6: Memory
+            </p>
+            <p className="text-[13px] leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
+              The final four stages — Encoding, Storage, Retrieval, and Report — map to Module 6&apos;s memory concepts. The Encoding Strength slider directly illustrates Craik &amp; Lockhart&apos;s levels of processing. The Retrieval Cue slider demonstrates Tulving&apos;s encoding specificity principle. And the Report stage reveals how memory is always reconstruction, never replay.
+            </p>
+          </div>
+        </div>
+        <div
+          className="p-4 rounded-xl"
+          style={{ background: "#8b5cf60a", border: "1px solid #8b5cf625" }}
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: "#8b5cf6" }}>
+            The Bridge
+          </p>
+          <p className="text-[13px] leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
+            The most important insight: these aren&apos;t isolated modules. The pipeline shows that what you perceive directly determines what you remember. Distortions accumulate — a noisy sensation leads to a filtered attention, which leads to a biased perception, which gets shallowly encoded, weakly stored, and poorly retrieved. Every stage matters.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -2531,7 +2693,7 @@ function AboutTab() {
 // ─────────────────────────────────────────────────────────────────────────────
 // STICKY NAV BAR
 // ─────────────────────────────────────────────────────────────────────────────
-type Tab = "pipeline" | "learn" | "quiz" | "about";
+type Tab = "pipeline" | "learn" | "about";
 
 interface NavBarProps {
   activeTab: Tab;
@@ -2542,7 +2704,6 @@ function NavBar({ activeTab, onTabChange }: NavBarProps) {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "pipeline", label: "Pipeline", icon: <Zap size={14} /> },
     { id: "learn", label: "Learn", icon: <BookOpen size={14} /> },
-    { id: "quiz", label: "Quiz", icon: <HelpCircle size={14} /> },
     { id: "about", label: "About", icon: <Info size={14} /> },
   ];
 
@@ -2704,7 +2865,6 @@ function SimulatorSection() {
         >
           {activeTab === "pipeline" && <PipelineTab />}
           {activeTab === "learn" && <LearnTab />}
-          {activeTab === "quiz" && <QuizTab />}
           {activeTab === "about" && <AboutTab />}
         </motion.div>
       </AnimatePresence>

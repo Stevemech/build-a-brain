@@ -127,3 +127,22 @@ body {
   animation: flow-down var(--speed, 1.2s) ease-in-out infinite;
   animation-delay: var(--dot-delay, 0s);
 }
+
+/* ─── Pulse indicators for stage cards ─────────────────────────────────── */
+@keyframes pulse-strong {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px currentColor; }
+  50% { opacity: 0.6; box-shadow: 0 0 8px currentColor; }
+}
+@keyframes pulse-moderate {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.9); }
+}
+@keyframes pulse-weak {
+  0%, 33% { opacity: 1; }
+  50% { opacity: 0.2; }
+  66%, 100% { opacity: 0.8; }
+}
+
+.pulse-strong { animation: pulse-strong 2s ease-in-out infinite; }
+.pulse-moderate { animation: pulse-moderate 2.5s ease-in-out infinite; }
+.pulse-weak { animation: pulse-weak 0.8s linear infinite; }
