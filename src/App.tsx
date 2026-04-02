@@ -1812,6 +1812,11 @@ function PipelineTab() {
   const [results, setResults] = useState<StageResult[] | null>(null);
   const [hasRun, setHasRun] = useState(false);
 
+  // ── Tune phase: one-at-a-time step state ─────────────────────────────────────
+  const [tuneStep, setTuneStep] = useState(0); // 0-4
+  const [showPresets, setShowPresets] = useState(false);
+  const [tuneDir, setTuneDir] = useState<1 | -1>(1); // animation direction
+
   // ── Comparison mode state (lives in dashboard phase) ─────────────────────────
   const [comparisonMode, setComparisonMode] = useState(false);
   const [activeSet, setActiveSet] = useState<"A" | "B">("A");
@@ -1936,17 +1941,9 @@ function PipelineTab() {
   // ── Phase handlers ────────────────────────────────────────────────────────────
   const handlePickStimulus = (s: Stimulus) => {
     setSelectedStimulus(s);
+    setTuneStep(0);
+    setShowPresets(false);
     setPhase("tune");
-  };
-
-  const handlePickPreset = (presetParams: PipelineParams) => {
-    setSelectedStimulus(STIMULI[0]);
-    setParams(presetParams);
-    const r = runPipeline(STIMULI[0], presetParams);
-    setResults(r);
-    setResultsA(r);
-    setHasRun(true);
-    setPhase("reveal");
   };
 
   const handleTuneRun = () => {
@@ -1957,8 +1954,20 @@ function PipelineTab() {
     setPhase("reveal");
   };
 
+  const handlePresetQuickRun = (presetParams: PipelineParams) => {
+    setParams(presetParams);
+    const r = runPipeline(selectedStimulus, presetParams);
+    setResults(r);
+    setResultsA(r);
+    setHasRun(true);
+    setShowPresets(false);
+    setPhase("reveal");
+  };
+
   const handleStartOver = () => {
     handleReset();
+    setTuneStep(0);
+    setShowPresets(false);
     setPhase("pick");
   };
 
@@ -1989,6 +1998,52 @@ function PipelineTab() {
     cursor: "pointer",
   };
 
+  // ── Param tips (what extreme values do) ──────────────────────────────────────
+  const PARAM_TIPS: Record<string, { low: string; high: string }> = {
+    attentionalFocus: {
+      low: "Low: Diffuse, scattered awareness — misses details but takes in broad context",
+      high: "High: Deep, narrow focus — processes one thing with great precision",
+    },
+    perceptualNoise: {
+      low: "Low: Crystal-clear signal — every detail arrives intact",
+      high: "High: Heavy distortion — the brain must guess at missing information",
+    },
+    priorExpectation: {
+      low: "Low: Data-driven — your brain takes the world at face value",
+      high: "High: Heavily filtered by beliefs — you see what you expect to see",
+    },
+    encodingStrength: {
+      low: "Low: Shallow encoding — quick to form, quick to fade",
+      high: "High: Deep semantic encoding — meaningful, durable memories",
+    },
+    retrievalCue: {
+      low: "Low: Weak context — memories drift out of reach (tip-of-tongue effect)",
+      high: "High: Strong cue — memories resurface with clarity and confidence",
+    },
+  };
+
+  // ── Tune step navigation ─────────────────────────────────────────────────────
+  const totalSteps = PARAM_META.length;
+  const currentMeta = PARAM_META[tuneStep];
+
+  const goNextStep = () => {
+    if (tuneStep < totalSteps - 1) {
+      setTuneDir(1);
+      setTuneStep((s) => s + 1);
+    } else {
+      handleTuneRun();
+    }
+  };
+
+  const goPrevStep = () => {
+    if (tuneStep > 0) {
+      setTuneDir(-1);
+      setTuneStep((s) => s - 1);
+    } else {
+      setPhase("pick");
+    }
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <AnimatePresence mode="wait">
@@ -2003,30 +2058,15 @@ function PipelineTab() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -12 }}
           transition={{ duration: 0.3 }}
-          style={{ maxWidth: 860, margin: "0 auto", padding: "48px 24px 64px" }}
+          style={{ maxWidth: 820, margin: "0 auto", padding: "48px 24px 64px" }}
         >
           {/* Heading */}
           <div style={{ textAlign: "center", marginBottom: 40 }}>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 56,
-                height: 56,
-                borderRadius: 16,
-                background: "#8b5cf610",
-                border: "1px solid #8b5cf625",
-                marginBottom: 20,
-              }}
-            >
-              <Brain size={28} color="#8b5cf6" strokeWidth={1.5} />
-            </div>
-            <h2 style={{ fontSize: 28, fontWeight: 700, color: "var(--color-text)", margin: "0 0 8px" }}>
-              Choose a Scenario
+            <h2 style={{ fontSize: 30, fontWeight: 700, color: "var(--color-text)", margin: "0 0 10px", letterSpacing: "-0.02em" }}>
+              What should your brain process?
             </h2>
             <p style={{ fontSize: 15, color: "var(--color-text-dim)", margin: 0 }}>
-              Pick what your brain will process
+              Choose a scenario to simulate
             </p>
           </div>
 
@@ -2085,54 +2125,28 @@ function PipelineTab() {
             ))}
           </div>
 
-          {/* Divider */}
-          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28 }}>
-            <div style={{ flex: 1, height: 1, background: "var(--color-border)" }} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", whiteSpace: "nowrap" }}>
-              Or try a Quick Experiment
-            </span>
-            <div style={{ flex: 1, height: 1, background: "var(--color-border)" }} />
-          </div>
-
-          {/* Preset cards */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
-            {PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                onClick={() => handlePickPreset(preset.params)}
-                style={{
-                  flex: "1 1 140px",
-                  maxWidth: 180,
-                  background: "var(--color-surface)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 14,
-                  padding: "14px 14px 12px",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  transition: "all 0.15s ease",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.border = "1px solid #8b5cf650";
-                  (e.currentTarget as HTMLButtonElement).style.background = "var(--color-surface-2)";
-                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.border = "1px solid var(--color-border)";
-                  (e.currentTarget as HTMLButtonElement).style.background = "var(--color-surface)";
-                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-                }}
-              >
-                <span style={{ fontSize: 24, display: "block", marginBottom: 8 }}>{preset.emoji}</span>
-                <p style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text)", margin: "0 0 4px", lineHeight: 1.3 }}>{preset.name}</p>
-                <p style={{ fontSize: 11, color: "var(--color-text-muted)", margin: 0, lineHeight: 1.4 }}>{preset.description}</p>
-              </button>
-            ))}
+          {/* Subtle preset shortcut */}
+          <div style={{ textAlign: "center" }}>
+            <button
+              onClick={() => { setTuneStep(0); setShowPresets(true); setPhase("tune"); }}
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontSize: 13,
+                color: "var(--color-text-muted)",
+                textDecoration: "underline",
+                textUnderlineOffset: 3,
+              }}
+            >
+              or choose a preset →
+            </button>
           </div>
         </motion.div>
       )}
 
       {/* ════════════════════════════════════════════════════
-          PHASE 2: TUNE — Tune Your Brain
+          PHASE 2: TUNE — One parameter at a time
       ════════════════════════════════════════════════════ */}
       {phase === "tune" && (
         <motion.div
@@ -2141,109 +2155,308 @@ function PipelineTab() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -12 }}
           transition={{ duration: 0.3 }}
-          style={{ maxWidth: 600, margin: "0 auto", padding: "40px 24px 64px" }}
+          style={{ maxWidth: 560, margin: "0 auto", padding: "40px 24px 64px" }}
         >
-          {/* Back link */}
-          <button
-            onClick={() => setPhase("pick")}
-            style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 10, fontSize: 13, marginBottom: 32 }}
-          >
-            ← Back
-          </button>
+          {/* Selected stimulus compact chip */}
+          {!showPresets && (
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                background: "var(--color-surface)",
+                border: "1px solid var(--color-accent)",
+                borderRadius: 12,
+                padding: "8px 14px",
+                marginBottom: 32,
+              }}
+            >
+              <span style={{ fontSize: 22 }}>{selectedStimulus.imageEmoji}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)" }}>{selectedStimulus.name}</span>
+              <button
+                onClick={() => setPhase("pick")}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--color-text-muted)", marginLeft: 4 }}
+              >
+                change
+              </button>
+            </div>
+          )}
 
-          {/* Selected stimulus compact card */}
-          <div
-            style={{
-              background: "var(--color-surface)",
-              border: "1px solid var(--color-accent)",
-              borderRadius: 16,
-              padding: "18px 20px",
-              marginBottom: 28,
-              display: "flex",
-              alignItems: "flex-start",
-              gap: 14,
-            }}
-          >
-            <span style={{ fontSize: 36 }}>{selectedStimulus.imageEmoji}</span>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                <span style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text)" }}>{selectedStimulus.name}</span>
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                    padding: "2px 7px",
-                    borderRadius: 6,
-                    background: selectedStimulus.modality === "auditory" ? "#06b6d418" : "#8b5cf618",
-                    color: selectedStimulus.modality === "auditory" ? "#06b6d4" : "#8b5cf6",
-                  }}
+          {/* ── PRESETS VIEW ── */}
+          {showPresets ? (
+            <motion.div
+              key="presets-view"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              <button
+                onClick={() => setShowPresets(false)}
+                style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 10, fontSize: 13, marginBottom: 28 }}
+              >
+                ← Back
+              </button>
+              <h3 style={{ fontSize: 22, fontWeight: 700, color: "var(--color-text)", margin: "0 0 6px" }}>
+                Quick Presets
+              </h3>
+              <p style={{ fontSize: 13, color: "var(--color-text-dim)", margin: "0 0 24px" }}>
+                Choose a preset to instantly load parameters and run the pipeline.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    onClick={() => handlePresetQuickRun(preset.params)}
+                    style={{
+                      background: "var(--color-surface)",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: 16,
+                      padding: "16px 18px",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 14,
+                      transition: "all 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.border = "1px solid #8b5cf650";
+                      (e.currentTarget as HTMLButtonElement).style.background = "var(--color-surface-2)";
+                      (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
+                      (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px #8b5cf615";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.border = "1px solid var(--color-border)";
+                      (e.currentTarget as HTMLButtonElement).style.background = "var(--color-surface)";
+                      (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+                      (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
+                    }}
+                  >
+                    <span style={{ fontSize: 28, flexShrink: 0 }}>{preset.emoji}</span>
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: "0 0 3px" }}>{preset.name}</p>
+                      <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: 0, lineHeight: 1.4 }}>{preset.description}</p>
+                    </div>
+                    <span style={{ marginLeft: "auto", fontSize: 16, color: "var(--color-text-muted)", alignSelf: "center" }}>→</span>
+                  </button>
+                ))}
+              </div>
+              <div style={{ marginTop: 20, textAlign: "center" }}>
+                <button
+                  onClick={() => { setShowPresets(false); setTuneStep(0); }}
+                  style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: 13, color: "var(--color-text-muted)", textDecoration: "underline", textUnderlineOffset: 3 }}
                 >
-                  {selectedStimulus.modality}
+                  tune parameters manually instead
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            /* ── STEP-BY-STEP PARAM VIEW ── */
+            <>
+              {/* Progress indicator */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 32 }}>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {PARAM_META.map((_, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        width: i === tuneStep ? 20 : 8,
+                        height: 8,
+                        borderRadius: 4,
+                        background: i <= tuneStep ? "#8b5cf6" : "var(--color-border)",
+                        transition: "all 0.25s ease",
+                      }}
+                    />
+                  ))}
+                </div>
+                <span style={{ fontSize: 12, color: "var(--color-text-muted)", fontWeight: 600 }}>
+                  Step {tuneStep + 1} of {totalSteps}
                 </span>
               </div>
-              <p style={{ fontSize: 13, color: "var(--color-text-dim)", margin: 0, lineHeight: 1.5 }}>
-                {selectedStimulus.description}
-              </p>
-            </div>
-          </div>
 
-          {/* Heading */}
-          <h3 style={{ fontSize: 20, fontWeight: 700, color: "var(--color-text)", margin: "0 0 6px" }}>
-            Tune Your Brain
-          </h3>
-          <p style={{ fontSize: 13, color: "var(--color-text-dim)", margin: "0 0 24px" }}>
-            Adjust these parameters to shape how your brain processes the stimulus.
-          </p>
+              {/* Animated param step */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`step-${tuneStep}`}
+                  initial={{ opacity: 0, x: tuneDir * 40 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: tuneDir * -40 }}
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                >
+                  {/* Param label */}
+                  <div
+                    style={{
+                      display: "inline-block",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                      color: currentMeta.color,
+                      background: `${currentMeta.color}18`,
+                      padding: "4px 10px",
+                      borderRadius: 8,
+                      marginBottom: 12,
+                    }}
+                  >
+                    Parameter {tuneStep + 1}
+                  </div>
+                  <h3
+                    style={{
+                      fontSize: 26,
+                      fontWeight: 800,
+                      color: "var(--color-text)",
+                      margin: "0 0 8px",
+                      letterSpacing: "-0.02em",
+                    }}
+                  >
+                    {currentMeta.label}
+                  </h3>
+                  <p style={{ fontSize: 14, color: "var(--color-text-dim)", margin: "0 0 32px", lineHeight: 1.6 }}>
+                    {currentMeta.description}
+                  </p>
 
-          {/* Sliders */}
-          <div
-            style={{
-              background: "var(--color-surface)",
-              border: "1px solid var(--color-border)",
-              borderRadius: 16,
-              padding: "20px 20px 8px",
-              marginBottom: 28,
-            }}
-          >
-            {PARAM_META.map((meta) => (
-              <ParamSlider
-                key={meta.key}
-                label={meta.label}
-                description={meta.description}
-                value={params[meta.key]}
-                color={meta.color}
-                paramKey={meta.key}
-                onChange={(key, val) => setParams((prev) => ({ ...prev, [key]: val }))}
-              />
-            ))}
-          </div>
+                  {/* Big slider */}
+                  <div
+                    style={{
+                      background: "var(--color-surface)",
+                      border: `1px solid ${currentMeta.color}30`,
+                      borderRadius: 20,
+                      padding: "32px 28px",
+                      marginBottom: 20,
+                    }}
+                  >
+                    {/* Value display */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
+                      <span style={{ fontSize: 13, color: "var(--color-text-muted)", fontWeight: 600 }}>Value</span>
+                      <span
+                        style={{
+                          fontSize: 40,
+                          fontWeight: 800,
+                          color: currentMeta.color,
+                          lineHeight: 1,
+                          fontVariantNumeric: "tabular-nums",
+                        }}
+                      >
+                        {params[currentMeta.key]}
+                      </span>
+                    </div>
 
-          {/* Run button */}
-          <button
-            onClick={handleTuneRun}
-            style={{
-              ...btnPrimary,
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-              padding: "15px 24px",
-              borderRadius: 14,
-              fontSize: 15,
-              fontWeight: 700,
-            }}
-          >
-            <Play size={17} />
-            Run Pipeline
-          </button>
+                    {/* Slider */}
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={params[currentMeta.key]}
+                      onChange={(e) =>
+                        setParams((prev) => ({ ...prev, [currentMeta.key]: Number(e.target.value) }))
+                      }
+                      style={{
+                        width: "100%",
+                        height: 8,
+                        accentColor: currentMeta.color,
+                        cursor: "pointer",
+                        marginBottom: 10,
+                      }}
+                    />
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>0</span>
+                      <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>100</span>
+                    </div>
+                  </div>
+
+                  {/* Contextual tip */}
+                  {PARAM_TIPS[currentMeta.key] && (
+                    <div
+                      style={{
+                        background: `${currentMeta.color}0c`,
+                        border: `1px solid ${currentMeta.color}20`,
+                        borderRadius: 12,
+                        padding: "12px 16px",
+                        marginBottom: 32,
+                      }}
+                    >
+                      <p style={{ fontSize: 12, color: "var(--color-text-dim)", margin: 0, lineHeight: 1.5 }}>
+                        {params[currentMeta.key] <= 40
+                          ? PARAM_TIPS[currentMeta.key].low
+                          : params[currentMeta.key] >= 60
+                          ? PARAM_TIPS[currentMeta.key].high
+                          : `Balanced: moderate ${currentMeta.label.toLowerCase()} — a blend of both extremes`}
+                      </p>
+                    </div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Back / Next buttons */}
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <button
+                  onClick={goPrevStep}
+                  style={{
+                    ...btnGhost,
+                    padding: "13px 22px",
+                    borderRadius: 14,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    flexShrink: 0,
+                  }}
+                >
+                  ← {tuneStep === 0 ? "Back" : "Prev"}
+                </button>
+                <button
+                  onClick={goNextStep}
+                  style={{
+                    ...btnPrimary,
+                    flex: 1,
+                    padding: "13px 24px",
+                    borderRadius: 14,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                  }}
+                >
+                  {tuneStep === totalSteps - 1 ? (
+                    <>
+                      <Play size={15} />
+                      Run Pipeline ▶
+                    </>
+                  ) : (
+                    <>
+                      Next →
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Preset shortcut */}
+              <div style={{ textAlign: "center", marginTop: 20 }}>
+                <button
+                  onClick={() => setShowPresets(true)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    color: "var(--color-text-muted)",
+                    textDecoration: "underline",
+                    textUnderlineOffset: 3,
+                  }}
+                >
+                  Use a preset instead →
+                </button>
+              </div>
+            </>
+          )}
         </motion.div>
       )}
 
       {/* ════════════════════════════════════════════════════
-          PHASE 3: REVEAL — Results Reveal
+          PHASE 3: REVEAL — Streamlined Results
       ════════════════════════════════════════════════════ */}
       {phase === "reveal" && results && (
         <motion.div
@@ -2285,7 +2498,7 @@ function PipelineTab() {
             </div>
           </div>
 
-          {/* Staggered results sections */}
+          {/* Staggered results sections — only the key ones */}
           <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
 
             {/* 1. Pipeline Flow Diagram */}
@@ -2301,45 +2514,16 @@ function PipelineTab() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.4 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
             >
               <ScenarioNarration params={params} />
             </motion.div>
 
-            {/* 3. Signal Waveform */}
+            {/* 3. Stage Cards */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.4 }}
-            >
-              <SignalWaveform stages={results} />
-            </motion.div>
-
-            {/* 4. Distortion Tracker */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.0, duration: 0.4 }}
-            >
-              <DistortionTracker stages={results} />
-            </motion.div>
-
-            {/* 5. Brain Heatmap + Feature Survival side by side */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.3, duration: 0.4 }}
-              style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}
-            >
-              <BrainHeatmap stages={results} />
-              <FeatureSurvivalGrid stimulus={selectedStimulus} stages={results} />
-            </motion.div>
-
-            {/* 6. Stage Cards */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.6, duration: 0.4 }}
+              transition={{ delay: 0.5, duration: 0.4 }}
             >
               <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--color-text-muted)", marginBottom: 16 }}>
                 Stage-by-Stage Breakdown
@@ -2368,20 +2552,20 @@ function PipelineTab() {
               </div>
             </motion.div>
 
-            {/* 7. Pipeline Summary */}
+            {/* 4. Pipeline Summary */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.9, duration: 0.4 }}
+              transition={{ delay: 0.8, duration: 0.4 }}
             >
               <PipelineSummary stages={results} />
             </motion.div>
 
-            {/* CTA */}
+            {/* 5. CTAs */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 2.2, duration: 0.4 }}
+              transition={{ delay: 1.0, duration: 0.4 }}
               style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", paddingTop: 8 }}
             >
               <button
@@ -2397,7 +2581,7 @@ function PipelineTab() {
                   fontWeight: 700,
                 }}
               >
-                Explore in Dashboard →
+                Explore Full Dashboard →
               </button>
               <button
                 onClick={handleStartOver}
@@ -2421,7 +2605,7 @@ function PipelineTab() {
       )}
 
       {/* ════════════════════════════════════════════════════
-          PHASE 4: DASHBOARD — Full Dashboard
+          PHASE 4: DASHBOARD — Full Dashboard (with extra visualizations)
       ════════════════════════════════════════════════════ */}
       {phase === "dashboard" && (
         <motion.div
@@ -2708,7 +2892,7 @@ function PipelineTab() {
                     </div>
                   </div>
 
-                  {/* Signal Journey */}
+                  {/* Signal Journey — power-user visualizations */}
                   <div className="space-y-4">
                     <p className="text-xs font-medium tracking-wide" style={{ color: "var(--color-text-muted)" }}>
                       Signal Journey
@@ -2769,6 +2953,7 @@ function PipelineTab() {
     </AnimatePresence>
   );
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LEARN TAB
