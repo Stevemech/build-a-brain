@@ -437,9 +437,9 @@ function PathwayConnector({ fromVal, toVal, color }: { fromVal: number; toVal: n
           <span
             className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full z-10 relative"
             style={{
-              background: isPositive ? "#10b98118" : "#ef444418",
-              color: isPositive ? "#34d399" : "#f87171",
-              border: `1px solid ${isPositive ? "#10b98130" : "#ef444430"}`,
+              background: isPositive ? "#10b98115" : "#a78bfa15",
+              color: isPositive ? "#34d399" : "#a78bfa",
+              border: `1px solid ${isPositive ? "#10b98125" : "#a78bfa25"}`,
               fontFamily: "var(--font-mono)",
             }}
           >
@@ -526,11 +526,11 @@ function SignalWaveform({ stages }: { stages: StageResult[] }) {
 
   return (
     <div
-      className="rounded-xl p-4"
+      className="rounded-2xl p-5"
       style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
     >
-      <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--color-text-muted)" }}>
-        Signal Waveform
+      <p className="text-xs font-medium mb-3" style={{ color: "var(--color-text-muted)" }}>
+        Signal waveform across stages
       </p>
       <div style={{ overflowX: "auto" }}>
         <svg viewBox={`0 0 ${width} ${height}`} style={{ width: "100%", minWidth: 280, height: 90 }}>
@@ -797,21 +797,21 @@ function StageCard({ stage, config, index, comparisonStage, isComparisonMode }: 
         )}
       </div>
 
-      {/* Animated Stage Transition Indicator */}
+      {/* Signal strength indicator */}
       <div className="px-4 pb-3 flex items-center gap-2">
         <div
           className={clamped >= 70 ? "pulse-strong" : clamped >= 40 ? "pulse-moderate" : "pulse-weak"}
           style={{
-            width: 8,
-            height: 8,
+            width: 7,
+            height: 7,
             borderRadius: "50%",
-            background: clamped >= 70 ? "#10b981" : clamped >= 40 ? "#f59e0b" : "#ef4444",
-            color: clamped >= 70 ? "#10b981" : clamped >= 40 ? "#f59e0b" : "#ef4444",
+            background: clamped >= 70 ? "#10b981" : clamped >= 40 ? "#a78bfa" : "#f59e0b",
+            color: clamped >= 70 ? "#10b981" : clamped >= 40 ? "#a78bfa" : "#f59e0b",
             flexShrink: 0,
           }}
         />
-        <span className="text-[11px]" style={{ color: clamped >= 70 ? "#10b981" : clamped >= 40 ? "#f59e0b" : "#ef4444" }}>
-          {clamped >= 70 ? "Strong signal" : clamped >= 40 ? "Moderate signal" : "Weak signal"}
+        <span className="text-[11px]" style={{ color: clamped >= 70 ? "#10b981" : clamped >= 40 ? "#a78bfa" : "#f59e0b" }}>
+          {clamped >= 70 ? "Clear signal" : clamped >= 40 ? "Moderate signal" : "Faint signal"}
         </span>
       </div>
 
@@ -1586,58 +1586,73 @@ function PresetsPanel({ onApply }: PresetsPanelProps) {
 // PIPELINE INFORMATION FLOW DIAGRAM (mini circles)
 // ─────────────────────────────────────────────────────────────────────────────
 function PipelineFlowDiagram({ stages }: { stages: StageResult[] }) {
-  const minSize = 12;
-  const maxSize = 28;
+  const avg = Math.round(stages.reduce((a, s) => a + clamp(s.signalStrength), 0) / stages.length);
+  const emoji = avg >= 70 ? "🌟" : avg >= 50 ? "👍" : avg >= 30 ? "🌤" : "🌧";
+  const summaryText = avg >= 70
+    ? "Your brain processed this really well — strong signal throughout."
+    : avg >= 50
+    ? "A solid processing run — most stages held up nicely."
+    : avg >= 30
+    ? "Some signal faded along the way — a few stages struggled."
+    : "This was a tough one — the signal had a hard time getting through.";
 
   return (
     <div
-      className="rounded-xl p-4"
-      style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
+      className="rounded-2xl p-5"
+      style={{ background: "linear-gradient(135deg, var(--color-surface), var(--color-surface-2))", border: "1px solid var(--color-border)" }}
     >
-      <p className="text-[11px] font-semibold uppercase tracking-wider mb-4" style={{ color: "var(--color-text-muted)" }}>
-        Pipeline Overview
-      </p>
-      <div className="flex items-center justify-between gap-1 overflow-x-auto pb-1">
+      {/* Friendly summary */}
+      <div className="flex items-center gap-3 mb-5">
+        <span className="text-2xl">{emoji}</span>
+        <div>
+          <p className="text-sm font-medium" style={{ color: "var(--color-text)" }}>{summaryText}</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>Average signal strength: {avg}%</p>
+        </div>
+      </div>
+
+      {/* Stage flow — generous spacing */}
+      <div className="flex items-center justify-between gap-0 px-2">
         {stages.map((s, i) => {
           const cfg = STAGE_CONFIG[i];
           const signal = clamp(s.signalStrength) / 100;
-          const size = minSize + signal * (maxSize - minSize);
+          const size = 28 + signal * 12;
           const nextSignal = i < stages.length - 1 ? clamp(stages[i + 1].signalStrength) / 100 : null;
-          const lineThickness = nextSignal !== null ? Math.max(1, nextSignal * 4) : 0;
 
           return (
-            <div key={cfg.id} className="flex items-center gap-1 flex-shrink-0">
-              <div className="flex flex-col items-center gap-1">
+            <div key={cfg.id} className="flex items-center flex-1 min-w-0">
+              <div className="flex flex-col items-center gap-1.5 flex-shrink-0" style={{ minWidth: 44 }}>
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ delay: i * 0.07, type: "spring", stiffness: 200 }}
+                  transition={{ delay: i * 0.08, type: "spring", stiffness: 180, damping: 14 }}
                   style={{
                     width: size,
                     height: size,
                     borderRadius: "50%",
-                    background: `${cfg.color}30`,
-                    border: `2px solid ${cfg.color}`,
-                    boxShadow: `0 0 ${signal * 12}px ${cfg.color}50`,
+                    background: `${cfg.color}18`,
+                    border: `2px solid ${cfg.color}80`,
+                    boxShadow: `0 0 ${signal * 16}px ${cfg.color}30`,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    transition: "all 0.4s ease",
+                    transition: "all 0.5s ease",
                   }}
-                />
-                <span className="text-[9px] font-semibold" style={{ color: cfg.color }}>{cfg.shortLabel}</span>
-                <span className="text-[9px] font-mono" style={{ color: "var(--color-text-muted)" }}>{Math.round(clamp(s.signalStrength))}%</span>
+                >
+                  <span style={{ fontSize: 12, color: cfg.color, fontWeight: 700 }}>{Math.round(clamp(s.signalStrength))}</span>
+                </motion.div>
+                <span className="text-[10px] font-medium" style={{ color: cfg.color }}>{cfg.shortLabel}</span>
               </div>
               {nextSignal !== null && (
-                <div
-                  className="flex-shrink-0 rounded-full mb-4"
-                  style={{
-                    width: 20,
-                    height: Math.max(1, lineThickness),
-                    background: `${STAGE_CONFIG[i + 1].color}60`,
-                    transition: "all 0.4s ease",
-                  }}
-                />
+                <div className="flex-1 flex items-center justify-center px-0.5" style={{ minWidth: 8 }}>
+                  <div
+                    className="rounded-full w-full"
+                    style={{
+                      height: Math.max(2, nextSignal * 4),
+                      background: `linear-gradient(to right, ${cfg.color}50, ${STAGE_CONFIG[i + 1].color}50)`,
+                      transition: "all 0.5s ease",
+                    }}
+                  />
+                </div>
               )}
             </div>
           );
@@ -1655,65 +1670,61 @@ function DistortionTracker({ stages }: { stages: StageResult[] }) {
     const curr = clamp(s.signalStrength);
     const prev = i === 0 ? curr : clamp(stages[i - 1].signalStrength);
     const delta = curr - prev;
-    let status: "distortion" | "minor" | "enhanced" | "preserved";
+    let status: "boost" | "shift" | "steady" | "dip";
     let color: string;
     let label: string;
-    if (delta > 2) { status = "enhanced"; color = "#10b981"; label = "+" + Math.round(delta) + "%"; }
-    else if (delta >= -10) { status = "minor"; color = "#f59e0b"; label = Math.round(delta) + "%"; }
-    else { status = "distortion"; color = "#ef4444"; label = Math.round(delta) + "%"; }
-    if (Math.abs(delta) <= 1) { status = "preserved"; color = "#6366f1"; label = "~0%"; }
+    if (delta > 2) { status = "boost"; color = "#10b981"; label = "+" + Math.round(delta) + "%"; }
+    else if (delta >= -10) { status = "shift"; color = "#a78bfa"; label = Math.round(delta) + "%"; }
+    else { status = "dip"; color = "#f59e0b"; label = Math.round(delta) + "%"; }
+    if (Math.abs(delta) <= 1) { status = "steady"; color = "#6366f1"; label = "~0%"; }
     return { ...STAGE_CONFIG[i], delta, status, color, label, signal: curr };
   });
 
   const peakStage = [...stages].sort((a, b) => b.signalStrength - a.signalStrength)[0];
   const troughStage = [...stages].sort((a, b) => a.signalStrength - b.signalStrength)[0];
-  const biggestDrop = segments.reduce((worst, seg) => seg.delta < worst.delta ? seg : worst, segments[0]);
   const peakCfg = STAGE_CONFIG.find(c => c.id === peakStage.stage)!;
   const troughCfg = STAGE_CONFIG.find(c => c.id === troughStage.stage)!;
 
   return (
     <div
-      className="rounded-xl p-4 space-y-3"
+      className="rounded-2xl p-5 space-y-4"
       style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
     >
-      <div className="flex items-center gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
-          Distortion Tracker
-        </p>
-        <Info size={11} style={{ color: "var(--color-text-muted)" }} />
-      </div>
+      <p className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
+        How the signal changed at each stage
+      </p>
 
       {/* Horizontal bar segments */}
-      <div className="flex rounded-lg overflow-hidden" style={{ height: 36 }}>
+      <div className="flex rounded-xl overflow-hidden" style={{ height: 40 }}>
         {segments.map((seg, i) => (
           <motion.div
             key={seg.id}
             initial={{ opacity: 0, scaleY: 0 }}
             animate={{ opacity: 1, scaleY: 1 }}
-            transition={{ delay: i * 0.08, duration: 0.3 }}
+            transition={{ delay: i * 0.08, duration: 0.35 }}
             className="flex-1 flex flex-col items-center justify-center relative"
             title={`${seg.label} — ${seg.id}`}
-            style={{ background: `${seg.color}22`, borderRight: i < segments.length - 1 ? "1px solid #0a0818" : "none" }}
+            style={{ background: `${seg.color}15`, borderRight: i < segments.length - 1 ? "1px solid var(--color-bg)" : "none" }}
           >
-            <span className="text-[9px] font-bold" style={{ color: seg.color }}>{seg.shortLabel}</span>
-            <span className="text-[8px] font-mono" style={{ color: seg.color }}>{seg.label}</span>
+            <span className="text-[10px] font-semibold" style={{ color: seg.color }}>{seg.shortLabel}</span>
+            <span className="text-[9px] font-mono opacity-80" style={{ color: seg.color }}>{seg.label}</span>
           </motion.div>
         ))}
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-3">
-        {([{color:"#10b981",label:"Enhancement"},{color:"#6366f1",label:"Preserved"},{color:"#f59e0b",label:"Minor Loss"},{color:"#ef4444",label:"Distortion"}] as const).map(item => (
-          <div key={item.label} className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-sm" style={{ background: item.color }} />
-            <span className="text-[10px]" style={{ color: "var(--color-text-muted)" }}>{item.label}</span>
+      <div className="flex flex-wrap gap-4">
+        {([{color:"#10b981",label:"Boosted"},{color:"#6366f1",label:"Steady"},{color:"#a78bfa",label:"Slight shift"},{color:"#f59e0b",label:"Noticeable dip"}] as const).map(item => (
+          <div key={item.label} className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
+            <span className="text-[11px]" style={{ color: "var(--color-text-muted)" }}>{item.label}</span>
           </div>
         ))}
       </div>
 
-      {/* Narration */}
-      <p className="text-[12px] leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
-        Signal was strongest at <strong style={{ color: peakCfg.color }}>{peakCfg.label}</strong> ({Math.round(clamp(peakStage.signalStrength))}%) and weakest at <strong style={{ color: troughCfg.color }}>{troughCfg.label}</strong> ({Math.round(clamp(troughStage.signalStrength))}%). The biggest drop occurred at <strong style={{ color: biggestDrop.color }}>{biggestDrop.label}</strong> ({biggestDrop.label}).
+      {/* Friendly narration */}
+      <p className="text-[13px] leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
+        The signal was strongest at <span style={{ color: peakCfg.color, fontWeight: 600 }}>{peakCfg.label}</span> ({Math.round(clamp(peakStage.signalStrength))}%) and softest at <span style={{ color: troughCfg.color, fontWeight: 600 }}>{troughCfg.label}</span> ({Math.round(clamp(troughStage.signalStrength))}%).
       </p>
     </div>
   );
@@ -1763,22 +1774,22 @@ function ScenarioNarration({ params }: { params: PipelineParams }) {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="rounded-xl p-4"
-      style={{ background: "var(--color-surface)", border: "1px solid #8b5cf625" }}
+      transition={{ duration: 0.5 }}
+      className="rounded-2xl p-5"
+      style={{ background: "var(--color-surface)", border: "1px solid #8b5cf618" }}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-4">
         <div
-          className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
-          style={{ background: "#8b5cf615", border: "1px solid #8b5cf630" }}
+          className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
+          style={{ background: "#8b5cf610", border: "1px solid #8b5cf620" }}
         >
-          <Quote size={14} color="#8b5cf6" />
+          <Quote size={16} color="#8b5cf6" />
         </div>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#8b5cf6" }}>
-            Cognitive Story
+        <div className="flex-1">
+          <p className="text-xs font-medium mb-2" style={{ color: "#8b5cf6" }}>
+            What happened inside your brain
           </p>
-          <p className="text-[13px] leading-relaxed italic" style={{ color: "var(--color-text-dim)" }}>
+          <p className="text-sm leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
             {sentences.join(" ")}
           </p>
         </div>
@@ -2080,7 +2091,7 @@ function PipelineTab() {
       </aside>
 
       {/* ── MAIN RESULTS ── */}
-      <main className="flex-1 min-w-0 space-y-5">
+      <main className="flex-1 min-w-0 space-y-6">
         {/* Comparison toggle */}
         <div className="flex items-center justify-end">
           <button
@@ -2102,48 +2113,28 @@ function PipelineTab() {
           <div
             className="rounded-2xl flex flex-col items-center justify-center text-center py-24 px-8"
             style={{
-              background: "var(--color-surface)",
+              background: "linear-gradient(135deg, var(--color-surface), var(--color-surface-2))",
               border: "1px solid var(--color-border)",
               minHeight: "400px",
-              boxShadow: "0 4px 32px rgba(0,0,0,0.3)",
             }}
           >
             <div
               className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6"
-              style={{ background: "#8b5cf612", border: "1px solid #8b5cf630" }}
+              style={{ background: "#8b5cf60d", border: "1px solid #8b5cf620" }}
             >
               <Brain size={36} color="#8b5cf6" strokeWidth={1.5} />
             </div>
-            <p className="text-lg font-semibold mb-2" style={{ color: "var(--color-text)" }}>
-              Pipeline not yet run
+            <p className="text-lg font-medium mb-2" style={{ color: "var(--color-text)" }}>
+              Ready when you are
             </p>
-            <p className="text-sm max-w-sm" style={{ color: "var(--color-text-dim)" }}>
-              Select a stimulus, adjust the brain parameters, then press "Run Pipeline" to simulate how your brain would process this stimulus.
+            <p className="text-sm max-w-sm leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
+              Pick a stimulus on the left, adjust the brain parameters, then hit "Run Pipeline" to see how your brain would process it.
             </p>
           </div>
         ) : (
           <>
-            {/* Output header */}
-            <div className="flex items-center gap-3">
-              <div
-                className="w-2 h-2 rounded-full animate-pulse"
-                style={{ background: "#10b981", boxShadow: "0 0 8px #10b981" }}
-              />
-              <h2 className="text-sm font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-muted)" }}>
-                {comparisonMode ? "Pipeline Comparison" : "Pipeline Output"}
-              </h2>
-              {avgScore !== null && (
-                <span
-                  className="text-xs font-mono font-bold px-2 py-0.5 rounded-full ml-auto"
-                  style={{
-                    background: `${getStatusColor(avgScore)}20`,
-                    color: getStatusColor(avgScore),
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
-                  avg {avgScore}%
-                </span>
-              )}
+            {/* Friendly header */}
+            <div className="flex items-center gap-3 mb-1">
               {comparisonMode && (
                 <div className="flex items-center gap-2 text-[11px]">
                   <span className="px-2 py-0.5 rounded font-semibold" style={{ background: "#8b5cf620", color: "#a78bfa" }}>A: purple</span>
@@ -2152,12 +2143,15 @@ function PipelineTab() {
               )}
             </div>
 
-            {/* Pipeline Flow Overview */}
+            {/* Pipeline Flow Overview — leads with friendly summary */}
             <PipelineFlowDiagram stages={displayResultsA} />
 
-            {/* Current stimulus card */}
+            {/* Scenario Narration — the story of what happened */}
+            <ScenarioNarration params={comparisonMode ? (activeSet === "A" ? paramsA : paramsB) : params} />
+
+            {/* Stimulus context card */}
             <div
-              className="rounded-xl p-4"
+              className="rounded-2xl p-5"
               style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
             >
               <div className="flex items-start gap-4">
@@ -2168,23 +2162,23 @@ function PipelineTab() {
                       {selectedStimulus.name}
                     </h3>
                     <span
-                      className="text-[11px] font-semibold uppercase px-2 py-0.5 rounded-full"
+                      className="text-[11px] font-medium px-2 py-0.5 rounded-full"
                       style={{
-                        background: selectedStimulus.modality === "auditory" ? "#06b6d418" : "#8b5cf618",
+                        background: selectedStimulus.modality === "auditory" ? "#06b6d412" : "#8b5cf612",
                         color: selectedStimulus.modality === "auditory" ? "#06b6d4" : "#8b5cf6",
                       }}
                     >
                       {selectedStimulus.modality}
                     </span>
                   </div>
-                  <p className="text-sm mb-3" style={{ color: "var(--color-text-dim)" }}>
+                  <p className="text-sm mb-3 leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
                     {selectedStimulus.sceneDescription}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedStimulus.features.map((f) => (
                       <span
                         key={f}
-                        className="text-[11px] px-2 py-0.5 rounded-full"
+                        className="text-[11px] px-2.5 py-1 rounded-full"
                         style={{ background: "var(--color-surface-2)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
                       >
                         {f}
@@ -2195,25 +2189,25 @@ function PipelineTab() {
               </div>
             </div>
 
-            {/* Scenario Narration */}
-            <ScenarioNarration params={comparisonMode ? (activeSet === "A" ? paramsA : paramsB) : params} />
+            {/* Signal Journey — waveform + tracker together */}
+            <div className="space-y-4">
+              <p className="text-xs font-medium tracking-wide" style={{ color: "var(--color-text-muted)" }}>
+                Signal Journey
+              </p>
+              <SignalWaveform stages={displayResultsA} />
+              <DistortionTracker stages={displayResultsA} />
+            </div>
 
-            {/* Signal Waveform */}
-            <SignalWaveform stages={displayResultsA} />
-
-            {/* Distortion Tracker */}
-            <DistortionTracker stages={displayResultsA} />
-
-            {/* Heatmap + Feature Survival */}
+            {/* Brain activity + Feature survival */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <BrainHeatmap stages={displayResultsA} />
               <FeatureSurvivalGrid stimulus={selectedStimulus} stages={displayResultsA} />
             </div>
 
-            {/* Stage cards + connectors */}
+            {/* Stage-by-stage breakdown */}
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--color-text-muted)" }}>
-                Cognitive Stages
+              <p className="text-xs font-medium tracking-wide mb-4" style={{ color: "var(--color-text-muted)" }}>
+                Stage-by-Stage Breakdown
               </p>
               <div className="space-y-0">
                 {displayResultsA.map((stage, i) => {
