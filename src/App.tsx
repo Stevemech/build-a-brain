@@ -1802,12 +1802,17 @@ function ScenarioNarration({ params }: { params: PipelineParams }) {
 // PIPELINE TAB
 // ─────────────────────────────────────────────────────────────────────────────
 function PipelineTab() {
+  // ── Phase state ──────────────────────────────────────────────────────────────
+  type Phase = "pick" | "tune" | "reveal" | "dashboard";
+  const [phase, setPhase] = useState<Phase>("pick");
+
+  // ── Core state ───────────────────────────────────────────────────────────────
   const [selectedStimulus, setSelectedStimulus] = useState<Stimulus>(STIMULI[0]);
   const [params, setParams] = useState<PipelineParams>({ ...DEFAULT_PARAMS });
   const [results, setResults] = useState<StageResult[] | null>(null);
   const [hasRun, setHasRun] = useState(false);
 
-  // Comparison mode state
+  // ── Comparison mode state (lives in dashboard phase) ─────────────────────────
   const [comparisonMode, setComparisonMode] = useState(false);
   const [activeSet, setActiveSet] = useState<"A" | "B">("A");
   const [paramsA, setParamsA] = useState<PipelineParams>({ ...DEFAULT_PARAMS });
@@ -1815,6 +1820,7 @@ function PipelineTab() {
   const [resultsA, setResultsA] = useState<StageResult[] | null>(null);
   const [resultsB, setResultsB] = useState<StageResult[] | null>(null);
 
+  // ── Dashboard param handler ───────────────────────────────────────────────────
   const handleParam = useCallback(
     (key: keyof PipelineParams, val: number) => {
       if (comparisonMode) {
@@ -1857,7 +1863,7 @@ function PipelineTab() {
     [hasRun, params, paramsA, paramsB, comparisonMode]
   );
 
-  const handleRun = () => {
+  const handleDashboardRun = () => {
     if (comparisonMode) {
       setResultsA(runPipeline(selectedStimulus, paramsA));
       setResultsB(runPipeline(selectedStimulus, paramsB));
@@ -1905,7 +1911,6 @@ function PipelineTab() {
 
   const toggleComparisonMode = () => {
     if (!comparisonMode) {
-      // Entering comparison mode — copy current params to A
       setParamsA({ ...(params) });
       setParamsB({ ...DEFAULT_PARAMS });
       if (results) setResultsA(results);
@@ -1919,7 +1924,7 @@ function PipelineTab() {
     setActiveSet("A");
   };
 
-  // Current params for sliders
+  // ── Derived dashboard values ──────────────────────────────────────────────────
   const currentParams = comparisonMode ? (activeSet === "A" ? paramsA : paramsB) : params;
   const displayResultsA = comparisonMode ? resultsA : results;
   const displayResultsB = comparisonMode ? resultsB : null;
@@ -1928,304 +1933,432 @@ function PipelineTab() {
     ? Math.round(displayResultsA.reduce((acc, s) => acc + clamp(s.signalStrength), 0) / displayResultsA.length)
     : null;
 
-  return (
-    <div className="flex flex-col md:flex-row gap-6 px-6 pt-6 pb-8 md:px-10 md:pt-8 md:pb-10 max-w-[1600px] mx-auto">
-      {/* ── LEFT SIDEBAR ── */}
-      <aside
-        className="w-full md:w-[370px] flex-shrink-0 space-y-5 md:max-h-[calc(100vh-80px)] md:overflow-y-auto md:sticky md:top-[56px] no-scrollbar"
-        style={{ minWidth: 0 }}
-      >
-        {/* Stimulus selector */}
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--color-text-muted)" }}>
-            Stimulus
-          </p>
-          <div className="space-y-2">
-            {STIMULI.map((s) => {
-              const isSelected = s.id === selectedStimulus.id;
-              return (
-                <button
-                  key={s.id}
-                  onClick={() => handleStimulusChange(s)}
-                  className="w-full text-left rounded-xl p-3 transition-all duration-200"
-                  style={{
-                    background: isSelected ? "var(--color-surface-2)" : "var(--color-surface)",
-                    border: isSelected ? "1px solid var(--color-accent)" : "1px solid var(--color-border)",
-                    outline: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl flex-shrink-0 mt-0.5">{s.imageEmoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>
-                          {s.name}
-                        </span>
-                        <span
-                          className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded"
-                          style={{
-                            background: s.modality === "auditory" ? "#06b6d418" : "#8b5cf618",
-                            color: s.modality === "auditory" ? "#06b6d4" : "#8b5cf6",
-                          }}
-                        >
-                          {s.modality}
-                        </span>
-                      </div>
-                      <p className="text-[12px] mt-0.5" style={{ color: "var(--color-text-muted)" }}>
-                        {s.description}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+  // ── Phase handlers ────────────────────────────────────────────────────────────
+  const handlePickStimulus = (s: Stimulus) => {
+    setSelectedStimulus(s);
+    setPhase("tune");
+  };
 
-        {/* Parameters */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-muted)" }}>
-              Brain Parameters
+  const handlePickPreset = (presetParams: PipelineParams) => {
+    setSelectedStimulus(STIMULI[0]);
+    setParams(presetParams);
+    const r = runPipeline(STIMULI[0], presetParams);
+    setResults(r);
+    setResultsA(r);
+    setHasRun(true);
+    setPhase("reveal");
+  };
+
+  const handleTuneRun = () => {
+    const r = runPipeline(selectedStimulus, params);
+    setResults(r);
+    setResultsA(r);
+    setHasRun(true);
+    setPhase("reveal");
+  };
+
+  const handleStartOver = () => {
+    handleReset();
+    setPhase("pick");
+  };
+
+  const handleGoToDashboard = () => {
+    // Sync dashboard state from guided flow
+    setParamsA({ ...params });
+    setParamsB({ ...DEFAULT_PARAMS });
+    if (results) {
+      setResultsA(results);
+      setResultsB(runPipeline(selectedStimulus, DEFAULT_PARAMS));
+    }
+    setPhase("dashboard");
+  };
+
+  // ── Shared button style helpers ────────────────────────────────────────────────
+  const btnPrimary: React.CSSProperties = {
+    background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+    color: "#fff",
+    border: "none",
+    cursor: "pointer",
+    boxShadow: "0 4px 24px #8b5cf640",
+  };
+
+  const btnGhost: React.CSSProperties = {
+    background: "transparent",
+    color: "var(--color-text-dim)",
+    border: "1px solid var(--color-border)",
+    cursor: "pointer",
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────────
+  return (
+    <AnimatePresence mode="wait">
+
+      {/* ════════════════════════════════════════════════════
+          PHASE 1: PICK — Choose Your Scenario
+      ════════════════════════════════════════════════════ */}
+      {phase === "pick" && (
+        <motion.div
+          key="pick"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.3 }}
+          style={{ maxWidth: 860, margin: "0 auto", padding: "48px 24px 64px" }}
+        >
+          {/* Heading */}
+          <div style={{ textAlign: "center", marginBottom: 40 }}>
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: "#8b5cf610",
+                border: "1px solid #8b5cf625",
+                marginBottom: 20,
+              }}
+            >
+              <Brain size={28} color="#8b5cf6" strokeWidth={1.5} />
+            </div>
+            <h2 style={{ fontSize: 28, fontWeight: 700, color: "var(--color-text)", margin: "0 0 8px" }}>
+              Choose a Scenario
+            </h2>
+            <p style={{ fontSize: 15, color: "var(--color-text-dim)", margin: 0 }}>
+              Pick what your brain will process
             </p>
-            {comparisonMode && (
-              <div className="flex gap-1">
-                <button
-                  onClick={() => setActiveSet("A")}
-                  className="px-2 py-0.5 rounded text-[10px] font-semibold"
-                  style={{
-                    background: activeSet === "A" ? "#8b5cf6" : "transparent",
-                    color: activeSet === "A" ? "#fff" : "var(--color-text-muted)",
-                    border: activeSet === "A" ? "none" : "1px solid var(--color-border)",
-                    cursor: "pointer",
-                  }}
-                >
-                  Set A
-                </button>
-                <button
-                  onClick={() => setActiveSet("B")}
-                  className="px-2 py-0.5 rounded text-[10px] font-semibold"
-                  style={{
-                    background: activeSet === "B" ? "#60a5fa" : "transparent",
-                    color: activeSet === "B" ? "#fff" : "var(--color-text-muted)",
-                    border: activeSet === "B" ? "none" : "1px solid var(--color-border)",
-                    cursor: "pointer",
-                  }}
-                >
-                  Set B
-                </button>
-              </div>
-            )}
           </div>
+
+          {/* Stimulus cards */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 16, justifyContent: "center", marginBottom: 40 }}>
+            {STIMULI.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => handlePickStimulus(s)}
+                style={{
+                  flex: "1 1 220px",
+                  maxWidth: 260,
+                  background: "var(--color-surface)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: 20,
+                  padding: "28px 20px 24px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "all 0.18s ease",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.border = "1px solid #8b5cf660";
+                  (e.currentTarget as HTMLButtonElement).style.background = "var(--color-surface-2)";
+                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-3px)";
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 32px #8b5cf620";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.border = "1px solid var(--color-border)";
+                  (e.currentTarget as HTMLButtonElement).style.background = "var(--color-surface)";
+                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
+                }}
+              >
+                <span style={{ fontSize: 40, display: "block", marginBottom: 14 }}>{s.imageEmoji}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text)" }}>{s.name}</span>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      padding: "2px 7px",
+                      borderRadius: 6,
+                      background: s.modality === "auditory" ? "#06b6d418" : "#8b5cf618",
+                      color: s.modality === "auditory" ? "#06b6d4" : "#8b5cf6",
+                    }}
+                  >
+                    {s.modality}
+                  </span>
+                </div>
+                <p style={{ fontSize: 13, color: "var(--color-text-muted)", margin: 0, lineHeight: 1.5 }}>
+                  {s.description}
+                </p>
+              </button>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28 }}>
+            <div style={{ flex: 1, height: 1, background: "var(--color-border)" }} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", whiteSpace: "nowrap" }}>
+              Or try a Quick Experiment
+            </span>
+            <div style={{ flex: 1, height: 1, background: "var(--color-border)" }} />
+          </div>
+
+          {/* Preset cards */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+            {PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                onClick={() => handlePickPreset(preset.params)}
+                style={{
+                  flex: "1 1 140px",
+                  maxWidth: 180,
+                  background: "var(--color-surface)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: 14,
+                  padding: "14px 14px 12px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "all 0.15s ease",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.border = "1px solid #8b5cf650";
+                  (e.currentTarget as HTMLButtonElement).style.background = "var(--color-surface-2)";
+                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.border = "1px solid var(--color-border)";
+                  (e.currentTarget as HTMLButtonElement).style.background = "var(--color-surface)";
+                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+                }}
+              >
+                <span style={{ fontSize: 24, display: "block", marginBottom: 8 }}>{preset.emoji}</span>
+                <p style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text)", margin: "0 0 4px", lineHeight: 1.3 }}>{preset.name}</p>
+                <p style={{ fontSize: 11, color: "var(--color-text-muted)", margin: 0, lineHeight: 1.4 }}>{preset.description}</p>
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* ════════════════════════════════════════════════════
+          PHASE 2: TUNE — Tune Your Brain
+      ════════════════════════════════════════════════════ */}
+      {phase === "tune" && (
+        <motion.div
+          key="tune"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.3 }}
+          style={{ maxWidth: 600, margin: "0 auto", padding: "40px 24px 64px" }}
+        >
+          {/* Back link */}
+          <button
+            onClick={() => setPhase("pick")}
+            style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 10, fontSize: 13, marginBottom: 32 }}
+          >
+            ← Back
+          </button>
+
+          {/* Selected stimulus compact card */}
           <div
-            className="rounded-xl p-4"
             style={{
               background: "var(--color-surface)",
-              border: comparisonMode
-                ? `1px solid ${activeSet === "A" ? "#8b5cf640" : "#60a5fa40"}`
-                : "1px solid var(--color-border)",
+              border: "1px solid var(--color-accent)",
+              borderRadius: 16,
+              padding: "18px 20px",
+              marginBottom: 28,
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 14,
             }}
           >
-            {comparisonMode && (
-              <p
-                className="text-[10px] font-semibold uppercase tracking-wider mb-3 px-1"
-                style={{ color: activeSet === "A" ? "#a78bfa" : "#93c5fd" }}
-              >
-                Editing Set {activeSet}
+            <span style={{ fontSize: 36 }}>{selectedStimulus.imageEmoji}</span>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text)" }}>{selectedStimulus.name}</span>
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    padding: "2px 7px",
+                    borderRadius: 6,
+                    background: selectedStimulus.modality === "auditory" ? "#06b6d418" : "#8b5cf618",
+                    color: selectedStimulus.modality === "auditory" ? "#06b6d4" : "#8b5cf6",
+                  }}
+                >
+                  {selectedStimulus.modality}
+                </span>
+              </div>
+              <p style={{ fontSize: 13, color: "var(--color-text-dim)", margin: 0, lineHeight: 1.5 }}>
+                {selectedStimulus.description}
               </p>
-            )}
+            </div>
+          </div>
+
+          {/* Heading */}
+          <h3 style={{ fontSize: 20, fontWeight: 700, color: "var(--color-text)", margin: "0 0 6px" }}>
+            Tune Your Brain
+          </h3>
+          <p style={{ fontSize: 13, color: "var(--color-text-dim)", margin: "0 0 24px" }}>
+            Adjust these parameters to shape how your brain processes the stimulus.
+          </p>
+
+          {/* Sliders */}
+          <div
+            style={{
+              background: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
+              borderRadius: 16,
+              padding: "20px 20px 8px",
+              marginBottom: 28,
+            }}
+          >
             {PARAM_META.map((meta) => (
               <ParamSlider
                 key={meta.key}
                 label={meta.label}
                 description={meta.description}
-                value={currentParams[meta.key]}
+                value={params[meta.key]}
                 color={meta.color}
                 paramKey={meta.key}
-                onChange={handleParam}
+                onChange={(key, val) => setParams((prev) => ({ ...prev, [key]: val }))}
               />
             ))}
           </div>
-        </div>
 
-        {/* Actions */}
-        <div className="flex gap-2">
+          {/* Run button */}
           <button
-            onClick={handleRun}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
+            onClick={handleTuneRun}
             style={{
-              background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
-              color: "#fff",
-              border: "none",
-              cursor: "pointer",
-              boxShadow: "0 4px 24px #8b5cf640",
+              ...btnPrimary,
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
+              padding: "15px 24px",
+              borderRadius: 14,
+              fontSize: 15,
+              fontWeight: 700,
             }}
           >
-            <Play size={15} />
-            {hasRun ? "Re-run Pipeline" : "Run Pipeline"}
+            <Play size={17} />
+            Run Pipeline
           </button>
-          <button
-            onClick={handleReset}
-            className="flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 hover:opacity-80 active:scale-[0.95]"
-            title="Reset"
-            style={{
-              background: "var(--color-surface)",
-              border: "1px solid var(--color-border)",
-              color: "var(--color-text-dim)",
-              cursor: "pointer",
-            }}
-          >
-            <RotateCcw size={16} />
-          </button>
-        </div>
+        </motion.div>
+      )}
 
-        {!hasRun && (
-          <p className="text-[12px] text-center" style={{ color: "var(--color-text-muted)" }}>
-            Adjust parameters then press Run Pipeline to simulate
-          </p>
-        )}
-
-        {/* Presets Panel */}
-        <PresetsPanel onApply={handleApplyPreset} />
-      </aside>
-
-      {/* ── MAIN RESULTS ── */}
-      <main className="flex-1 min-w-0 space-y-6">
-        {/* Comparison toggle */}
-        <div className="flex items-center justify-end">
-          <button
-            onClick={toggleComparisonMode}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all hover:opacity-90"
-            style={{
-              background: comparisonMode ? "#8b5cf6" : "var(--color-surface)",
-              color: comparisonMode ? "#fff" : "var(--color-text-muted)",
-              border: comparisonMode ? "none" : "1px solid var(--color-border)",
-              cursor: "pointer",
-            }}
-          >
-            <GitCompare size={13} />
-            {comparisonMode ? "Exit Comparison" : "Compare A vs B"}
-          </button>
-        </div>
-
-        {!displayResultsA ? (
-          <div
-            className="rounded-2xl flex flex-col items-center justify-center text-center py-24 px-8"
-            style={{
-              background: "linear-gradient(135deg, var(--color-surface), var(--color-surface-2))",
-              border: "1px solid var(--color-border)",
-              minHeight: "400px",
-            }}
-          >
-            <div
-              className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6"
-              style={{ background: "#8b5cf60d", border: "1px solid #8b5cf620" }}
+      {/* ════════════════════════════════════════════════════
+          PHASE 3: REVEAL — Results Reveal
+      ════════════════════════════════════════════════════ */}
+      {phase === "reveal" && results && (
+        <motion.div
+          key="reveal"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.25 }}
+          style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}
+        >
+          {/* Top nav */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 36, flexWrap: "wrap", gap: 12 }}>
+            <button
+              onClick={handleStartOver}
+              style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 10, fontSize: 13 }}
             >
-              <Brain size={36} color="#8b5cf6" strokeWidth={1.5} />
-            </div>
-            <p className="text-lg font-medium mb-2" style={{ color: "var(--color-text)" }}>
-              Ready when you are
-            </p>
-            <p className="text-sm max-w-sm leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
-              Pick a stimulus on the left, adjust the brain parameters, then hit "Run Pipeline" to see how your brain would process it.
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* Friendly header */}
-            <div className="flex items-center gap-3 mb-1">
-              {comparisonMode && (
-                <div className="flex items-center gap-2 text-[11px]">
-                  <span className="px-2 py-0.5 rounded font-semibold" style={{ background: "#8b5cf620", color: "#a78bfa" }}>A: purple</span>
-                  <span className="px-2 py-0.5 rounded font-semibold" style={{ background: "#60a5fa20", color: "#93c5fd" }}>B: blue</span>
-                </div>
-              )}
-            </div>
-
-            {/* Pipeline Flow Overview — leads with friendly summary */}
-            <PipelineFlowDiagram stages={displayResultsA} />
-
-            {/* Scenario Narration — the story of what happened */}
-            <ScenarioNarration params={comparisonMode ? (activeSet === "A" ? paramsA : paramsB) : params} />
-
-            {/* Stimulus context card */}
-            <div
-              className="rounded-2xl p-5"
-              style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
-            >
-              <div className="flex items-start gap-4">
-                <span className="text-4xl">{selectedStimulus.imageEmoji}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <h3 className="text-base font-semibold" style={{ color: "var(--color-text)" }}>
-                      {selectedStimulus.name}
-                    </h3>
-                    <span
-                      className="text-[11px] font-medium px-2 py-0.5 rounded-full"
-                      style={{
-                        background: selectedStimulus.modality === "auditory" ? "#06b6d412" : "#8b5cf612",
-                        color: selectedStimulus.modality === "auditory" ? "#06b6d4" : "#8b5cf6",
-                      }}
-                    >
-                      {selectedStimulus.modality}
-                    </span>
-                  </div>
-                  <p className="text-sm mb-3 leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
-                    {selectedStimulus.sceneDescription}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedStimulus.features.map((f) => (
-                      <span
-                        key={f}
-                        className="text-[11px] px-2.5 py-1 rounded-full"
-                        style={{ background: "var(--color-surface-2)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
-                      >
-                        {f}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+              ← Try Another
+            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 24 }}>{selectedStimulus.imageEmoji}</span>
+              <div>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)" }}>{selectedStimulus.name}</span>
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    padding: "2px 7px",
+                    borderRadius: 6,
+                    marginLeft: 8,
+                    background: selectedStimulus.modality === "auditory" ? "#06b6d418" : "#8b5cf618",
+                    color: selectedStimulus.modality === "auditory" ? "#06b6d4" : "#8b5cf6",
+                  }}
+                >
+                  {selectedStimulus.modality}
+                </span>
               </div>
             </div>
+          </div>
 
-            {/* Signal Journey — waveform + tracker together */}
-            <div className="space-y-4">
-              <p className="text-xs font-medium tracking-wide" style={{ color: "var(--color-text-muted)" }}>
-                Signal Journey
-              </p>
-              <SignalWaveform stages={displayResultsA} />
-              <DistortionTracker stages={displayResultsA} />
-            </div>
+          {/* Staggered results sections */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
 
-            {/* Brain activity + Feature survival */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <BrainHeatmap stages={displayResultsA} />
-              <FeatureSurvivalGrid stimulus={selectedStimulus} stages={displayResultsA} />
-            </div>
+            {/* 1. Pipeline Flow Diagram */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.4 }}
+            >
+              <PipelineFlowDiagram stages={results} />
+            </motion.div>
 
-            {/* Stage-by-stage breakdown */}
-            <div>
-              <p className="text-xs font-medium tracking-wide mb-4" style={{ color: "var(--color-text-muted)" }}>
+            {/* 2. Scenario Narration */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.4 }}
+            >
+              <ScenarioNarration params={params} />
+            </motion.div>
+
+            {/* 3. Signal Waveform */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7, duration: 0.4 }}
+            >
+              <SignalWaveform stages={results} />
+            </motion.div>
+
+            {/* 4. Distortion Tracker */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.0, duration: 0.4 }}
+            >
+              <DistortionTracker stages={results} />
+            </motion.div>
+
+            {/* 5. Brain Heatmap + Feature Survival side by side */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.3, duration: 0.4 }}
+              style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}
+            >
+              <BrainHeatmap stages={results} />
+              <FeatureSurvivalGrid stimulus={selectedStimulus} stages={results} />
+            </motion.div>
+
+            {/* 6. Stage Cards */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.6, duration: 0.4 }}
+            >
+              <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--color-text-muted)", marginBottom: 16 }}>
                 Stage-by-Stage Breakdown
               </p>
-              <div className="space-y-0">
-                {displayResultsA.map((stage, i) => {
+              <div>
+                {results.map((stage, i) => {
                   const cfg = STAGE_CONFIG.find((c) => c.id === stage.stage) ?? STAGE_CONFIG[i];
-                  const compStage = displayResultsB ? displayResultsB[i] : undefined;
                   return (
                     <div key={stage.stage}>
                       <StageCard
                         stage={stage}
                         config={cfg}
                         index={i}
-                        comparisonStage={compStage}
-                        isComparisonMode={comparisonMode}
+                        isComparisonMode={false}
                       />
-                      {i < displayResultsA.length - 1 && (
+                      {i < results.length - 1 && (
                         <PathwayConnector
                           fromVal={stage.signalStrength}
-                          toVal={displayResultsA[i + 1].signalStrength}
+                          toVal={results[i + 1].signalStrength}
                           color={STAGE_CONFIG[i + 1].color}
                         />
                       )}
@@ -2233,17 +2366,407 @@ function PipelineTab() {
                   );
                 })}
               </div>
-            </div>
+            </motion.div>
 
-            {/* Summary */}
-            <PipelineSummary
-              stages={displayResultsA}
-              stagesB={displayResultsB ?? undefined}
-            />
-          </>
-        )}
-      </main>
-    </div>
+            {/* 7. Pipeline Summary */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.9, duration: 0.4 }}
+            >
+              <PipelineSummary stages={results} />
+            </motion.div>
+
+            {/* CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 2.2, duration: 0.4 }}
+              style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", paddingTop: 8 }}
+            >
+              <button
+                onClick={handleGoToDashboard}
+                style={{
+                  ...btnPrimary,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "13px 28px",
+                  borderRadius: 14,
+                  fontSize: 14,
+                  fontWeight: 700,
+                }}
+              >
+                Explore in Dashboard →
+              </button>
+              <button
+                onClick={handleStartOver}
+                style={{
+                  ...btnGhost,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "13px 22px",
+                  borderRadius: 14,
+                  fontSize: 14,
+                  fontWeight: 600,
+                }}
+              >
+                ← Try Another
+              </button>
+            </motion.div>
+
+          </div>
+        </motion.div>
+      )}
+
+      {/* ════════════════════════════════════════════════════
+          PHASE 4: DASHBOARD — Full Dashboard
+      ════════════════════════════════════════════════════ */}
+      {phase === "dashboard" && (
+        <motion.div
+          key="dashboard"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="flex flex-col md:flex-row gap-6 px-6 pt-6 pb-8 md:px-10 md:pt-8 md:pb-10 max-w-[1600px] mx-auto">
+            {/* ── LEFT SIDEBAR ── */}
+            <aside
+              className="w-full md:w-[370px] flex-shrink-0 space-y-5 md:max-h-[calc(100vh-80px)] md:overflow-y-auto md:sticky md:top-[56px] no-scrollbar"
+              style={{ minWidth: 0 }}
+            >
+              {/* Start over */}
+              <button
+                onClick={handleStartOver}
+                style={{
+                  ...btnGhost,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "6px 14px",
+                  borderRadius: 10,
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+              >
+                ← Start Over
+              </button>
+
+              {/* Stimulus selector */}
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--color-text-muted)" }}>
+                  Stimulus
+                </p>
+                <div className="space-y-2">
+                  {STIMULI.map((s) => {
+                    const isSelected = s.id === selectedStimulus.id;
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => handleStimulusChange(s)}
+                        className="w-full text-left rounded-xl p-3 transition-all duration-200"
+                        style={{
+                          background: isSelected ? "var(--color-surface-2)" : "var(--color-surface)",
+                          border: isSelected ? "1px solid var(--color-accent)" : "1px solid var(--color-border)",
+                          outline: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className="text-2xl flex-shrink-0 mt-0.5">{s.imageEmoji}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>
+                                {s.name}
+                              </span>
+                              <span
+                                className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded"
+                                style={{
+                                  background: s.modality === "auditory" ? "#06b6d418" : "#8b5cf618",
+                                  color: s.modality === "auditory" ? "#06b6d4" : "#8b5cf6",
+                                }}
+                              >
+                                {s.modality}
+                              </span>
+                            </div>
+                            <p className="text-[12px] mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+                              {s.description}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Parameters */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-muted)" }}>
+                    Brain Parameters
+                  </p>
+                  {comparisonMode && (
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => setActiveSet("A")}
+                        className="px-2 py-0.5 rounded text-[10px] font-semibold"
+                        style={{
+                          background: activeSet === "A" ? "#8b5cf6" : "transparent",
+                          color: activeSet === "A" ? "#fff" : "var(--color-text-muted)",
+                          border: activeSet === "A" ? "none" : "1px solid var(--color-border)",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Set A
+                      </button>
+                      <button
+                        onClick={() => setActiveSet("B")}
+                        className="px-2 py-0.5 rounded text-[10px] font-semibold"
+                        style={{
+                          background: activeSet === "B" ? "#60a5fa" : "transparent",
+                          color: activeSet === "B" ? "#fff" : "var(--color-text-muted)",
+                          border: activeSet === "B" ? "none" : "1px solid var(--color-border)",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Set B
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div
+                  className="rounded-xl p-4"
+                  style={{
+                    background: "var(--color-surface)",
+                    border: comparisonMode
+                      ? `1px solid ${activeSet === "A" ? "#8b5cf640" : "#60a5fa40"}`
+                      : "1px solid var(--color-border)",
+                  }}
+                >
+                  {comparisonMode && (
+                    <p
+                      className="text-[10px] font-semibold uppercase tracking-wider mb-3 px-1"
+                      style={{ color: activeSet === "A" ? "#a78bfa" : "#93c5fd" }}
+                    >
+                      Editing Set {activeSet}
+                    </p>
+                  )}
+                  {PARAM_META.map((meta) => (
+                    <ParamSlider
+                      key={meta.key}
+                      label={meta.label}
+                      description={meta.description}
+                      value={currentParams[meta.key]}
+                      color={meta.color}
+                      paramKey={meta.key}
+                      onChange={handleParam}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleDashboardRun}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
+                  style={{
+                    background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+                    color: "#fff",
+                    border: "none",
+                    cursor: "pointer",
+                    boxShadow: "0 4px 24px #8b5cf640",
+                  }}
+                >
+                  <Play size={15} />
+                  {hasRun ? "Re-run Pipeline" : "Run Pipeline"}
+                </button>
+                <button
+                  onClick={handleReset}
+                  className="flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 hover:opacity-80 active:scale-[0.95]"
+                  title="Reset"
+                  style={{
+                    background: "var(--color-surface)",
+                    border: "1px solid var(--color-border)",
+                    color: "var(--color-text-dim)",
+                    cursor: "pointer",
+                  }}
+                >
+                  <RotateCcw size={16} />
+                </button>
+              </div>
+
+              {!hasRun && (
+                <p className="text-[12px] text-center" style={{ color: "var(--color-text-muted)" }}>
+                  Adjust parameters then press Run Pipeline to simulate
+                </p>
+              )}
+
+              {/* Presets Panel */}
+              <PresetsPanel onApply={handleApplyPreset} />
+            </aside>
+
+            {/* ── MAIN RESULTS ── */}
+            <main className="flex-1 min-w-0 space-y-6">
+              {/* Comparison toggle */}
+              <div className="flex items-center justify-end">
+                <button
+                  onClick={toggleComparisonMode}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all hover:opacity-90"
+                  style={{
+                    background: comparisonMode ? "#8b5cf6" : "var(--color-surface)",
+                    color: comparisonMode ? "#fff" : "var(--color-text-muted)",
+                    border: comparisonMode ? "none" : "1px solid var(--color-border)",
+                    cursor: "pointer",
+                  }}
+                >
+                  <GitCompare size={13} />
+                  {comparisonMode ? "Exit Comparison" : "Compare A vs B"}
+                </button>
+              </div>
+
+              {!displayResultsA ? (
+                <div
+                  className="rounded-2xl flex flex-col items-center justify-center text-center py-24 px-8"
+                  style={{
+                    background: "linear-gradient(135deg, var(--color-surface), var(--color-surface-2))",
+                    border: "1px solid var(--color-border)",
+                    minHeight: "400px",
+                  }}
+                >
+                  <div
+                    className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6"
+                    style={{ background: "#8b5cf60d", border: "1px solid #8b5cf620" }}
+                  >
+                    <Brain size={36} color="#8b5cf6" strokeWidth={1.5} />
+                  </div>
+                  <p className="text-lg font-medium mb-2" style={{ color: "var(--color-text)" }}>
+                    Ready when you are
+                  </p>
+                  <p className="text-sm max-w-sm leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
+                    Pick a stimulus on the left, adjust the brain parameters, then hit "Run Pipeline" to see how your brain would process it.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Friendly header */}
+                  <div className="flex items-center gap-3 mb-1">
+                    {comparisonMode && (
+                      <div className="flex items-center gap-2 text-[11px]">
+                        <span className="px-2 py-0.5 rounded font-semibold" style={{ background: "#8b5cf620", color: "#a78bfa" }}>A: purple</span>
+                        <span className="px-2 py-0.5 rounded font-semibold" style={{ background: "#60a5fa20", color: "#93c5fd" }}>B: blue</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Pipeline Flow Overview */}
+                  <PipelineFlowDiagram stages={displayResultsA} />
+
+                  {/* Scenario Narration */}
+                  <ScenarioNarration params={comparisonMode ? (activeSet === "A" ? paramsA : paramsB) : params} />
+
+                  {/* Stimulus context card */}
+                  <div
+                    className="rounded-2xl p-5"
+                    style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
+                  >
+                    <div className="flex items-start gap-4">
+                      <span className="text-4xl">{selectedStimulus.imageEmoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <h3 className="text-base font-semibold" style={{ color: "var(--color-text)" }}>
+                            {selectedStimulus.name}
+                          </h3>
+                          <span
+                            className="text-[11px] font-medium px-2 py-0.5 rounded-full"
+                            style={{
+                              background: selectedStimulus.modality === "auditory" ? "#06b6d412" : "#8b5cf612",
+                              color: selectedStimulus.modality === "auditory" ? "#06b6d4" : "#8b5cf6",
+                            }}
+                          >
+                            {selectedStimulus.modality}
+                          </span>
+                        </div>
+                        <p className="text-sm mb-3 leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
+                          {selectedStimulus.sceneDescription}
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedStimulus.features.map((f) => (
+                            <span
+                              key={f}
+                              className="text-[11px] px-2.5 py-1 rounded-full"
+                              style={{ background: "var(--color-surface-2)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
+                            >
+                              {f}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Signal Journey */}
+                  <div className="space-y-4">
+                    <p className="text-xs font-medium tracking-wide" style={{ color: "var(--color-text-muted)" }}>
+                      Signal Journey
+                    </p>
+                    <SignalWaveform stages={displayResultsA} />
+                    <DistortionTracker stages={displayResultsA} />
+                  </div>
+
+                  {/* Brain activity + Feature survival */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <BrainHeatmap stages={displayResultsA} />
+                    <FeatureSurvivalGrid stimulus={selectedStimulus} stages={displayResultsA} />
+                  </div>
+
+                  {/* Stage-by-stage breakdown */}
+                  <div>
+                    <p className="text-xs font-medium tracking-wide mb-4" style={{ color: "var(--color-text-muted)" }}>
+                      Stage-by-Stage Breakdown
+                    </p>
+                    <div className="space-y-0">
+                      {displayResultsA.map((stage, i) => {
+                        const cfg = STAGE_CONFIG.find((c) => c.id === stage.stage) ?? STAGE_CONFIG[i];
+                        const compStage = displayResultsB ? displayResultsB[i] : undefined;
+                        return (
+                          <div key={stage.stage}>
+                            <StageCard
+                              stage={stage}
+                              config={cfg}
+                              index={i}
+                              comparisonStage={compStage}
+                              isComparisonMode={comparisonMode}
+                            />
+                            {i < displayResultsA.length - 1 && (
+                              <PathwayConnector
+                                fromVal={stage.signalStrength}
+                                toVal={displayResultsA[i + 1].signalStrength}
+                                color={STAGE_CONFIG[i + 1].color}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Summary */}
+                  <PipelineSummary
+                    stages={displayResultsA}
+                    stagesB={displayResultsB ?? undefined}
+                  />
+                </>
+              )}
+            </main>
+          </div>
+        </motion.div>
+      )}
+
+    </AnimatePresence>
   );
 }
 
