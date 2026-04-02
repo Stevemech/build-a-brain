@@ -31,7 +31,7 @@ const clamp = (v: number) => Math.min(100, Math.max(0, v));
 // ─── Stage config ─────────────────────────────────────────────────────────────
 const STAGE_CONFIG = [
   { id: "sensation",  color: "#f59e0b", gradient: "linear-gradient(to right, #f59e0b, #fbbf24)", label: "Sensation",  icon: "◉", shortLabel: "SEN" },
-  { id: "attention",  color: "#8b5cf6", gradient: "linear-gradient(to right, #8b5cf6, #a78bfa)", label: "Attention",  icon: "◎", shortLabel: "ATT" },
+  { id: "attention",  color: "#7C3AED", gradient: "linear-gradient(to right, #7C3AED, #8B5CF6)", label: "Attention",  icon: "◎", shortLabel: "ATT" },
   { id: "perception", color: "#6366f1", gradient: "linear-gradient(to right, #6366f1, #818cf8)", label: "Perception", icon: "⬡", shortLabel: "PER" },
   { id: "encoding",   color: "#14b8a6", gradient: "linear-gradient(to right, #14b8a6, #2dd4bf)", label: "Encoding",   icon: "▣", shortLabel: "ENC" },
   { id: "storage",    color: "#10b981", gradient: "linear-gradient(to right, #10b981, #34d399)", label: "Storage",    icon: "⬢", shortLabel: "STR" },
@@ -58,7 +58,7 @@ const PARAM_META = [
     key: "attentionalFocus" as keyof PipelineParams,
     label: "Attentional Focus",
     description: "High = narrow deep focus, Low = diffuse awareness",
-    color: "#8b5cf6",
+    color: "#7C3AED",
   },
   {
     key: "perceptualNoise" as keyof PipelineParams,
@@ -186,8 +186,8 @@ function GlossaryTerm({ term, children }: { term: string; children: React.ReactN
     >
       <span
         style={{
-          borderBottom: "1px dashed #8b5cf680",
-          color: "#a78bfa",
+          borderBottom: "1px dashed #7C3AED80",
+          color: "#8B5CF6",
           cursor: "help",
         }}
       >
@@ -202,13 +202,13 @@ function GlossaryTerm({ term, children }: { term: string; children: React.ReactN
             transition={{ duration: 0.15 }}
             className="absolute z-50 left-0 bottom-full mb-2 w-64 rounded-lg p-3 text-[12px] leading-relaxed pointer-events-none"
             style={{
-              background: "#1a1735",
-              border: "1px solid #8b5cf650",
+              background: "rgba(250,249,247,0.92)",
+              border: "1px solid #7C3AED50",
               color: "var(--color-text-dim)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px #8b5cf620",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px #7C3AED20",
             }}
           >
-            <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#8b5cf6" }}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#7C3AED" }}>
               {term}
             </p>
             {definition}
@@ -231,7 +231,7 @@ function BrainFallback() {
           style={{
             width: 220,
             height: 220,
-            background: "radial-gradient(circle, #8b5cf6, transparent)",
+            background: "radial-gradient(circle, #7C3AED40, transparent)",
             animationDuration: "1.8s",
           }}
         />
@@ -240,11 +240,11 @@ function BrainFallback() {
           style={{
             width: 160,
             height: 160,
-            background: "radial-gradient(circle, #8b5cf6 40%, transparent 80%)",
+            background: "radial-gradient(circle, #7C3AED30 40%, transparent 80%)",
             animation: "pulse 2s ease-in-out infinite",
           }}
         />
-        <Brain size={72} color="#a78bfa" strokeWidth={1.5} />
+        <Brain size={72} color="#8B5CF6" strokeWidth={1.5} />
       </div>
     </div>
   );
@@ -346,10 +346,10 @@ function ParamSlider({ label, description, value, color, paramKey, onChange }: S
           width: 16px;
           height: 16px;
           border-radius: 50%;
-          background: var(--thumb-color, #8b5cf6);
+          background: var(--thumb-color, #7C3AED);
           cursor: pointer;
           border: 2px solid rgba(255,255,255,0.15);
-          box-shadow: 0 0 8px var(--thumb-color, #8b5cf6);
+          box-shadow: 0 0 8px var(--thumb-color, #7C3AED);
           transition: transform 0.1s;
         }
         input[type="range"]::-webkit-slider-thumb:hover {
@@ -359,10 +359,10 @@ function ParamSlider({ label, description, value, color, paramKey, onChange }: S
           width: 16px;
           height: 16px;
           border-radius: 50%;
-          background: var(--thumb-color, #8b5cf6);
+          background: var(--thumb-color, #7C3AED);
           cursor: pointer;
           border: 2px solid rgba(255,255,255,0.15);
-          box-shadow: 0 0 8px var(--thumb-color, #8b5cf6);
+          box-shadow: 0 0 8px var(--thumb-color, #7C3AED);
         }
       `}</style>
     </div>
@@ -437,9 +437,9 @@ function PathwayConnector({ fromVal, toVal, color }: { fromVal: number; toVal: n
           <span
             className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full z-10 relative"
             style={{
-              background: isPositive ? "#10b98115" : "#a78bfa15",
-              color: isPositive ? "#34d399" : "#a78bfa",
-              border: `1px solid ${isPositive ? "#10b98125" : "#a78bfa25"}`,
+              background: isPositive ? "#d1fae5" : "#ede9fe",
+              color: isPositive ? "#34d399" : "#8B5CF6",
+              border: `1px solid ${isPositive ? "#10b98125" : "#8B5CF625"}`,
               fontFamily: "var(--font-mono)",
             }}
           >
@@ -746,8 +746,8 @@ function StageCard({ stage, config, index, comparisonStage, isComparisonMode }: 
         {/* Score + comparison + chevron */}
         <div className="flex items-center gap-3 flex-shrink-0">
           <span
-            className="text-lg font-mono font-bold"
-            style={{ color: config.color, fontFamily: "var(--font-mono)" }}
+            className="text-lg font-bold"
+            style={{ color: config.color, fontFamily: "var(--font-display)", letterSpacing: "-0.01em" }}
           >
             {Math.round(clamped)}%
           </span>
@@ -805,12 +805,12 @@ function StageCard({ stage, config, index, comparisonStage, isComparisonMode }: 
             width: 7,
             height: 7,
             borderRadius: "50%",
-            background: clamped >= 70 ? "#10b981" : clamped >= 40 ? "#a78bfa" : "#f59e0b",
-            color: clamped >= 70 ? "#10b981" : clamped >= 40 ? "#a78bfa" : "#f59e0b",
+            background: clamped >= 70 ? "#10b981" : clamped >= 40 ? "#8B5CF6" : "#f59e0b",
+            color: clamped >= 70 ? "#10b981" : clamped >= 40 ? "#8B5CF6" : "#f59e0b",
             flexShrink: 0,
           }}
         />
-        <span className="text-[11px]" style={{ color: clamped >= 70 ? "#10b981" : clamped >= 40 ? "#a78bfa" : "#f59e0b" }}>
+        <span className="text-[11px]" style={{ color: clamped >= 70 ? "#10b981" : clamped >= 40 ? "#8B5CF6" : "#f59e0b" }}>
           {clamped >= 70 ? "Clear signal" : clamped >= 40 ? "Moderate signal" : "Faint signal"}
         </span>
       </div>
@@ -917,7 +917,7 @@ function StageCard({ stage, config, index, comparisonStage, isComparisonMode }: 
                         <span
                           key={f}
                           className="text-[11px] px-2 py-0.5 rounded-full"
-                          style={{ background: "var(--color-surface-2)", color: "var(--color-text-dim)" }}
+                          style={{ background: "rgba(250,249,247,0.92)", color: "var(--color-text-dim)" }}
                         >
                           {f}
                         </span>
@@ -957,7 +957,7 @@ function StageCard({ stage, config, index, comparisonStage, isComparisonMode }: 
                     <div
                       key={w}
                       className="flex items-start gap-2 p-2.5 rounded-lg text-[12px]"
-                      style={{ background: "#ef444418", border: "1px solid #ef444430", color: "#f87171" }}
+                      style={{ background: "#fee2e2", border: "1px solid #fca5a5", color: "#b91c1c" }}
                     >
                       <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" />
                       {w}
@@ -1060,8 +1060,8 @@ function RadarChart({ stages, stagesB }: { stages: StageResult[]; stagesB?: Stag
       {/* Set A (main) data polygon */}
       <polygon
         points={pointStr}
-        fill="#8b5cf630"
-        stroke="#8b5cf6"
+        fill="#7C3AED30"
+        stroke="#7C3AED"
         strokeWidth={2}
         style={{ transition: "all 0.4s ease" }}
       />
@@ -1077,7 +1077,7 @@ function RadarChart({ stages, stagesB }: { stages: StageResult[]; stagesB?: Stag
             cy={cy + r * val * Math.sin(angle)}
             r={4}
             fill={cfg.color}
-            stroke="#0a0818"
+            stroke="#FAF9F7"
             strokeWidth={1.5}
             style={{ transition: "all 0.4s ease" }}
           />
@@ -1109,7 +1109,7 @@ function RadarChart({ stages, stagesB }: { stages: StageResult[]; stagesB?: Stag
               textAnchor={anchor}
               fontSize={9}
               fill="var(--color-text-muted)"
-              fontFamily="var(--font-mono)"
+              fontFamily="var(--font-display)"
             >
               {Math.round(clamp(s.signalStrength))}%
             </text>
@@ -1203,7 +1203,7 @@ function FeatureSurvivalGrid({ stimulus, stages }: { stimulus: Stimulus; stages:
       {/* Legend */}
       <div className="flex gap-4 px-3 pt-2 pb-3">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm" style={{ background: "#8b5cf635", border: "1px solid #8b5cf660" }} />
+          <div className="w-3 h-3 rounded-sm" style={{ background: "#7C3AED35", border: "1px solid #7C3AED60" }} />
           <span className="text-[11px]" style={{ color: "var(--color-text-muted)" }}>Survived</span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -1234,7 +1234,7 @@ function BrainHeatmap({ stages }: { stages: StageResult[] }) {
         Brain Activity Map
       </p>
       <svg viewBox="0 0 200 180" style={{ width: "100%", maxWidth: 200 }}>
-        <ellipse cx={100} cy={90} rx={85} ry={78} fill="#1a1735" stroke="#2a2650" strokeWidth={1.5} />
+        <ellipse cx={100} cy={90} rx={85} ry={78} fill="#F3F1EE" stroke="#E4E0DA" strokeWidth={1.5} />
         <ellipse cx={100} cy={148} rx={40} ry={22} fill={`rgba(245,158,11,${regionOpacity(0) * 0.7})`} style={{ transition: "fill 0.4s" }} />
         <ellipse cx={100} cy={42} rx={50} ry={30} fill={`rgba(139,92,246,${regionOpacity(1) * 0.7})`} style={{ transition: "fill 0.4s" }} />
         <ellipse cx={52} cy={100} rx={30} ry={38} fill={`rgba(99,102,241,${regionOpacity(2) * 0.7})`} style={{ transition: "fill 0.4s" }} />
@@ -1242,8 +1242,8 @@ function BrainHeatmap({ stages }: { stages: StageResult[] }) {
         <ellipse cx={100} cy={90} rx={28} ry={28} fill={`rgba(16,185,129,${regionOpacity(4) * 0.7})`} style={{ transition: "fill 0.4s" }} />
         <ellipse cx={78} cy={55} rx={22} ry={18} fill={`rgba(6,182,212,${regionOpacity(5) * 0.7})`} style={{ transition: "fill 0.4s" }} />
         <ellipse cx={122} cy={55} rx={22} ry={18} fill={`rgba(59,130,246,${regionOpacity(6) * 0.7})`} style={{ transition: "fill 0.4s" }} />
-        <ellipse cx={100} cy={90} rx={85} ry={78} fill="none" stroke="#2a2650" strokeWidth={1.5} />
-        <rect x={86} y={164} width={28} height={14} rx={6} fill="#1a1735" stroke="#2a2650" strokeWidth={1} />
+        <ellipse cx={100} cy={90} rx={85} ry={78} fill="none" stroke="#E4E0DA" strokeWidth={1.5} />
+        <rect x={86} y={164} width={28} height={14} rx={6} fill="#F3F1EE" stroke="#E4E0DA" strokeWidth={1} />
       </svg>
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-3 w-full">
         {STAGE_CONFIG.map((cfg, i) => (
@@ -1289,7 +1289,7 @@ function PipelineSummary({ stages, stagesB }: { stages: StageResult[]; stagesB?:
   return (
     <div className="rounded-xl p-4 space-y-4" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>
+        <h3 className="text-sm font-semibold" style={{ color: "var(--color-text)", fontFamily: "var(--font-display)", fontSize: "1rem" }}>
           Pipeline Summary
         </h3>
         <span
@@ -1306,19 +1306,19 @@ function PipelineSummary({ stages, stagesB }: { stages: StageResult[]; stagesB?:
           { label: "Input Signal", value: `${inputSignal}%`, color: "#f59e0b" },
           { label: "Output Signal", value: `${outputSignal}%`, color: scoreColor },
           { label: "Signal Δ", value: `${signalChange >= 0 ? "+" : ""}${signalChange}%`, color: signalChange >= 0 ? "#10b981" : "#ef4444" },
-          { label: "Avg Score", value: `${avgSignal}%`, color: "#8b5cf6" },
+          { label: "Avg Score", value: `${avgSignal}%`, color: "#7C3AED" },
         ].map((stat) => (
           <div
             key={stat.label}
             className="rounded-lg p-3 text-center"
-            style={{ background: "var(--color-surface-2)", border: "1px solid var(--color-border)" }}
+            style={{ background: "rgba(250,249,247,0.92)", border: "1px solid var(--color-border)" }}
           >
             <p className="text-[11px] mb-1" style={{ color: "var(--color-text-muted)" }}>
               {stat.label}
             </p>
             <p
-              className="text-xl font-mono font-bold"
-              style={{ color: stat.color, fontFamily: "var(--font-mono)" }}
+              className="text-xl font-bold"
+              style={{ color: stat.color, fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}
             >
               {stat.value}
             </p>
@@ -1354,7 +1354,7 @@ function PipelineSummary({ stages, stagesB }: { stages: StageResult[]; stagesB?:
         return (
           <div
             className="rounded-xl p-4"
-            style={{ background: "var(--color-surface-2)", border: "1px solid var(--color-border)" }}
+            style={{ background: "rgba(250,249,247,0.92)", border: "1px solid var(--color-border)" }}
           >
             <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--color-text-muted)" }}>
               Confidence vs. Accuracy
@@ -1363,8 +1363,8 @@ function PipelineSummary({ stages, stagesB }: { stages: StageResult[]; stagesB?:
               <div className="flex-shrink-0">
                 <svg viewBox="0 0 120 120" style={{ width: 120, height: 120 }}>
                   {/* Background tracks */}
-                  <path d={arcPath(60, 60, 46, -45, 225)} fill="none" stroke="#2a265022" strokeWidth={8} strokeLinecap="round" />
-                  <path d={arcPath(60, 60, 32, -45, 225)} fill="none" stroke="#2a265022" strokeWidth={8} strokeLinecap="round" />
+                  <path d={arcPath(60, 60, 46, -45, 225)} fill="none" stroke="#E4E0DA22" strokeWidth={8} strokeLinecap="round" />
+                  <path d={arcPath(60, 60, 32, -45, 225)} fill="none" stroke="#E4E0DA22" strokeWidth={8} strokeLinecap="round" />
                   {/* Fidelity arc (inner) */}
                   {fidelAngle > 0 && (
                     <motion.path
@@ -1383,7 +1383,7 @@ function PipelineSummary({ stages, stagesB }: { stages: StageResult[]; stagesB?:
                     <motion.path
                       d={arcPath(60, 60, 46, -45, -45 + confAngle)}
                       fill="none"
-                      stroke="#8b5cf6"
+                      stroke="#7C3AED"
                       strokeWidth={8}
                       strokeLinecap="round"
                       initial={{ pathLength: 0 }}
@@ -1398,8 +1398,8 @@ function PipelineSummary({ stages, stagesB }: { stages: StageResult[]; stagesB?:
               </div>
               <div className="flex-1 space-y-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: "#8b5cf6" }} />
-                  <span className="text-[12px]" style={{ color: "var(--color-text-dim)" }}>Confidence: <strong style={{ color: "#8b5cf6" }}>{confidence}%</strong></span>
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: "#7C3AED" }} />
+                  <span className="text-[12px]" style={{ color: "var(--color-text-dim)" }}>Confidence: <strong style={{ color: "#7C3AED" }}>{confidence}%</strong></span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: "#10b981" }} />
@@ -1514,7 +1514,7 @@ function PresetsPanel({ onApply }: PresetsPanelProps) {
                     key={preset.id}
                     className="rounded-lg p-3"
                     style={{
-                      background: "var(--color-surface-2)",
+                      background: "rgba(250,249,247,0.92)",
                       border: "1px solid var(--color-border)",
                     }}
                   >
@@ -1525,7 +1525,7 @@ function PresetsPanel({ onApply }: PresetsPanelProps) {
                           onClick={() => setActiveVariants((v) => ({ ...v, [preset.id]: "A" }))}
                           className="flex-1 py-0.5 rounded text-[10px] font-semibold transition-all"
                           style={{
-                            background: variant === "A" ? "#8b5cf6" : "transparent",
+                            background: variant === "A" ? "#7C3AED" : "transparent",
                             color: variant === "A" ? "#fff" : "var(--color-text-muted)",
                             border: variant === "A" ? "none" : "1px solid var(--color-border)",
                             cursor: "pointer",
@@ -1537,7 +1537,7 @@ function PresetsPanel({ onApply }: PresetsPanelProps) {
                           onClick={() => setActiveVariants((v) => ({ ...v, [preset.id]: "B" }))}
                           className="flex-1 py-0.5 rounded text-[10px] font-semibold transition-all"
                           style={{
-                            background: variant === "B" ? "#8b5cf6" : "transparent",
+                            background: variant === "B" ? "#7C3AED" : "transparent",
                             color: variant === "B" ? "#fff" : "var(--color-text-muted)",
                             border: variant === "B" ? "none" : "1px solid var(--color-border)",
                             cursor: "pointer",
@@ -1561,8 +1561,8 @@ function PresetsPanel({ onApply }: PresetsPanelProps) {
                           onClick={() => onApply(activeParams)}
                           className="w-full py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:opacity-90 active:scale-[0.97]"
                           style={{
-                            background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
-                            color: "#fff",
+                            background: "linear-gradient(135deg, #7C3AED, #7c3aed)",
+                            color: "var(--color-text)",
                             border: "none",
                             cursor: "pointer",
                           }}
@@ -1674,7 +1674,7 @@ function DistortionTracker({ stages }: { stages: StageResult[] }) {
     let color: string;
     let label: string;
     if (delta > 2) { status = "boost"; color = "#10b981"; label = "+" + Math.round(delta) + "%"; }
-    else if (delta >= -10) { status = "shift"; color = "#a78bfa"; label = Math.round(delta) + "%"; }
+    else if (delta >= -10) { status = "shift"; color = "#8B5CF6"; label = Math.round(delta) + "%"; }
     else { status = "dip"; color = "#f59e0b"; label = Math.round(delta) + "%"; }
     if (Math.abs(delta) <= 1) { status = "steady"; color = "#6366f1"; label = "~0%"; }
     return { ...STAGE_CONFIG[i], delta, status, color, label, signal: curr };
@@ -1714,7 +1714,7 @@ function DistortionTracker({ stages }: { stages: StageResult[] }) {
 
       {/* Legend */}
       <div className="flex flex-wrap gap-4">
-        {([{color:"#10b981",label:"Boosted"},{color:"#6366f1",label:"Steady"},{color:"#a78bfa",label:"Slight shift"},{color:"#f59e0b",label:"Noticeable dip"}] as const).map(item => (
+        {([{color:"#10b981",label:"Boosted"},{color:"#6366f1",label:"Steady"},{color:"#8B5CF6",label:"Slight shift"},{color:"#f59e0b",label:"Noticeable dip"}] as const).map(item => (
           <div key={item.label} className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
             <span className="text-[11px]" style={{ color: "var(--color-text-muted)" }}>{item.label}</span>
@@ -1776,17 +1776,17 @@ function ScenarioNarration({ params }: { params: PipelineParams }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       className="rounded-2xl p-5"
-      style={{ background: "var(--color-surface)", border: "1px solid #8b5cf618" }}
+      style={{ background: "var(--color-surface)", border: "1px solid #7C3AED18" }}
     >
       <div className="flex items-start gap-4">
         <div
           className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: "#8b5cf610", border: "1px solid #8b5cf620" }}
+          style={{ background: "#7C3AED10", border: "1px solid #7C3AED20" }}
         >
-          <Quote size={16} color="#8b5cf6" />
+          <Quote size={16} color="#7C3AED" />
         </div>
         <div className="flex-1">
-          <p className="text-xs font-medium mb-2" style={{ color: "#8b5cf6" }}>
+          <p className="text-xs font-medium mb-2" style={{ color: "#7C3AED" }}>
             What happened inside your brain
           </p>
           <p className="text-sm leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
@@ -1984,11 +1984,11 @@ function PipelineTab() {
 
   // ── Shared button style helpers ────────────────────────────────────────────────
   const btnPrimary: React.CSSProperties = {
-    background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
-    color: "#fff",
+    background: "linear-gradient(135deg, #7C3AED, #6D28D9)",
+    color: "#ffffff",
     border: "none",
     cursor: "pointer",
-    boxShadow: "0 4px 24px #8b5cf640",
+    boxShadow: "0 4px 20px #7C3AED35",
   };
 
   const btnGhost: React.CSSProperties = {
@@ -2062,7 +2062,7 @@ function PipelineTab() {
         >
           {/* Heading */}
           <div style={{ textAlign: "center", marginBottom: 40 }}>
-            <h2 style={{ fontSize: 30, fontWeight: 700, color: "var(--color-text)", margin: "0 0 10px", letterSpacing: "-0.02em" }}>
+            <h2 style={{ fontSize: 30, fontWeight: 700, color: "var(--color-text)", margin: "0 0 10px", letterSpacing: "-0.01em", fontFamily: "var(--font-display)" }}>
               What should your brain process?
             </h2>
             <p style={{ fontSize: 15, color: "var(--color-text-dim)", margin: 0 }}>
@@ -2088,10 +2088,10 @@ function PipelineTab() {
                   transition: "all 0.18s ease",
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.border = "1px solid #8b5cf660";
+                  (e.currentTarget as HTMLButtonElement).style.border = "1px solid #7C3AED60";
                   (e.currentTarget as HTMLButtonElement).style.background = "var(--color-surface-2)";
                   (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-3px)";
-                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 32px #8b5cf620";
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 32px #7C3AED20";
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLButtonElement).style.border = "1px solid var(--color-border)";
@@ -2111,8 +2111,8 @@ function PipelineTab() {
                       letterSpacing: "0.06em",
                       padding: "2px 7px",
                       borderRadius: 6,
-                      background: s.modality === "auditory" ? "#06b6d418" : "#8b5cf618",
-                      color: s.modality === "auditory" ? "#06b6d4" : "#8b5cf6",
+                      background: s.modality === "auditory" ? "#06b6d418" : "#7C3AED18",
+                      color: s.modality === "auditory" ? "#06b6d4" : "#7C3AED",
                     }}
                   >
                     {s.modality}
@@ -2196,7 +2196,7 @@ function PipelineTab() {
               >
                 ← Back
               </button>
-              <h3 style={{ fontSize: 22, fontWeight: 700, color: "var(--color-text)", margin: "0 0 6px" }}>
+              <h3 style={{ fontSize: 22, fontWeight: 700, color: "var(--color-text)", margin: "0 0 6px", fontFamily: "var(--font-display)" }}>
                 Quick Presets
               </h3>
               <p style={{ fontSize: 13, color: "var(--color-text-dim)", margin: "0 0 24px" }}>
@@ -2220,10 +2220,10 @@ function PipelineTab() {
                       transition: "all 0.15s ease",
                     }}
                     onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.border = "1px solid #8b5cf650";
+                      (e.currentTarget as HTMLButtonElement).style.border = "1px solid #7C3AED50";
                       (e.currentTarget as HTMLButtonElement).style.background = "var(--color-surface-2)";
                       (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
-                      (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px #8b5cf615";
+                      (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px #7C3AED15";
                     }}
                     onMouseLeave={(e) => {
                       (e.currentTarget as HTMLButtonElement).style.border = "1px solid var(--color-border)";
@@ -2263,7 +2263,7 @@ function PipelineTab() {
                         width: i === tuneStep ? 20 : 8,
                         height: 8,
                         borderRadius: 4,
-                        background: i <= tuneStep ? "#8b5cf6" : "var(--color-border)",
+                        background: i <= tuneStep ? "#7C3AED" : "var(--color-border)",
                         transition: "all 0.25s ease",
                       }}
                     />
@@ -2303,10 +2303,11 @@ function PipelineTab() {
                   <h3
                     style={{
                       fontSize: 26,
-                      fontWeight: 800,
+                      fontWeight: 700,
                       color: "var(--color-text)",
                       margin: "0 0 8px",
-                      letterSpacing: "-0.02em",
+                      letterSpacing: "-0.01em",
+                      fontFamily: "var(--font-display)",
                     }}
                   >
                     {currentMeta.label}
@@ -2331,10 +2332,12 @@ function PipelineTab() {
                       <span
                         style={{
                           fontSize: 40,
-                          fontWeight: 800,
+                          fontWeight: 700,
                           color: currentMeta.color,
                           lineHeight: 1,
                           fontVariantNumeric: "tabular-nums",
+                          fontFamily: "var(--font-display)",
+                          letterSpacing: "-0.02em",
                         }}
                       >
                         {params[currentMeta.key]}
@@ -2488,8 +2491,8 @@ function PipelineTab() {
                     padding: "2px 7px",
                     borderRadius: 6,
                     marginLeft: 8,
-                    background: selectedStimulus.modality === "auditory" ? "#06b6d418" : "#8b5cf618",
-                    color: selectedStimulus.modality === "auditory" ? "#06b6d4" : "#8b5cf6",
+                    background: selectedStimulus.modality === "auditory" ? "#06b6d418" : "#7C3AED18",
+                    color: selectedStimulus.modality === "auditory" ? "#06b6d4" : "#7C3AED",
                   }}
                 >
                   {selectedStimulus.modality}
@@ -2668,8 +2671,8 @@ function PipelineTab() {
                               <span
                                 className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded"
                                 style={{
-                                  background: s.modality === "auditory" ? "#06b6d418" : "#8b5cf618",
-                                  color: s.modality === "auditory" ? "#06b6d4" : "#8b5cf6",
+                                  background: s.modality === "auditory" ? "#06b6d418" : "#7C3AED18",
+                                  color: s.modality === "auditory" ? "#06b6d4" : "#7C3AED",
                                 }}
                               >
                                 {s.modality}
@@ -2698,7 +2701,7 @@ function PipelineTab() {
                         onClick={() => setActiveSet("A")}
                         className="px-2 py-0.5 rounded text-[10px] font-semibold"
                         style={{
-                          background: activeSet === "A" ? "#8b5cf6" : "transparent",
+                          background: activeSet === "A" ? "#7C3AED" : "transparent",
                           color: activeSet === "A" ? "#fff" : "var(--color-text-muted)",
                           border: activeSet === "A" ? "none" : "1px solid var(--color-border)",
                           cursor: "pointer",
@@ -2726,14 +2729,14 @@ function PipelineTab() {
                   style={{
                     background: "var(--color-surface)",
                     border: comparisonMode
-                      ? `1px solid ${activeSet === "A" ? "#8b5cf640" : "#60a5fa40"}`
+                      ? `1px solid ${activeSet === "A" ? "#7C3AED40" : "#60a5fa40"}`
                       : "1px solid var(--color-border)",
                   }}
                 >
                   {comparisonMode && (
                     <p
                       className="text-[10px] font-semibold uppercase tracking-wider mb-3 px-1"
-                      style={{ color: activeSet === "A" ? "#a78bfa" : "#93c5fd" }}
+                      style={{ color: activeSet === "A" ? "#8B5CF6" : "#93c5fd" }}
                     >
                       Editing Set {activeSet}
                     </p>
@@ -2758,11 +2761,11 @@ function PipelineTab() {
                   onClick={handleDashboardRun}
                   className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
                   style={{
-                    background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
-                    color: "#fff",
+                    background: "linear-gradient(135deg, #7C3AED, #7c3aed)",
+                    color: "var(--color-text)",
                     border: "none",
                     cursor: "pointer",
-                    boxShadow: "0 4px 24px #8b5cf640",
+                    boxShadow: "0 4px 24px #7C3AED40",
                   }}
                 >
                   <Play size={15} />
@@ -2801,7 +2804,7 @@ function PipelineTab() {
                   onClick={toggleComparisonMode}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all hover:opacity-90"
                   style={{
-                    background: comparisonMode ? "#8b5cf6" : "var(--color-surface)",
+                    background: comparisonMode ? "#7C3AED" : "var(--color-surface)",
                     color: comparisonMode ? "#fff" : "var(--color-text-muted)",
                     border: comparisonMode ? "none" : "1px solid var(--color-border)",
                     cursor: "pointer",
@@ -2823,9 +2826,9 @@ function PipelineTab() {
                 >
                   <div
                     className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6"
-                    style={{ background: "#8b5cf60d", border: "1px solid #8b5cf620" }}
+                    style={{ background: "#7C3AED0d", border: "1px solid #7C3AED20" }}
                   >
-                    <Brain size={36} color="#8b5cf6" strokeWidth={1.5} />
+                    <Brain size={36} color="#7C3AED" strokeWidth={1.5} />
                   </div>
                   <p className="text-lg font-medium mb-2" style={{ color: "var(--color-text)" }}>
                     Ready when you are
@@ -2840,7 +2843,7 @@ function PipelineTab() {
                   <div className="flex items-center gap-3 mb-1">
                     {comparisonMode && (
                       <div className="flex items-center gap-2 text-[11px]">
-                        <span className="px-2 py-0.5 rounded font-semibold" style={{ background: "#8b5cf620", color: "#a78bfa" }}>A: purple</span>
+                        <span className="px-2 py-0.5 rounded font-semibold" style={{ background: "#7C3AED20", color: "#8B5CF6" }}>A: purple</span>
                         <span className="px-2 py-0.5 rounded font-semibold" style={{ background: "#60a5fa20", color: "#93c5fd" }}>B: blue</span>
                       </div>
                     )}
@@ -2867,8 +2870,8 @@ function PipelineTab() {
                           <span
                             className="text-[11px] font-medium px-2 py-0.5 rounded-full"
                             style={{
-                              background: selectedStimulus.modality === "auditory" ? "#06b6d412" : "#8b5cf612",
-                              color: selectedStimulus.modality === "auditory" ? "#06b6d4" : "#8b5cf6",
+                              background: selectedStimulus.modality === "auditory" ? "#06b6d412" : "#7C3AED12",
+                              color: selectedStimulus.modality === "auditory" ? "#06b6d4" : "#7C3AED",
                             }}
                           >
                             {selectedStimulus.modality}
@@ -2882,7 +2885,7 @@ function PipelineTab() {
                             <span
                               key={f}
                               className="text-[11px] px-2.5 py-1 rounded-full"
-                              style={{ background: "var(--color-surface-2)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
+                              style={{ background: "rgba(250,249,247,0.92)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
                             >
                               {f}
                             </span>
@@ -2970,7 +2973,7 @@ const LEARN_SECTIONS = [
   },
   {
     icon: "◎",
-    color: "#8b5cf6",
+    color: "#7C3AED",
     title: "Attention",
     subtitle: "The Cognitive Bottleneck",
     body: "Attention is a selective spotlight — we simply cannot process everything at once. Broadbent's Filter Theory (1958) proposed that we filter information based on physical properties before meaning is extracted. Treisman's Attenuation Model refined this, showing that unattended channels are dimmed rather than blocked. High attentional focus means deep processing of fewer features; low focus means shallow processing of many.",
@@ -3075,7 +3078,7 @@ function LearnTab() {
   return (
     <div className="max-w-3xl mx-auto p-4 md:p-8 space-y-8">
       <div>
-        <h2 className="text-2xl font-bold mb-2" style={{ color: "var(--color-text)" }}>
+        <h2 className="text-2xl font-bold mb-2" style={{ color: "var(--color-text)", fontFamily: "var(--font-display)" }}>
           How Your Brain Processes Information
         </h2>
         <p className="text-base" style={{ color: "var(--color-text-dim)" }}>
@@ -3088,7 +3091,7 @@ function LearnTab() {
         {[
           { label: "Bottom-up processing", desc: "Driven by stimulus features — pure sensation flowing upward through the system without prior influence.", color: "#f59e0b" },
           { label: "Top-down processing", desc: "Driven by prior knowledge and expectations — your brain predicts what it will perceive before perceiving it.", color: "#6366f1" },
-          { label: "Broadbent's Filter Theory", desc: "Attention acts as a single-channel filter that blocks out all but one input stream based on physical characteristics.", color: "#8b5cf6" },
+          { label: "Broadbent's Filter Theory", desc: "Attention acts as a single-channel filter that blocks out all but one input stream based on physical characteristics.", color: "#7C3AED" },
           { label: "Levels of processing", desc: "Deeper, more meaningful encoding creates stronger, more durable memory traces than shallow structural analysis.", color: "#14b8a6" },
           { label: "Encoding specificity", desc: "Memory retrieval is best when cues at retrieval match the context present at the time of encoding.", color: "#06b6d4" },
           { label: "Reconstructive memory", desc: "We don't replay memories like videos — we rebuild them from fragments, influenced by subsequent experiences.", color: "#3b82f6" },
@@ -3110,7 +3113,7 @@ function LearnTab() {
 
       {/* Myths vs Reality section */}
       <div>
-        <h3 className="text-lg font-bold mb-4" style={{ color: "var(--color-text)" }}>
+        <h3 className="text-lg font-bold mb-4" style={{ color: "var(--color-text)", fontFamily: "var(--font-display)" }}>
           Common Myths About Memory &amp; Perception
         </h3>
         <div className="space-y-3">
@@ -3163,7 +3166,7 @@ function LearnTab() {
               {s.icon}
             </span>
             <div>
-              <h3 className="text-base font-bold" style={{ color: "var(--color-text)" }}>
+              <h3 className="text-base font-bold" style={{ color: "var(--color-text)", fontFamily: "var(--font-display)" }}>
                 {s.title}
               </h3>
               <p className="text-[12px]" style={{ color: s.color }}>
@@ -3198,7 +3201,7 @@ function LearnTab() {
                     <span
                       key={r}
                       className="text-[11px] px-2.5 py-1 rounded-full"
-                      style={{ background: "var(--color-surface-2)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
+                      style={{ background: "rgba(250,249,247,0.92)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
                     >
                       {hasGlossary ? <GlossaryTerm term={glossaryKey}>{r}</GlossaryTerm> : r}
                     </span>
@@ -3212,19 +3215,19 @@ function LearnTab() {
               <div
                 className="flex items-start gap-3 p-3 rounded-lg"
                 style={{
-                  background: "linear-gradient(135deg, #8b5cf608, #6366f108)",
-                  border: "1px solid #8b5cf635",
+                  background: "linear-gradient(135deg, #7C3AED08, #6366f108)",
+                  border: "1px solid #7C3AED35",
                   boxShadow: "inset 0 0 0 1px #6366f120",
                 }}
               >
                 <div
                   className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center"
-                  style={{ background: "#8b5cf618", border: "1px solid #8b5cf630" }}
+                  style={{ background: "#7C3AED18", border: "1px solid #7C3AED30" }}
                 >
-                  <Lightbulb size={13} color="#a78bfa" />
+                  <Lightbulb size={13} color="#8B5CF6" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: "#a78bfa" }}>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: "#8B5CF6" }}>
                     Try It in the Pipeline
                   </p>
                   <p className="text-[12px] leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
@@ -3243,7 +3246,7 @@ function LearnTab() {
         style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
       >
         <div>
-          <h3 className="text-base font-bold mb-1" style={{ color: "var(--color-text)" }}>
+          <h3 className="text-base font-bold mb-1" style={{ color: "var(--color-text)", fontFamily: "var(--font-display)" }}>
             Connecting the Dots: PSYC 203 Module Integration
           </h3>
           <p className="text-[13px]" style={{ color: "var(--color-text-dim)" }}>
@@ -3276,9 +3279,9 @@ function LearnTab() {
         </div>
         <div
           className="p-4 rounded-xl"
-          style={{ background: "#8b5cf60a", border: "1px solid #8b5cf625" }}
+          style={{ background: "#7C3AED0a", border: "1px solid #7C3AED25" }}
         >
-          <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: "#8b5cf6" }}>
+          <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: "#7C3AED" }}>
             The Bridge
           </p>
           <p className="text-[13px] leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
@@ -3297,7 +3300,7 @@ function AboutTab() {
   return (
     <div className="max-w-2xl mx-auto p-4 md:p-8 space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-2" style={{ color: "var(--color-text)" }}>
+        <h2 className="text-2xl font-bold mb-2" style={{ color: "var(--color-text)", fontFamily: "var(--font-display)" }}>
           About Build-A-Brain
         </h2>
         <p className="text-base leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
@@ -3308,7 +3311,7 @@ function AboutTab() {
       {[
         {
           title: "The Mission",
-          color: "#8b5cf6",
+          color: "#7C3AED",
           body: "Textbooks describe cognitive stages in sequence — sensation, attention, perception, encoding, storage, retrieval, report — but the feedback loops and parameter interactions only become clear when you can actually manipulate them. Build-A-Brain lets you do exactly that.",
         },
         {
@@ -3360,7 +3363,7 @@ function AboutTab() {
             ["Loftus & Palmer (1974)", "Misinformation Effect — post-event information alters memory traces"],
           ].map(([author, desc]) => (
             <div key={author} className="flex gap-3 text-sm">
-              <span className="font-mono font-semibold flex-shrink-0 text-[12px]" style={{ color: "#8b5cf6", minWidth: 140, fontFamily: "var(--font-mono)" }}>
+              <span className="font-mono font-semibold flex-shrink-0 text-[12px]" style={{ color: "#7C3AED", minWidth: 140, fontFamily: "var(--font-mono)" }}>
                 {author}
               </span>
               <span style={{ color: "var(--color-text-dim)" }}>{desc}</span>
@@ -3413,23 +3416,23 @@ function NavBar({ activeTab, onTabChange }: NavBarProps) {
     <div
       className="sticky top-0 z-40 flex items-center px-6 py-3.5 md:px-10 gap-4"
       style={{
-        background: "rgba(10,8,24,0.92)",
+        background: "rgba(250,249,247,0.92)",
         backdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--color-border)",
       }}
     >
       {/* Logo */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        <Brain size={20} color="#8b5cf6" strokeWidth={1.5} />
+        <Brain size={20} color="#7C3AED" strokeWidth={1.5} />
         <span className="text-sm font-bold hidden sm:block" style={{ color: "var(--color-text)" }}>
-          Build-A-<span style={{ color: "#8b5cf6" }}>Brain</span>
+          Build-A-<span style={{ color: "#7C3AED" }}>Brain</span>
         </span>
       </div>
 
       {/* Tab pills */}
       <div
         className="flex items-center gap-1 mx-auto rounded-full p-1"
-        style={{ background: "var(--color-surface)" }}
+        style={{ background: "var(--color-surface-2)", border: "1px solid var(--color-border)" }}
       >
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
@@ -3439,7 +3442,7 @@ function NavBar({ activeTab, onTabChange }: NavBarProps) {
               onClick={() => onTabChange(tab.id)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200"
               style={{
-                background: isActive ? "#8b5cf6" : "transparent",
+                background: isActive ? "#7C3AED" : "transparent",
                 color: isActive ? "#fff" : "var(--color-text-muted)",
                 border: "none",
                 cursor: "pointer",
@@ -3455,7 +3458,7 @@ function NavBar({ activeTab, onTabChange }: NavBarProps) {
       {/* Badge */}
       <div
         className="text-[11px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0"
-        style={{ background: "var(--color-surface-2)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
+        style={{ background: "rgba(250,249,247,0.92)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
       >
         PSYC 203
       </div>
@@ -3476,7 +3479,7 @@ function HeroSection() {
       className="relative flex flex-col items-center justify-center overflow-hidden"
       style={{
         minHeight: "100vh",
-        background: "radial-gradient(ellipse 80% 60% at 50% 40%, #2a0a4e 0%, #150d30 35%, #0a0818 70%)",
+        background: "radial-gradient(ellipse 90% 70% at 50% 30%, #EDE9FE 0%, #F5F3FF 35%, #FAF9F7 70%)",
       }}
     >
       {/* Particle background */}
@@ -3486,14 +3489,14 @@ function HeroSection() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse 60% 40% at 50% 55%, #8b5cf614 0%, transparent 70%)",
+          background: "radial-gradient(ellipse 60% 40% at 50% 55%, #7C3AED14 0%, transparent 70%)",
         }}
       />
 
       {/* PSYC 203 badge */}
       <div
         className="relative z-10 mb-6 text-[12px] font-semibold uppercase tracking-[0.2em] px-4 py-1.5 rounded-full"
-        style={{ border: "1px solid #8b5cf640", color: "#a78bfa", background: "#8b5cf610" }}
+        style={{ border: "1px solid #7C3AED30", color: "#7C3AED", background: "#EDE9FE" }}
       >
         PSYC 203
       </div>
@@ -3507,10 +3510,10 @@ function HeroSection() {
 
       {/* Title */}
       <div className="relative z-10 text-center px-4">
-        <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold leading-tight mb-3">
-          Build-A-<span style={{ color: "#8b5cf6" }}>Brain</span>
+        <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold leading-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
+          Build-A-<span style={{ color: "#7C3AED" }}>Brain</span>
         </h1>
-        <p className="text-base sm:text-lg md:text-xl mb-8" style={{ color: "var(--color-text-dim)" }}>
+        <p className="text-base sm:text-lg md:text-xl mb-8" style={{ color: "var(--color-text-muted)", letterSpacing: "0.02em" }}>
           Cognitive Pipeline Simulator
         </p>
 
@@ -3519,11 +3522,11 @@ function HeroSection() {
           onClick={scrollToSimulator}
           className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full text-sm font-semibold transition-all duration-200 hover:opacity-90 active:scale-[0.97]"
           style={{
-            background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
-            color: "#fff",
+            background: "linear-gradient(135deg, #7C3AED, #7c3aed)",
+            color: "#ffffff",
             border: "none",
             cursor: "pointer",
-            boxShadow: "0 8px 32px #8b5cf640",
+            boxShadow: "0 8px 32px #7C3AED40",
           }}
         >
           Explore the Pipeline
@@ -3542,7 +3545,7 @@ function HeroSection() {
       {/* Bottom gradient fade */}
       <div
         className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-10"
-        style={{ background: "linear-gradient(to bottom, transparent, #0a0818)" }}
+        style={{ background: "linear-gradient(to bottom, transparent, #faf9f7)" }}
       />
     </section>
   );

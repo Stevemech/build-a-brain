@@ -1,60 +1,31 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
 
 @theme {
-  --color-bg: #0a0818;
-  --color-surface: #110f24;
-  --color-surface-2: #1a1735;
-  --color-border: #2a2650;
-  --color-text: #e8e4f0;
-  --color-text-dim: #9890b0;
-  --color-text-muted: #6b6388;
-  --color-accent: #8b5cf6;
-  --color-accent-dim: #6d45cc;
+  /* ── Light off-white palette ── */
+  --color-bg:        #FAF9F7;
+  --color-surface:   #FFFFFF;
+  --color-surface-2: #F3F1EE;
+  --color-border:    #E4E0DA;
+  --color-text:      #2C2925;
+  --color-text-dim:  #6B6560;
+  --color-text-muted:#9E9890;
+  --color-accent:    #7C3AED;
+  --color-accent-dim:#6D28D9;
 
-  --color-amber: #f59e0b;
-  --color-violet: #8b5cf6;
-  --color-indigo: #6366f1;
-  --color-teal: #14b8a6;
-  --color-emerald: #10b981;
-  --color-cyan: #06b6d4;
-  --color-blue: #3b82f6;
-  --color-red: #ef4444;
+  /* ── Semantic colors (softened for light bg) ── */
+  --color-amber:   #D97706;
+  --color-violet:  #7C3AED;
+  --color-indigo:  #4F46E5;
+  --color-teal:    #0F9488;
+  --color-emerald: #059669;
+  --color-cyan:    #0891B2;
+  --color-blue:    #2563EB;
+  --color-red:     #DC2626;
 
-  --font-sans: "General Sans", system-ui, -apple-system, sans-serif;
+  --font-display: "Lora", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
-}
-
-@font-face {
-  font-family: "General Sans";
-  src: url("https://cdn.fontshare.com/wf/YFLQJSMZLXQXUWXEAKRQ7IK3MQ5BHMLU/67BYHYP3ZFGR47U5L64BT6LDKWXW2DQN/CFSYAJOQGJBGCSDQHSUVNCLJUIBOBFOA.woff2")
-    format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "General Sans";
-  src: url("https://cdn.fontshare.com/wf/P5SPUIR6PXXSKDHQE3YC76HBBFQBQHFV/GZAFO5SCYP3DVVIMQWQ2RJIOY6Q2GGFR/B6PJQNUPDJNE4L6JMCKQIWLHAVHUGFBD.woff2")
-    format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "General Sans";
-  src: url("https://cdn.fontshare.com/wf/MMGNHCFVXBJC5U3VFHCXPVXFPL7SLWZP/SPDSJ4GKXQQWT4VW4WN6JZSGXFLTJFH3/ULQGM5QZWK5CWEVFXZKHMBCQ7GOJSCDZ.woff2")
-    format("woff2");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "General Sans";
-  src: url("https://cdn.fontshare.com/wf/MQ5IVG6KKDQORLS6TKMJSJYKMWJRTWFP/VZ2YCJCPCB27KYGYHH4AA3BSEOTGTXL6/TQHV5BZ27QZGAAVG3K3KCK2D3P5UUDJ7.woff2")
-    format("woff2");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
 }
 
 /* Tailwind v4 base layer already handles reset (box-sizing, margin, padding) */
@@ -97,7 +68,7 @@ body {
     opacity: 1;
   }
   80% {
-    opacity: 0.6;
+    opacity: 0.4;
   }
   100% {
     transform: translateY(-120px) translateX(var(--drift, 20px));
@@ -108,11 +79,11 @@ body {
 .particle {
   position: absolute;
   border-radius: 50%;
-  background: #8b5cf6;
+  background: #7C3AED;
   pointer-events: none;
   animation: particle-float var(--duration, 6s) ease-in-out infinite;
   animation-delay: var(--delay, 0s);
-  box-shadow: 0 0 6px #8b5cf6, 0 0 12px #8b5cf640;
+  box-shadow: 0 0 6px #7C3AED80, 0 0 12px #7C3AED30;
 }
 
 /* ─── Animated flow dot (pathway connector) ─────────────────────────────── */
