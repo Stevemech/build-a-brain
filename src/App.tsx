@@ -202,7 +202,7 @@ function GlossaryTerm({ term, children }: { term: string; children: React.ReactN
             transition={{ duration: 0.15 }}
             className="absolute z-50 left-0 bottom-full mb-2 w-64 rounded-lg p-3 text-[12px] leading-relaxed pointer-events-none"
             style={{
-              background: "rgba(250,249,247,0.92)",
+              background: "rgba(255,255,255,0.95)",
               border: "1px solid #7C3AED50",
               color: "var(--color-text-dim)",
               boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px #7C3AED20",
@@ -917,7 +917,7 @@ function StageCard({ stage, config, index, comparisonStage, isComparisonMode }: 
                         <span
                           key={f}
                           className="text-[11px] px-2 py-0.5 rounded-full"
-                          style={{ background: "rgba(250,249,247,0.92)", color: "var(--color-text-dim)" }}
+                          style={{ background: "rgba(255,255,255,0.95)", color: "var(--color-text-dim)" }}
                         >
                           {f}
                         </span>
@@ -1077,7 +1077,7 @@ function RadarChart({ stages, stagesB }: { stages: StageResult[]; stagesB?: Stag
             cy={cy + r * val * Math.sin(angle)}
             r={4}
             fill={cfg.color}
-            stroke="#FAF9F7"
+            stroke="#FFFFFF"
             strokeWidth={1.5}
             style={{ transition: "all 0.4s ease" }}
           />
@@ -1311,7 +1311,7 @@ function PipelineSummary({ stages, stagesB }: { stages: StageResult[]; stagesB?:
           <div
             key={stat.label}
             className="rounded-lg p-3 text-center"
-            style={{ background: "rgba(250,249,247,0.92)", border: "1px solid var(--color-border)" }}
+            style={{ background: "rgba(255,255,255,0.95)", border: "1px solid var(--color-border)" }}
           >
             <p className="text-[11px] mb-1" style={{ color: "var(--color-text-muted)" }}>
               {stat.label}
@@ -1354,7 +1354,7 @@ function PipelineSummary({ stages, stagesB }: { stages: StageResult[]; stagesB?:
         return (
           <div
             className="rounded-xl p-4"
-            style={{ background: "rgba(250,249,247,0.92)", border: "1px solid var(--color-border)" }}
+            style={{ background: "rgba(255,255,255,0.95)", border: "1px solid var(--color-border)" }}
           >
             <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--color-text-muted)" }}>
               Confidence vs. Accuracy
@@ -1514,7 +1514,7 @@ function PresetsPanel({ onApply }: PresetsPanelProps) {
                     key={preset.id}
                     className="rounded-lg p-3"
                     style={{
-                      background: "rgba(250,249,247,0.92)",
+                      background: "rgba(255,255,255,0.95)",
                       border: "1px solid var(--color-border)",
                     }}
                   >
@@ -1798,26 +1798,402 @@ function ScenarioNarration({ params }: { params: PipelineParams }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PIPELINE TAB
-// ─────────────────────────────────────────────────────────────────────────────
-function PipelineTab() {
-  // ── Phase state ──────────────────────────────────────────────────────────────
-  type Phase = "pick" | "tune" | "reveal" | "dashboard";
-  const [phase, setPhase] = useState<Phase>("pick");
 
-  // ── Core state ───────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PIPELINE TAB  — new scroll-driven single-page flow
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Unique SVG icons per stage ────────────────────────────────────────────────
+const STAGE_ICONS_SVG: Record<string, React.ReactNode> = {
+  sensation: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+    </svg>
+  ),
+  attention: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  ),
+  perception: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </svg>
+  ),
+  encoding: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+      <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+    </svg>
+  ),
+  storage: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+      <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4.03 3-9 3S3 13.66 3 12"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/>
+    </svg>
+  ),
+  retrieval: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+    </svg>
+  ),
+  report: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+    </svg>
+  ),
+};
+
+// ── Stimulus display icons ────────────────────────────────────────────────────
+const STIMULUS_ICONS: Record<string, React.ReactNode> = {
+  "Ambiguous Face": (
+    <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" width="40" height="40">
+      <circle cx="20" cy="20" r="16"/>
+      <circle cx="15" cy="16" r="1.5" fill="currentColor"/>
+      <circle cx="25" cy="16" r="1.5" fill="currentColor"/>
+      <path d="M14 25c1.5 2 10.5 2 12 0"/>
+    </svg>
+  ),
+  "Street Scene": (
+    <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" width="40" height="40">
+      <rect x="4" y="16" width="12" height="18" rx="1"/>
+      <rect x="24" y="10" width="12" height="24" rx="1"/>
+      <path d="M4 34h32M16 24h8"/>
+      <path d="M8 16V10l4-4 4 4v6"/>
+    </svg>
+  ),
+  "Muffled Conversation": (
+    <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" width="40" height="40">
+      <path d="M20 8a8 8 0 018 8v4a8 8 0 01-16 0v-4a8 8 0 018-8z"/>
+      <path d="M8 22c0 7 5 12 12 12s12-5 12-12"/>
+      <line x1="20" y1="34" x2="20" y2="38"/>
+      <line x1="14" y1="38" x2="26" y2="38"/>
+    </svg>
+  ),
+};
+
+// ── Info tooltip ──────────────────────────────────────────────────────────────
+function InfoTooltip({ text }: { text: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <span className="relative inline-flex" style={{ verticalAlign: "middle" }}>
+      <button
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        onFocus={() => setShow(true)}
+        onBlur={() => setShow(false)}
+        style={{
+          width: 18, height: 18,
+          borderRadius: "50%",
+          border: "1.5px solid #D4D3CF",
+          background: "#F7F7F5",
+          color: "#A8A29E",
+          fontSize: 10,
+          fontWeight: 700,
+          cursor: "pointer",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          lineHeight: 1,
+        }}
+        aria-label="More info"
+      >
+        i
+      </button>
+      <AnimatePresence>
+        {show && (
+          <motion.div
+            initial={{ opacity: 0, y: 4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+            style={{
+              position: "absolute",
+              bottom: "calc(100% + 6px)",
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: "#1A1917",
+              color: "#fff",
+              padding: "8px 12px",
+              borderRadius: 10,
+              fontSize: 12,
+              lineHeight: 1.45,
+              width: 220,
+              zIndex: 100,
+              pointerEvents: "none",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
+            }}
+          >
+            {text}
+            <div style={{
+              position: "absolute", top: "100%", left: "50%",
+              transform: "translateX(-50%)",
+              borderLeft: "5px solid transparent",
+              borderRight: "5px solid transparent",
+              borderTop: "5px solid #1A1917",
+            }} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </span>
+  );
+}
+
+// ── Scroll-fade wrapper ───────────────────────────────────────────────────────
+function ScrollFade({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
+      { threshold: 0.12 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return (
+    <div ref={ref}>
+      <motion.div
+        initial={{ opacity: 0, y: 28 }}
+        animate={visible ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
+        transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay }}
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+}
+
+// ── Full-screen Result Summary card ──────────────────────────────────────────
+interface ResultSummaryProps {
+  stimulus: Stimulus;
+  params: PipelineParams;
+  stages: StageResult[];
+  onContinue: () => void;
+}
+function ResultSummary({ stimulus, params, stages, onContinue }: ResultSummaryProps) {
+  const finalSignal = stages[stages.length - 1]?.signalStrength ?? 0;
+  const avgSignal = stages.reduce((s, r) => s + r.signalStrength, 0) / stages.length;
+  const weakStages = stages.filter(s => s.signalStrength < 40);
+  const strongStages = stages.filter(s => s.signalStrength >= 70);
+
+  const getOutcome = () => {
+    if (finalSignal >= 70) return { label: "Strong recall", color: "#059669", icon: "✦" };
+    if (finalSignal >= 45) return { label: "Partial recall", color: "#D97706", icon: "◈" };
+    return { label: "Weak recall", color: "#DC2626", icon: "◎" };
+  };
+  const outcome = getOutcome();
+
+  const getSummaryText = () => {
+    const lines: string[] = [];
+    if (params.attentionalFocus < 35) {
+      lines.push(`Low attentional focus meant your brain processed "${stimulus.name}" superficially — most features never made it past the gate.`);
+    } else if (params.attentionalFocus > 70) {
+      lines.push(`Strong attentional focus locked onto "${stimulus.name}" — signals were captured deeply and thoroughly.`);
+    } else {
+      lines.push(`Moderate attention engaged with "${stimulus.name}", letting through a reasonable slice of the signal.`);
+    }
+    if (params.perceptualNoise > 65) {
+      lines.push("High perceptual noise scrambled the incoming signal before it could be organized — like trying to hear through static.");
+    }
+    if (params.priorExpectation > 70) {
+      lines.push("Strong prior expectations shaped what was perceived — the brain 'filled in' ambiguous features based on what it expected to see.");
+    }
+    if (params.encodingStrength < 35) {
+      lines.push("Shallow encoding meant memories formed weakly — like writing in sand instead of stone.");
+    } else if (params.encodingStrength > 75) {
+      lines.push("Deep encoding carved a durable memory trace — semantic connections locked this in for the long haul.");
+    }
+    if (params.retrievalCue < 30) {
+      lines.push("The retrieval cue was too weak to surface the memory reliably — like having the answer on the tip of your tongue.");
+    }
+    if (weakStages.length > 0) {
+      lines.push(`The pipeline bottlenecked at: ${weakStages.map(s => s.stage).join(", ")}.`);
+    }
+    if (strongStages.length >= 5) {
+      lines.push("Across nearly every stage, signals survived at high strength — a well-functioning cognitive system.");
+    }
+    return lines;
+  };
+
+  const summaryLines = getSummaryText();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.4 }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 200,
+        background: "#FFFFFF",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "24px",
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+        style={{ maxWidth: 560, width: "100%", textAlign: "center" }}
+      >
+        {/* Outcome badge */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.5 }}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "6px 16px",
+            borderRadius: 999,
+            background: `${outcome.color}12`,
+            border: `1.5px solid ${outcome.color}30`,
+            marginBottom: 24,
+          }}
+        >
+          <span style={{ color: outcome.color, fontSize: 14 }}>{outcome.icon}</span>
+          <span style={{ color: outcome.color, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            {outcome.label}
+          </span>
+        </motion.div>
+
+        {/* Main signal score */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.35, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          style={{ marginBottom: 8 }}
+        >
+          <span style={{ fontSize: 80, fontWeight: 800, color: "#1A1917", lineHeight: 1 }}>
+            {Math.round(finalSignal)}
+          </span>
+          <span style={{ fontSize: 28, fontWeight: 400, color: "#A8A29E" }}>/100</span>
+        </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.45 }}
+          style={{ color: "#A8A29E", fontSize: 13, marginBottom: 32, letterSpacing: "0.04em" }}
+        >
+          final signal · avg {Math.round(avgSignal)} across 7 stages
+        </motion.p>
+
+        {/* Stage mini-bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+          style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 32 }}
+        >
+          {stages.map((s, i) => {
+            const cfg = STAGE_CONFIG[i];
+            return (
+              <div key={s.stage} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                <div style={{
+                  width: 36,
+                  height: 5,
+                  borderRadius: 3,
+                  background: `linear-gradient(to right, ${cfg.color}, ${cfg.color}88)`,
+                  opacity: s.signalStrength / 100,
+                  minOpacity: 0.2,
+                }} />
+                <span style={{ fontSize: 9, color: "#A8A29E", fontWeight: 600, letterSpacing: "0.05em" }}>
+                  {cfg.shortLabel}
+                </span>
+              </div>
+            );
+          })}
+        </motion.div>
+
+        {/* Summary lines */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          style={{
+            background: "#F7F7F5",
+            borderRadius: 16,
+            padding: "20px 24px",
+            marginBottom: 32,
+            textAlign: "left",
+          }}
+        >
+          {summaryLines.map((line, i) => (
+            <motion.p
+              key={i}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.65 + i * 0.1, duration: 0.4 }}
+              style={{ fontSize: 14, color: "#57534E", lineHeight: 1.6, marginBottom: i < summaryLines.length - 1 ? 10 : 0 }}
+            >
+              {line}
+            </motion.p>
+          ))}
+        </motion.div>
+
+        {/* CTA */}
+        <motion.button
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          onClick={onContinue}
+          style={{
+            background: "#1A1917",
+            color: "#FFFFFF",
+            border: "none",
+            borderRadius: 12,
+            padding: "14px 32px",
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            letterSpacing: "0.02em",
+          }}
+          whileHover={{ opacity: 0.88 }}
+          whileTap={{ scale: 0.97 }}
+        >
+          Explore Full Dashboard
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+            <path d="M3 8h10M9 4l4 4-4 4"/>
+          </svg>
+        </motion.button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ── Param tooltip descriptions (richer than PARAM_META.description) ──────────
+const PARAM_TOOLTIP: Record<string, string> = {
+  attentionalFocus: "How narrowly focused your attention is. High = deep focus on a few features; Low = diffuse, superficial awareness of everything at once.",
+  perceptualNoise: "Environmental interference degrading the signal. High = like listening in a noisy room or seeing through fog. Low = crystal-clear input.",
+  priorExpectation: "How strongly your prior knowledge shapes perception. High = brain fills in gaps from expectations; Low = purely data-driven, unbiased processing.",
+  encodingStrength: "Depth of memory formation. High = rich semantic encoding (connected to meaning); Low = shallow structural encoding (just the surface form).",
+  retrievalCue: "How useful the context cues are when trying to recall. High = retrieval cues closely match encoding context; Low = mismatched or absent cues.",
+};
+
+function PipelineTab() {
+  // ── Core state ──────────────────────────────────────────────────────────────
   const [selectedStimulus, setSelectedStimulus] = useState<Stimulus>(STIMULI[0]);
   const [params, setParams] = useState<PipelineParams>({ ...DEFAULT_PARAMS });
   const [results, setResults] = useState<StageResult[] | null>(null);
   const [hasRun, setHasRun] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
 
-  // ── Tune phase: one-at-a-time step state ─────────────────────────────────────
-  const [tuneStep, setTuneStep] = useState(0); // 0-4
-  const [showPresets, setShowPresets] = useState(false);
-  const [tuneDir, setTuneDir] = useState<1 | -1>(1); // animation direction
-
-  // ── Comparison mode state (lives in dashboard phase) ─────────────────────────
+  // ── Comparison mode state ────────────────────────────────────────────────────
   const [comparisonMode, setComparisonMode] = useState(false);
   const [activeSet, setActiveSet] = useState<"A" | "B">("A");
   const [paramsA, setParamsA] = useState<PipelineParams>({ ...DEFAULT_PARAMS });
@@ -1825,48 +2201,32 @@ function PipelineTab() {
   const [resultsA, setResultsA] = useState<StageResult[] | null>(null);
   const [resultsB, setResultsB] = useState<StageResult[] | null>(null);
 
-  // ── Dashboard param handler ───────────────────────────────────────────────────
+  // ── Refs for scroll ──────────────────────────────────────────────────────────
+  const paramsRef = useRef<HTMLDivElement>(null);
+  const dashboardRef = useRef<HTMLDivElement>(null);
+
+  // ── Handlers ─────────────────────────────────────────────────────────────────
   const handleParam = useCallback(
     (key: keyof PipelineParams, val: number) => {
       if (comparisonMode) {
         if (activeSet === "A") {
-          setParamsA((prev) => {
-            const next = { ...prev, [key]: val };
-            if (hasRun) setResultsA(runPipeline(selectedStimulus, next));
-            return next;
-          });
+          setParamsA(prev => { const n = { ...prev, [key]: val }; if (hasRun) setResultsA(runPipeline(selectedStimulus, n)); return n; });
         } else {
-          setParamsB((prev) => {
-            const next = { ...prev, [key]: val };
-            if (hasRun) setResultsB(runPipeline(selectedStimulus, next));
-            return next;
-          });
+          setParamsB(prev => { const n = { ...prev, [key]: val }; if (hasRun) setResultsB(runPipeline(selectedStimulus, n)); return n; });
         }
       } else {
-        setParams((prev) => {
-          const next = { ...prev, [key]: val };
-          if (hasRun) setResults(runPipeline(selectedStimulus, next));
-          return next;
-        });
+        setParams(prev => { const n = { ...prev, [key]: val }; if (hasRun) setResults(runPipeline(selectedStimulus, n)); return n; });
       }
     },
-    [hasRun, selectedStimulus, comparisonMode, activeSet]
+    [comparisonMode, activeSet, hasRun, selectedStimulus]
   );
 
-  const handleStimulusChange = useCallback(
-    (s: Stimulus) => {
-      setSelectedStimulus(s);
-      if (hasRun) {
-        if (comparisonMode) {
-          setResultsA(runPipeline(s, paramsA));
-          setResultsB(runPipeline(s, paramsB));
-        } else {
-          setResults(runPipeline(s, params));
-        }
-      }
-    },
-    [hasRun, params, paramsA, paramsB, comparisonMode]
-  );
+  const handleRun = () => {
+    const r = runPipeline(selectedStimulus, params);
+    setResults(r);
+    setHasRun(true);
+    setShowSummary(true);
+  };
 
   const handleDashboardRun = () => {
     if (comparisonMode) {
@@ -1880,1080 +2240,625 @@ function PipelineTab() {
 
   const handleReset = () => {
     setParams({ ...DEFAULT_PARAMS });
-    setParamsA({ ...DEFAULT_PARAMS });
-    setParamsB({ ...DEFAULT_PARAMS });
     setResults(null);
+    setHasRun(false);
+    setShowDashboard(false);
+    setComparisonMode(false);
     setResultsA(null);
     setResultsB(null);
-    setHasRun(false);
-    setComparisonMode(false);
-    setActiveSet("A");
+    setParamsA({ ...DEFAULT_PARAMS });
+    setParamsB({ ...DEFAULT_PARAMS });
   };
 
-  const handleApplyPreset = (presetParams: PipelineParams) => {
-    if (comparisonMode) {
-      if (activeSet === "A") {
-        setParamsA(presetParams);
-        const r = runPipeline(selectedStimulus, presetParams);
-        setResultsA(r);
-        if (!hasRun && paramsB) {
-          setResultsB(runPipeline(selectedStimulus, paramsB));
-        }
-      } else {
-        setParamsB(presetParams);
-        const r = runPipeline(selectedStimulus, presetParams);
-        setResultsB(r);
-        if (!hasRun && paramsA) {
-          setResultsA(runPipeline(selectedStimulus, paramsA));
-        }
+  const handleApplyPreset = (preset: Preset) => {
+    if (comparisonMode && preset.variantB) {
+      setParamsA({ ...preset.params });
+      setParamsB({ ...preset.variantB });
+      if (hasRun) {
+        setResultsA(runPipeline(selectedStimulus, preset.params));
+        setResultsB(runPipeline(selectedStimulus, preset.variantB));
       }
     } else {
-      setParams(presetParams);
-      setResults(runPipeline(selectedStimulus, presetParams));
+      setParams({ ...preset.params });
+      if (hasRun) setResults(runPipeline(selectedStimulus, preset.params));
     }
-    setHasRun(true);
   };
 
   const toggleComparisonMode = () => {
     if (!comparisonMode) {
-      setParamsA({ ...(params) });
-      setParamsB({ ...DEFAULT_PARAMS });
-      if (results) setResultsA(results);
-      setResultsB(runPipeline(selectedStimulus, DEFAULT_PARAMS));
-      if (hasRun) {
-        setResultsA(runPipeline(selectedStimulus, params));
-        setResultsB(runPipeline(selectedStimulus, DEFAULT_PARAMS));
-      }
+      setParamsA({ ...params });
+      setParamsB({ ...params });
+      setResultsA(results ? [...results] : null);
+      setResultsB(results ? [...results] : null);
     }
-    setComparisonMode((c) => !c);
-    setActiveSet("A");
+    setComparisonMode(c => !c);
   };
 
-  // ── Derived dashboard values ──────────────────────────────────────────────────
-  const currentParams = comparisonMode ? (activeSet === "A" ? paramsA : paramsB) : params;
   const displayResultsA = comparisonMode ? resultsA : results;
   const displayResultsB = comparisonMode ? resultsB : null;
+  const currentParams = comparisonMode ? (activeSet === "A" ? paramsA : paramsB) : params;
 
-  const avgScore = displayResultsA
-    ? Math.round(displayResultsA.reduce((acc, s) => acc + clamp(s.signalStrength), 0) / displayResultsA.length)
-    : null;
-
-  // ── Phase handlers ────────────────────────────────────────────────────────────
-  const handlePickStimulus = (s: Stimulus) => {
+  const handleStimulusSelect = (s: Stimulus) => {
     setSelectedStimulus(s);
-    setTuneStep(0);
-    setShowPresets(false);
-    setPhase("tune");
+    // Scroll to params after short delay
+    setTimeout(() => {
+      paramsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 300);
   };
 
-  const handleTuneRun = () => {
-    const r = runPipeline(selectedStimulus, params);
-    setResults(r);
-    setResultsA(r);
-    setHasRun(true);
-    setPhase("reveal");
+  const handleSummaryDone = () => {
+    setShowSummary(false);
+    setShowDashboard(true);
+    setTimeout(() => {
+      dashboardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
   };
 
-  const handlePresetQuickRun = (presetParams: PipelineParams) => {
-    setParams(presetParams);
-    const r = runPipeline(selectedStimulus, presetParams);
-    setResults(r);
-    setResultsA(r);
-    setHasRun(true);
-    setShowPresets(false);
-    setPhase("reveal");
-  };
-
-  const handleStartOver = () => {
-    handleReset();
-    setTuneStep(0);
-    setShowPresets(false);
-    setPhase("pick");
-  };
-
-  const handleGoToDashboard = () => {
-    // Sync dashboard state from guided flow
-    setParamsA({ ...params });
-    setParamsB({ ...DEFAULT_PARAMS });
-    if (results) {
-      setResultsA(results);
-      setResultsB(runPipeline(selectedStimulus, DEFAULT_PARAMS));
-    }
-    setPhase("dashboard");
-  };
-
-  // ── Shared button style helpers ────────────────────────────────────────────────
-  const btnPrimary: React.CSSProperties = {
-    background: "linear-gradient(135deg, #7C3AED, #6D28D9)",
-    color: "#ffffff",
-    border: "none",
-    cursor: "pointer",
-    boxShadow: "0 4px 20px #7C3AED35",
-  };
-
-  const btnGhost: React.CSSProperties = {
-    background: "transparent",
-    color: "var(--color-text-dim)",
-    border: "1px solid var(--color-border)",
-    cursor: "pointer",
-  };
-
-  // ── Param tips (what extreme values do) ──────────────────────────────────────
-  const PARAM_TIPS: Record<string, { low: string; high: string }> = {
-    attentionalFocus: {
-      low: "Low: Diffuse, scattered awareness — misses details but takes in broad context",
-      high: "High: Deep, narrow focus — processes one thing with great precision",
-    },
-    perceptualNoise: {
-      low: "Low: Crystal-clear signal — every detail arrives intact",
-      high: "High: Heavy distortion — the brain must guess at missing information",
-    },
-    priorExpectation: {
-      low: "Low: Data-driven — your brain takes the world at face value",
-      high: "High: Heavily filtered by beliefs — you see what you expect to see",
-    },
-    encodingStrength: {
-      low: "Low: Shallow encoding — quick to form, quick to fade",
-      high: "High: Deep semantic encoding — meaningful, durable memories",
-    },
-    retrievalCue: {
-      low: "Low: Weak context — memories drift out of reach (tip-of-tongue effect)",
-      high: "High: Strong cue — memories resurface with clarity and confidence",
-    },
-  };
-
-  // ── Tune step navigation ─────────────────────────────────────────────────────
-  const totalSteps = PARAM_META.length;
-  const currentMeta = PARAM_META[tuneStep];
-
-  const goNextStep = () => {
-    if (tuneStep < totalSteps - 1) {
-      setTuneDir(1);
-      setTuneStep((s) => s + 1);
-    } else {
-      handleTuneRun();
-    }
-  };
-
-  const goPrevStep = () => {
-    if (tuneStep > 0) {
-      setTuneDir(-1);
-      setTuneStep((s) => s - 1);
-    } else {
-      setPhase("pick");
-    }
-  };
-
-  // ── Render ────────────────────────────────────────────────────────────────────
   return (
-    <AnimatePresence mode="wait">
+    <>
+      {/* ── Full-screen summary overlay ────────────────────────────────────── */}
+      <AnimatePresence>
+        {showSummary && results && (
+          <ResultSummary
+            stimulus={selectedStimulus}
+            params={params}
+            stages={results}
+            onContinue={handleSummaryDone}
+          />
+        )}
+      </AnimatePresence>
 
-      {/* ════════════════════════════════════════════════════
-          PHASE 1: PICK — Choose Your Scenario
-      ════════════════════════════════════════════════════ */}
-      {phase === "pick" && (
-        <motion.div
-          key="pick"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          transition={{ duration: 0.3 }}
-          style={{ maxWidth: 820, margin: "0 auto", padding: "48px 24px 64px" }}
-        >
-          {/* Heading */}
-          <div style={{ textAlign: "center", marginBottom: 40 }}>
-            <h2 style={{ fontSize: 30, fontWeight: 700, color: "var(--color-text)", margin: "0 0 10px", letterSpacing: "-0.01em", fontFamily: "var(--font-display)" }}>
-              What should your brain process?
-            </h2>
-            <p style={{ fontSize: 15, color: "var(--color-text-dim)", margin: 0 }}>
-              Choose a scenario to simulate
+      <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 20px" }}>
+
+        {/* ── SECTION 1: Choose a stimulus ───────────────────────────────── */}
+        <section style={{ padding: "80px 0 60px" }}>
+          <ScrollFade>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", color: "#A8A29E", textTransform: "uppercase", marginBottom: 12 }}>
+              Step 1
             </p>
-          </div>
+            <h2 style={{ fontSize: 28, fontWeight: 700, color: "#1A1917", marginBottom: 8, letterSpacing: "-0.02em" }}>
+              Choose a stimulus
+            </h2>
+            <p style={{ fontSize: 15, color: "#57534E", marginBottom: 36, lineHeight: 1.6 }}>
+              Pick the sensory input your brain will process through the pipeline.
+            </p>
+          </ScrollFade>
 
-          {/* Stimulus cards */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 16, justifyContent: "center", marginBottom: 40 }}>
-            {STIMULI.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => handlePickStimulus(s)}
-                style={{
-                  flex: "1 1 220px",
-                  maxWidth: 260,
-                  background: "var(--color-surface)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 20,
-                  padding: "28px 20px 24px",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  transition: "all 0.18s ease",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.border = "1px solid #7C3AED60";
-                  (e.currentTarget as HTMLButtonElement).style.background = "var(--color-surface-2)";
-                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-3px)";
-                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 32px #7C3AED20";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.border = "1px solid var(--color-border)";
-                  (e.currentTarget as HTMLButtonElement).style.background = "var(--color-surface)";
-                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
-                }}
-              >
-                <span style={{ fontSize: 40, display: "block", marginBottom: 14 }}>{s.imageEmoji}</span>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text)" }}>{s.name}</span>
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 600,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
-                      padding: "2px 7px",
-                      borderRadius: 6,
-                      background: s.modality === "auditory" ? "#06b6d418" : "#7C3AED18",
-                      color: s.modality === "auditory" ? "#06b6d4" : "#7C3AED",
-                    }}
-                  >
-                    {s.modality}
-                  </span>
-                </div>
-                <p style={{ fontSize: 13, color: "var(--color-text-muted)", margin: 0, lineHeight: 1.5 }}>
-                  {s.description}
-                </p>
-              </button>
-            ))}
-          </div>
-
-          {/* Subtle preset shortcut */}
-          <div style={{ textAlign: "center" }}>
-            <button
-              onClick={() => { setTuneStep(0); setShowPresets(true); setPhase("tune"); }}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                fontSize: 13,
-                color: "var(--color-text-muted)",
-                textDecoration: "underline",
-                textUnderlineOffset: 3,
-              }}
-            >
-              or choose a preset →
-            </button>
-          </div>
-        </motion.div>
-      )}
-
-      {/* ════════════════════════════════════════════════════
-          PHASE 2: TUNE — One parameter at a time
-      ════════════════════════════════════════════════════ */}
-      {phase === "tune" && (
-        <motion.div
-          key="tune"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          transition={{ duration: 0.3 }}
-          style={{ maxWidth: 560, margin: "0 auto", padding: "40px 24px 64px" }}
-        >
-          {/* Selected stimulus compact chip */}
-          {!showPresets && (
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                background: "var(--color-surface)",
-                border: "1px solid var(--color-accent)",
-                borderRadius: 12,
-                padding: "8px 14px",
-                marginBottom: 32,
-              }}
-            >
-              <span style={{ fontSize: 22 }}>{selectedStimulus.imageEmoji}</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)" }}>{selectedStimulus.name}</span>
-              <button
-                onClick={() => setPhase("pick")}
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--color-text-muted)", marginLeft: 4 }}
-              >
-                change
-              </button>
-            </div>
-          )}
-
-          {/* ── PRESETS VIEW ── */}
-          {showPresets ? (
-            <motion.div
-              key="presets-view"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.25 }}
-            >
-              <button
-                onClick={() => setShowPresets(false)}
-                style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 10, fontSize: 13, marginBottom: 28 }}
-              >
-                ← Back
-              </button>
-              <h3 style={{ fontSize: 22, fontWeight: 700, color: "var(--color-text)", margin: "0 0 6px", fontFamily: "var(--font-display)" }}>
-                Quick Presets
-              </h3>
-              <p style={{ fontSize: 13, color: "var(--color-text-dim)", margin: "0 0 24px" }}>
-                Choose a preset to instantly load parameters and run the pipeline.
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {PRESETS.map((preset) => (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+            {STIMULI.map((s, i) => {
+              const isSelected = selectedStimulus.id === s.id;
+              return (
+                <ScrollFade key={s.id} delay={i * 0.08}>
                   <button
-                    key={preset.id}
-                    onClick={() => handlePresetQuickRun(preset.params)}
+                    onClick={() => handleStimulusSelect(s)}
                     style={{
-                      background: "var(--color-surface)",
-                      border: "1px solid var(--color-border)",
+                      width: "100%",
+                      padding: "20px 18px",
                       borderRadius: 16,
-                      padding: "16px 18px",
+                      border: isSelected ? "2px solid #1A1917" : "1.5px solid #E8E7E4",
+                      background: isSelected ? "#1A1917" : "#FFFFFF",
                       cursor: "pointer",
                       textAlign: "left",
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 14,
-                      transition: "all 0.15s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.border = "1px solid #7C3AED50";
-                      (e.currentTarget as HTMLButtonElement).style.background = "var(--color-surface-2)";
-                      (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
-                      (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px #7C3AED15";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.border = "1px solid var(--color-border)";
-                      (e.currentTarget as HTMLButtonElement).style.background = "var(--color-surface)";
-                      (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-                      (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
+                      transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
+                      boxShadow: isSelected ? "0 4px 20px rgba(26,25,23,0.15)" : "none",
                     }}
                   >
-                    <span style={{ fontSize: 28, flexShrink: 0 }}>{preset.emoji}</span>
-                    <div>
-                      <p style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", margin: "0 0 3px" }}>{preset.name}</p>
-                      <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: 0, lineHeight: 1.4 }}>{preset.description}</p>
-                    </div>
-                    <span style={{ marginLeft: "auto", fontSize: 16, color: "var(--color-text-muted)", alignSelf: "center" }}>→</span>
-                  </button>
-                ))}
-              </div>
-              <div style={{ marginTop: 20, textAlign: "center" }}>
-                <button
-                  onClick={() => { setShowPresets(false); setTuneStep(0); }}
-                  style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: 13, color: "var(--color-text-muted)", textDecoration: "underline", textUnderlineOffset: 3 }}
-                >
-                  tune parameters manually instead
-                </button>
-              </div>
-            </motion.div>
-          ) : (
-            /* ── STEP-BY-STEP PARAM VIEW ── */
-            <>
-              {/* Progress indicator */}
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 32 }}>
-                <div style={{ display: "flex", gap: 6 }}>
-                  {PARAM_META.map((_, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        width: i === tuneStep ? 20 : 8,
-                        height: 8,
-                        borderRadius: 4,
-                        background: i <= tuneStep ? "#7C3AED" : "var(--color-border)",
-                        transition: "all 0.25s ease",
-                      }}
-                    />
-                  ))}
-                </div>
-                <span style={{ fontSize: 12, color: "var(--color-text-muted)", fontWeight: 600 }}>
-                  Step {tuneStep + 1} of {totalSteps}
-                </span>
-              </div>
-
-              {/* Animated param step */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={`step-${tuneStep}`}
-                  initial={{ opacity: 0, x: tuneDir * 40 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: tuneDir * -40 }}
-                  transition={{ duration: 0.22, ease: "easeOut" }}
-                >
-                  {/* Param label */}
-                  <div
-                    style={{
-                      display: "inline-block",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.08em",
-                      color: currentMeta.color,
-                      background: `${currentMeta.color}18`,
-                      padding: "4px 10px",
-                      borderRadius: 8,
+                    <div style={{
+                      color: isSelected ? "#FFFFFF" : "#57534E",
                       marginBottom: 12,
-                    }}
-                  >
-                    Parameter {tuneStep + 1}
-                  </div>
-                  <h3
-                    style={{
-                      fontSize: 26,
-                      fontWeight: 700,
-                      color: "var(--color-text)",
-                      margin: "0 0 8px",
-                      letterSpacing: "-0.01em",
-                      fontFamily: "var(--font-display)",
-                    }}
-                  >
-                    {currentMeta.label}
-                  </h3>
-                  <p style={{ fontSize: 14, color: "var(--color-text-dim)", margin: "0 0 32px", lineHeight: 1.6 }}>
-                    {currentMeta.description}
-                  </p>
-
-                  {/* Big slider */}
-                  <div
-                    style={{
-                      background: "var(--color-surface)",
-                      border: `1px solid ${currentMeta.color}30`,
-                      borderRadius: 20,
-                      padding: "32px 28px",
-                      marginBottom: 20,
-                    }}
-                  >
-                    {/* Value display */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
-                      <span style={{ fontSize: 13, color: "var(--color-text-muted)", fontWeight: 600 }}>Value</span>
-                      <span
-                        style={{
-                          fontSize: 40,
-                          fontWeight: 700,
-                          color: currentMeta.color,
-                          lineHeight: 1,
-                          fontVariantNumeric: "tabular-nums",
-                          fontFamily: "var(--font-display)",
-                          letterSpacing: "-0.02em",
-                        }}
-                      >
-                        {params[currentMeta.key]}
-                      </span>
+                      opacity: 0.85,
+                    }}>
+                      {STIMULUS_ICONS[s.name] ?? <span style={{ fontSize: 28 }}>{s.imageEmoji}</span>}
                     </div>
+                    <p style={{
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: isSelected ? "#FFFFFF" : "#1A1917",
+                      marginBottom: 4,
+                      letterSpacing: "-0.01em",
+                    }}>
+                      {s.name}
+                    </p>
+                    <p style={{
+                      fontSize: 12,
+                      color: isSelected ? "rgba(255,255,255,0.6)" : "#A8A29E",
+                      lineHeight: 1.45,
+                    }}>
+                      {s.sceneDescription.slice(0, 60)}…
+                    </p>
+                    <span style={{
+                      display: "inline-block",
+                      marginTop: 10,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      padding: "3px 8px",
+                      borderRadius: 999,
+                      background: isSelected ? "rgba(255,255,255,0.15)" : "#F7F7F5",
+                      color: isSelected ? "rgba(255,255,255,0.75)" : "#A8A29E",
+                    }}>
+                      {s.modality}
+                    </span>
+                  </button>
+                </ScrollFade>
+              );
+            })}
+          </div>
+        </section>
 
-                    {/* Slider */}
+        {/* ── SECTION 2: Brain parameters ────────────────────────────────── */}
+        <div ref={paramsRef} />
+        <section style={{ padding: "40px 0 60px" }}>
+          <ScrollFade>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", color: "#A8A29E", textTransform: "uppercase", marginBottom: 12 }}>
+              Step 2
+            </p>
+            <h2 style={{ fontSize: 28, fontWeight: 700, color: "#1A1917", marginBottom: 8, letterSpacing: "-0.02em" }}>
+              Set brain parameters
+            </h2>
+            <p style={{ fontSize: 15, color: "#57534E", marginBottom: 36, lineHeight: 1.6 }}>
+              Tune five cognitive knobs. Hover the <span style={{ background: "#F7F7F5", borderRadius: 4, padding: "1px 6px", fontSize: 12, fontWeight: 700, color: "#A8A29E", border: "1px solid #E8E7E4" }}>i</span> buttons to learn what each one does.
+            </p>
+          </ScrollFade>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            {PARAM_META.map((meta, i) => (
+              <ScrollFade key={meta.key} delay={i * 0.06}>
+                <div style={{
+                  padding: "20px 0",
+                  borderBottom: "1px solid #F0EFED",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{
+                        width: 8, height: 8,
+                        borderRadius: "50%",
+                        background: meta.color,
+                        flexShrink: 0,
+                      }} />
+                      <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1917", letterSpacing: "-0.01em" }}>
+                        {meta.label}
+                      </span>
+                      <InfoTooltip text={PARAM_TOOLTIP[meta.key] ?? meta.description} />
+                    </div>
+                    <span style={{
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: meta.color,
+                      minWidth: 36,
+                      textAlign: "right",
+                    }}>
+                      {currentParams[meta.key]}
+                    </span>
+                  </div>
+                  <div style={{ position: "relative" }}>
+                    <div style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: 0,
+                      right: 0,
+                      height: 4,
+                      borderRadius: 4,
+                      background: "#F0EFED",
+                      transform: "translateY(-50%)",
+                    }} />
+                    <div style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: 0,
+                      width: `${currentParams[meta.key]}%`,
+                      height: 4,
+                      borderRadius: 4,
+                      background: meta.color,
+                      transform: "translateY(-50%)",
+                      transition: "width 0.15s ease",
+                    }} />
                     <input
                       type="range"
                       min={0}
                       max={100}
-                      value={params[currentMeta.key]}
-                      onChange={(e) =>
-                        setParams((prev) => ({ ...prev, [currentMeta.key]: Number(e.target.value) }))
-                      }
+                      value={currentParams[meta.key]}
+                      onChange={e => handleParam(meta.key, Number(e.target.value))}
                       style={{
+                        position: "relative",
                         width: "100%",
-                        height: 8,
-                        accentColor: currentMeta.color,
+                        height: 20,
+                        appearance: "none",
+                        WebkitAppearance: "none",
+                        background: "transparent",
                         cursor: "pointer",
-                        marginBottom: 10,
+                        margin: 0,
+                        zIndex: 1,
                       }}
                     />
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>0</span>
-                      <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>100</span>
-                    </div>
                   </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                    <span style={{ fontSize: 10, color: "#C4C0BB" }}>{meta.description.split(",")[0].split("=")[1]?.trim() ?? "Low"}</span>
+                    <span style={{ fontSize: 10, color: "#C4C0BB" }}>{meta.description.split(",")[1]?.split("=")[1]?.trim() ?? "High"}</span>
+                  </div>
+                </div>
+              </ScrollFade>
+            ))}
+          </div>
 
-                  {/* Contextual tip */}
-                  {PARAM_TIPS[currentMeta.key] && (
-                    <div
-                      style={{
-                        background: `${currentMeta.color}0c`,
-                        border: `1px solid ${currentMeta.color}20`,
-                        borderRadius: 12,
-                        padding: "12px 16px",
-                        marginBottom: 32,
-                      }}
-                    >
-                      <p style={{ fontSize: 12, color: "var(--color-text-dim)", margin: 0, lineHeight: 1.5 }}>
-                        {params[currentMeta.key] <= 40
-                          ? PARAM_TIPS[currentMeta.key].low
-                          : params[currentMeta.key] >= 60
-                          ? PARAM_TIPS[currentMeta.key].high
-                          : `Balanced: moderate ${currentMeta.label.toLowerCase()} — a blend of both extremes`}
-                      </p>
-                    </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-
-              {/* Back / Next buttons */}
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <button
-                  onClick={goPrevStep}
-                  style={{
-                    ...btnGhost,
-                    padding: "13px 22px",
-                    borderRadius: 14,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    flexShrink: 0,
-                  }}
-                >
-                  ← {tuneStep === 0 ? "Back" : "Prev"}
-                </button>
-                <button
-                  onClick={goNextStep}
-                  style={{
-                    ...btnPrimary,
-                    flex: 1,
-                    padding: "13px 24px",
-                    borderRadius: 14,
-                    fontSize: 14,
-                    fontWeight: 700,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                  }}
-                >
-                  {tuneStep === totalSteps - 1 ? (
-                    <>
-                      <Play size={15} />
-                      Run Pipeline ▶
-                    </>
-                  ) : (
-                    <>
-                      Next →
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* Preset shortcut */}
-              <div style={{ textAlign: "center", marginTop: 20 }}>
-                <button
-                  onClick={() => setShowPresets(true)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 12,
-                    color: "var(--color-text-muted)",
-                    textDecoration: "underline",
-                    textUnderlineOffset: 3,
-                  }}
-                >
-                  Use a preset instead →
-                </button>
-              </div>
-            </>
-          )}
-        </motion.div>
-      )}
-
-      {/* ════════════════════════════════════════════════════
-          PHASE 3: REVEAL — Streamlined Results
-      ════════════════════════════════════════════════════ */}
-      {phase === "reveal" && results && (
-        <motion.div
-          key="reveal"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0, y: -12 }}
-          transition={{ duration: 0.25 }}
-          style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}
-        >
-          {/* Top nav */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 36, flexWrap: "wrap", gap: 12 }}>
-            <button
-              onClick={handleStartOver}
-              style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 10, fontSize: 13 }}
-            >
-              ← Try Another
-            </button>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 24 }}>{selectedStimulus.imageEmoji}</span>
-              <div>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)" }}>{selectedStimulus.name}</span>
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                    padding: "2px 7px",
-                    borderRadius: 6,
-                    marginLeft: 8,
-                    background: selectedStimulus.modality === "auditory" ? "#06b6d418" : "#7C3AED18",
-                    color: selectedStimulus.modality === "auditory" ? "#06b6d4" : "#7C3AED",
-                  }}
-                >
-                  {selectedStimulus.modality}
-                </span>
+          {/* Quick presets */}
+          <ScrollFade delay={0.3}>
+            <div style={{ marginTop: 24, marginBottom: 32 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#A8A29E", textTransform: "uppercase", marginBottom: 10 }}>
+                Quick Experiments
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {PRESETS.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => handleApplyPreset(p)}
+                    style={{
+                      padding: "6px 14px",
+                      borderRadius: 999,
+                      border: "1.5px solid #E8E7E4",
+                      background: "#FFFFFF",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: "#57534E",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 5,
+                      transition: "all 0.15s ease",
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = "#1A1917";
+                      (e.currentTarget as HTMLButtonElement).style.color = "#1A1917";
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = "#E8E7E4";
+                      (e.currentTarget as HTMLButtonElement).style.color = "#57534E";
+                    }}
+                  >
+                    <span style={{ fontSize: 13 }}>{p.emoji}</span>
+                    {p.name}
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
+          </ScrollFade>
 
-          {/* Staggered results sections — only the key ones */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-
-            {/* 1. Pipeline Flow Diagram */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.4 }}
+          {/* Run button */}
+          <ScrollFade delay={0.35}>
+            <button
+              onClick={handleRun}
+              style={{
+                width: "100%",
+                padding: "16px 24px",
+                borderRadius: 14,
+                border: "none",
+                background: "#1A1917",
+                color: "#FFFFFF",
+                fontSize: 15,
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+                letterSpacing: "-0.01em",
+                boxShadow: "0 4px 24px rgba(26,25,23,0.12)",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.85"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
             >
-              <PipelineFlowDiagram stages={results} />
-            </motion.div>
+              <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16">
+                <path d="M3 2.5a.5.5 0 01.776-.416l10 5.5a.5.5 0 010 .832l-10 5.5A.5.5 0 013 13.5v-11z"/>
+              </svg>
+              Run the Pipeline
+            </button>
+          </ScrollFade>
+        </section>
 
-            {/* 2. Scenario Narration */}
+        {/* ── SECTION 3: Full Dashboard (fades in after summary) ─────────── */}
+        <AnimatePresence>
+          {showDashboard && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              ref={dashboardRef}
+              initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.4 }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             >
-              <ScenarioNarration params={params} />
-            </motion.div>
-
-            {/* 3. Stage Cards */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.4 }}
-            >
-              <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--color-text-muted)", marginBottom: 16 }}>
-                Stage-by-Stage Breakdown
-              </p>
-              <div>
-                {results.map((stage, i) => {
-                  const cfg = STAGE_CONFIG.find((c) => c.id === stage.stage) ?? STAGE_CONFIG[i];
-                  return (
-                    <div key={stage.stage}>
-                      <StageCard
-                        stage={stage}
-                        config={cfg}
-                        index={i}
-                        isComparisonMode={false}
-                      />
-                      {i < results.length - 1 && (
-                        <PathwayConnector
-                          fromVal={stage.signalStrength}
-                          toVal={results[i + 1].signalStrength}
-                          color={STAGE_CONFIG[i + 1].color}
-                        />
-                      )}
+              <section style={{ paddingBottom: 80 }}>
+                {/* Section header */}
+                <div style={{ marginBottom: 32, paddingTop: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+                    <div>
+                      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", color: "#A8A29E", textTransform: "uppercase", marginBottom: 6 }}>
+                        Full Results
+                      </p>
+                      <h2 style={{ fontSize: 24, fontWeight: 700, color: "#1A1917", letterSpacing: "-0.02em" }}>
+                        Pipeline Dashboard
+                      </h2>
                     </div>
-                  );
-                })}
-              </div>
-            </motion.div>
-
-            {/* 4. Pipeline Summary */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8, duration: 0.4 }}
-            >
-              <PipelineSummary stages={results} />
-            </motion.div>
-
-            {/* 5. CTAs */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.0, duration: 0.4 }}
-              style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", paddingTop: 8 }}
-            >
-              <button
-                onClick={handleGoToDashboard}
-                style={{
-                  ...btnPrimary,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "13px 28px",
-                  borderRadius: 14,
-                  fontSize: 14,
-                  fontWeight: 700,
-                }}
-              >
-                Explore Full Dashboard →
-              </button>
-              <button
-                onClick={handleStartOver}
-                style={{
-                  ...btnGhost,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "13px 22px",
-                  borderRadius: 14,
-                  fontSize: 14,
-                  fontWeight: 600,
-                }}
-              >
-                ← Try Another
-              </button>
-            </motion.div>
-
-          </div>
-        </motion.div>
-      )}
-
-      {/* ════════════════════════════════════════════════════
-          PHASE 4: DASHBOARD — Full Dashboard (with extra visualizations)
-      ════════════════════════════════════════════════════ */}
-      {phase === "dashboard" && (
-        <motion.div
-          key="dashboard"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          transition={{ duration: 0.3 }}
-        >
-          <div className="flex flex-col md:flex-row gap-6 px-6 pt-6 pb-8 md:px-10 md:pt-8 md:pb-10 max-w-[1600px] mx-auto">
-            {/* ── LEFT SIDEBAR ── */}
-            <aside
-              className="w-full md:w-[370px] flex-shrink-0 space-y-5 md:max-h-[calc(100vh-80px)] md:overflow-y-auto md:sticky md:top-[56px] no-scrollbar"
-              style={{ minWidth: 0 }}
-            >
-              {/* Start over */}
-              <button
-                onClick={handleStartOver}
-                style={{
-                  ...btnGhost,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "6px 14px",
-                  borderRadius: 10,
-                  fontSize: 12,
-                  fontWeight: 600,
-                }}
-              >
-                ← Start Over
-              </button>
-
-              {/* Stimulus selector */}
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--color-text-muted)" }}>
-                  Stimulus
-                </p>
-                <div className="space-y-2">
-                  {STIMULI.map((s) => {
-                    const isSelected = s.id === selectedStimulus.id;
-                    return (
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                       <button
-                        key={s.id}
-                        onClick={() => handleStimulusChange(s)}
-                        className="w-full text-left rounded-xl p-3 transition-all duration-200"
+                        onClick={toggleComparisonMode}
                         style={{
-                          background: isSelected ? "var(--color-surface-2)" : "var(--color-surface)",
-                          border: isSelected ? "1px solid var(--color-accent)" : "1px solid var(--color-border)",
-                          outline: "none",
+                          padding: "8px 14px",
+                          borderRadius: 10,
+                          border: comparisonMode ? "none" : "1.5px solid #E8E7E4",
+                          background: comparisonMode ? "#7C3AED" : "#FFFFFF",
+                          color: comparisonMode ? "#fff" : "#57534E",
+                          fontSize: 12,
+                          fontWeight: 600,
                           cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          transition: "all 0.2s ease",
                         }}
                       >
-                        <div className="flex items-start gap-3">
-                          <span className="text-2xl flex-shrink-0 mt-0.5">{s.imageEmoji}</span>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>
+                        <GitCompare size={13} />
+                        {comparisonMode ? "Exit Compare" : "A vs B Compare"}
+                      </button>
+                      <button
+                        onClick={handleReset}
+                        title="Reset"
+                        style={{
+                          padding: "8px",
+                          borderRadius: 10,
+                          border: "1.5px solid #E8E7E4",
+                          background: "#FFFFFF",
+                          color: "#A8A29E",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <RotateCcw size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dashboard layout: sidebar + main */}
+                <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: 20, alignItems: "start" }}>
+                  {/* ── Sidebar ── */}
+                  <aside style={{ display: "flex", flexDirection: "column", gap: 14, position: "sticky", top: 80 }}>
+                    {/* Stimulus selector */}
+                    <div style={{
+                      background: "#FFFFFF",
+                      border: "1.5px solid #E8E7E4",
+                      borderRadius: 14,
+                      padding: "14px",
+                    }}>
+                      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#A8A29E", textTransform: "uppercase", marginBottom: 10 }}>
+                        Stimulus
+                      </p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {STIMULI.map(s => {
+                          const active = selectedStimulus.id === s.id;
+                          return (
+                            <button
+                              key={s.id}
+                              onClick={() => setSelectedStimulus(s)}
+                              style={{
+                                padding: "8px 10px",
+                                borderRadius: 9,
+                                border: active ? "1.5px solid #1A1917" : "1.5px solid transparent",
+                                background: active ? "#1A1917" : "#F7F7F5",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                transition: "all 0.15s ease",
+                              }}
+                            >
+                              <span style={{ fontSize: 16 }}>{s.imageEmoji}</span>
+                              <span style={{ fontSize: 11, fontWeight: 600, color: active ? "#FFFFFF" : "#57534E" }}>
                                 {s.name}
                               </span>
-                              <span
-                                className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded"
-                                style={{
-                                  background: s.modality === "auditory" ? "#06b6d418" : "#7C3AED18",
-                                  color: s.modality === "auditory" ? "#06b6d4" : "#7C3AED",
-                                }}
-                              >
-                                {s.modality}
-                              </span>
-                            </div>
-                            <p className="text-[12px] mt-0.5" style={{ color: "var(--color-text-muted)" }}>
-                              {s.description}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Parameters */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-muted)" }}>
-                    Brain Parameters
-                  </p>
-                  {comparisonMode && (
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => setActiveSet("A")}
-                        className="px-2 py-0.5 rounded text-[10px] font-semibold"
-                        style={{
-                          background: activeSet === "A" ? "#7C3AED" : "transparent",
-                          color: activeSet === "A" ? "#fff" : "var(--color-text-muted)",
-                          border: activeSet === "A" ? "none" : "1px solid var(--color-border)",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Set A
-                      </button>
-                      <button
-                        onClick={() => setActiveSet("B")}
-                        className="px-2 py-0.5 rounded text-[10px] font-semibold"
-                        style={{
-                          background: activeSet === "B" ? "#60a5fa" : "transparent",
-                          color: activeSet === "B" ? "#fff" : "var(--color-text-muted)",
-                          border: activeSet === "B" ? "none" : "1px solid var(--color-border)",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Set B
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <div
-                  className="rounded-xl p-4"
-                  style={{
-                    background: "var(--color-surface)",
-                    border: comparisonMode
-                      ? `1px solid ${activeSet === "A" ? "#7C3AED40" : "#60a5fa40"}`
-                      : "1px solid var(--color-border)",
-                  }}
-                >
-                  {comparisonMode && (
-                    <p
-                      className="text-[10px] font-semibold uppercase tracking-wider mb-3 px-1"
-                      style={{ color: activeSet === "A" ? "#8B5CF6" : "#93c5fd" }}
-                    >
-                      Editing Set {activeSet}
-                    </p>
-                  )}
-                  {PARAM_META.map((meta) => (
-                    <ParamSlider
-                      key={meta.key}
-                      label={meta.label}
-                      description={meta.description}
-                      value={currentParams[meta.key]}
-                      color={meta.color}
-                      paramKey={meta.key}
-                      onChange={handleParam}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-2">
-                <button
-                  onClick={handleDashboardRun}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
-                  style={{
-                    background: "linear-gradient(135deg, #7C3AED, #7c3aed)",
-                    color: "var(--color-text)",
-                    border: "none",
-                    cursor: "pointer",
-                    boxShadow: "0 4px 24px #7C3AED40",
-                  }}
-                >
-                  <Play size={15} />
-                  {hasRun ? "Re-run Pipeline" : "Run Pipeline"}
-                </button>
-                <button
-                  onClick={handleReset}
-                  className="flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 hover:opacity-80 active:scale-[0.95]"
-                  title="Reset"
-                  style={{
-                    background: "var(--color-surface)",
-                    border: "1px solid var(--color-border)",
-                    color: "var(--color-text-dim)",
-                    cursor: "pointer",
-                  }}
-                >
-                  <RotateCcw size={16} />
-                </button>
-              </div>
-
-              {!hasRun && (
-                <p className="text-[12px] text-center" style={{ color: "var(--color-text-muted)" }}>
-                  Adjust parameters then press Run Pipeline to simulate
-                </p>
-              )}
-
-              {/* Presets Panel */}
-              <PresetsPanel onApply={handleApplyPreset} />
-            </aside>
-
-            {/* ── MAIN RESULTS ── */}
-            <main className="flex-1 min-w-0 space-y-6">
-              {/* Comparison toggle */}
-              <div className="flex items-center justify-end">
-                <button
-                  onClick={toggleComparisonMode}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all hover:opacity-90"
-                  style={{
-                    background: comparisonMode ? "#7C3AED" : "var(--color-surface)",
-                    color: comparisonMode ? "#fff" : "var(--color-text-muted)",
-                    border: comparisonMode ? "none" : "1px solid var(--color-border)",
-                    cursor: "pointer",
-                  }}
-                >
-                  <GitCompare size={13} />
-                  {comparisonMode ? "Exit Comparison" : "Compare A vs B"}
-                </button>
-              </div>
-
-              {!displayResultsA ? (
-                <div
-                  className="rounded-2xl flex flex-col items-center justify-center text-center py-24 px-8"
-                  style={{
-                    background: "linear-gradient(135deg, var(--color-surface), var(--color-surface-2))",
-                    border: "1px solid var(--color-border)",
-                    minHeight: "400px",
-                  }}
-                >
-                  <div
-                    className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6"
-                    style={{ background: "#7C3AED0d", border: "1px solid #7C3AED20" }}
-                  >
-                    <Brain size={36} color="#7C3AED" strokeWidth={1.5} />
-                  </div>
-                  <p className="text-lg font-medium mb-2" style={{ color: "var(--color-text)" }}>
-                    Ready when you are
-                  </p>
-                  <p className="text-sm max-w-sm leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
-                    Pick a stimulus on the left, adjust the brain parameters, then hit "Run Pipeline" to see how your brain would process it.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {/* Friendly header */}
-                  <div className="flex items-center gap-3 mb-1">
-                    {comparisonMode && (
-                      <div className="flex items-center gap-2 text-[11px]">
-                        <span className="px-2 py-0.5 rounded font-semibold" style={{ background: "#7C3AED20", color: "#8B5CF6" }}>A: purple</span>
-                        <span className="px-2 py-0.5 rounded font-semibold" style={{ background: "#60a5fa20", color: "#93c5fd" }}>B: blue</span>
+                            </button>
+                          );
+                        })}
                       </div>
-                    )}
-                  </div>
+                    </div>
 
-                  {/* Pipeline Flow Overview */}
-                  <PipelineFlowDiagram stages={displayResultsA} />
-
-                  {/* Scenario Narration */}
-                  <ScenarioNarration params={comparisonMode ? (activeSet === "A" ? paramsA : paramsB) : params} />
-
-                  {/* Stimulus context card */}
-                  <div
-                    className="rounded-2xl p-5"
-                    style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
-                  >
-                    <div className="flex items-start gap-4">
-                      <span className="text-4xl">{selectedStimulus.imageEmoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <h3 className="text-base font-semibold" style={{ color: "var(--color-text)" }}>
-                            {selectedStimulus.name}
-                          </h3>
-                          <span
-                            className="text-[11px] font-medium px-2 py-0.5 rounded-full"
-                            style={{
-                              background: selectedStimulus.modality === "auditory" ? "#06b6d412" : "#7C3AED12",
-                              color: selectedStimulus.modality === "auditory" ? "#06b6d4" : "#7C3AED",
-                            }}
-                          >
-                            {selectedStimulus.modality}
-                          </span>
-                        </div>
-                        <p className="text-sm mb-3 leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
-                          {selectedStimulus.sceneDescription}
+                    {/* Params in sidebar */}
+                    <div style={{
+                      background: "#FFFFFF",
+                      border: comparisonMode
+                        ? `1.5px solid ${activeSet === "A" ? "#7C3AED40" : "#60a5fa40"}`
+                        : "1.5px solid #E8E7E4",
+                      borderRadius: 14,
+                      padding: "14px",
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#A8A29E", textTransform: "uppercase" }}>
+                          Parameters
                         </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {selectedStimulus.features.map((f) => (
-                            <span
-                              key={f}
-                              className="text-[11px] px-2.5 py-1 rounded-full"
-                              style={{ background: "rgba(250,249,247,0.92)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
-                            >
-                              {f}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Signal Journey — power-user visualizations */}
-                  <div className="space-y-4">
-                    <p className="text-xs font-medium tracking-wide" style={{ color: "var(--color-text-muted)" }}>
-                      Signal Journey
-                    </p>
-                    <SignalWaveform stages={displayResultsA} />
-                    <DistortionTracker stages={displayResultsA} />
-                  </div>
-
-                  {/* Brain activity + Feature survival */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <BrainHeatmap stages={displayResultsA} />
-                    <FeatureSurvivalGrid stimulus={selectedStimulus} stages={displayResultsA} />
-                  </div>
-
-                  {/* Stage-by-stage breakdown */}
-                  <div>
-                    <p className="text-xs font-medium tracking-wide mb-4" style={{ color: "var(--color-text-muted)" }}>
-                      Stage-by-Stage Breakdown
-                    </p>
-                    <div className="space-y-0">
-                      {displayResultsA.map((stage, i) => {
-                        const cfg = STAGE_CONFIG.find((c) => c.id === stage.stage) ?? STAGE_CONFIG[i];
-                        const compStage = displayResultsB ? displayResultsB[i] : undefined;
-                        return (
-                          <div key={stage.stage}>
-                            <StageCard
-                              stage={stage}
-                              config={cfg}
-                              index={i}
-                              comparisonStage={compStage}
-                              isComparisonMode={comparisonMode}
-                            />
-                            {i < displayResultsA.length - 1 && (
-                              <PathwayConnector
-                                fromVal={stage.signalStrength}
-                                toVal={displayResultsA[i + 1].signalStrength}
-                                color={STAGE_CONFIG[i + 1].color}
-                              />
-                            )}
+                        {comparisonMode && (
+                          <div style={{ display: "flex", gap: 4 }}>
+                            {(["A","B"] as const).map(set => (
+                              <button key={set} onClick={() => setActiveSet(set)} style={{
+                                padding: "2px 8px",
+                                borderRadius: 5,
+                                border: activeSet === set ? "none" : "1px solid #E8E7E4",
+                                background: activeSet === set ? (set === "A" ? "#7C3AED" : "#60a5fa") : "transparent",
+                                color: activeSet === set ? "#fff" : "#A8A29E",
+                                fontSize: 10, fontWeight: 700, cursor: "pointer",
+                              }}>
+                                {set}
+                              </button>
+                            ))}
                           </div>
-                        );
-                      })}
+                        )}
+                      </div>
+                      {PARAM_META.map(meta => (
+                        <ParamSlider
+                          key={meta.key}
+                          label={meta.label}
+                          description={meta.description}
+                          value={currentParams[meta.key]}
+                          color={meta.color}
+                          paramKey={meta.key}
+                          onChange={handleParam}
+                        />
+                      ))}
                     </div>
-                  </div>
 
-                  {/* Summary */}
-                  <PipelineSummary
-                    stages={displayResultsA}
-                    stagesB={displayResultsB ?? undefined}
-                  />
-                </>
-              )}
-            </main>
-          </div>
-        </motion.div>
-      )}
+                    {/* Re-run */}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={handleDashboardRun}
+                        style={{
+                          flex: 1,
+                          padding: "11px 0",
+                          borderRadius: 10,
+                          border: "none",
+                          background: "#7C3AED",
+                          color: "#fff",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                          boxShadow: "0 2px 12px #7C3AED40",
+                          transition: "opacity 0.15s",
+                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.85"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+                      >
+                        <Play size={13} />
+                        Re-run
+                      </button>
+                    </div>
 
-    </AnimatePresence>
+                    {/* Presets */}
+                    <PresetsPanel onApply={handleApplyPreset} />
+                  </aside>
+
+                  {/* ── Main results ── */}
+                  <main style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 20 }}>
+                    {!displayResultsA ? (
+                      <div style={{
+                        background: "#F7F7F5",
+                        borderRadius: 18,
+                        padding: "60px 24px",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        textAlign: "center",
+                        border: "1.5px solid #E8E7E4",
+                      }}>
+                        <div style={{
+                          width: 56, height: 56,
+                          borderRadius: 16,
+                          background: "#EEECFF",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          marginBottom: 16,
+                        }}>
+                          <Brain size={28} color="#7C3AED" strokeWidth={1.5} />
+                        </div>
+                        <p style={{ fontSize: 15, fontWeight: 600, color: "#1A1917", marginBottom: 6 }}>Ready when you are</p>
+                        <p style={{ fontSize: 13, color: "#A8A29E", maxWidth: 280, lineHeight: 1.6 }}>
+                          Adjust the parameters on the left and hit Re-run to see how your brain processes the stimulus.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        {comparisonMode && (
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <span style={{ padding: "3px 10px", borderRadius: 999, background: "#7C3AED18", color: "#7C3AED", fontSize: 11, fontWeight: 700 }}>A: purple</span>
+                            <span style={{ padding: "3px 10px", borderRadius: 999, background: "#60a5fa18", color: "#60a5fa", fontSize: 11, fontWeight: 700 }}>B: blue</span>
+                          </div>
+                        )}
+
+                        <PipelineFlowDiagram stages={displayResultsA} />
+                        <ScenarioNarration params={comparisonMode ? (activeSet === "A" ? paramsA : paramsB) : params} />
+
+                        {/* Stimulus context card */}
+                        <div style={{
+                          background: "#FFFFFF",
+                          border: "1.5px solid #E8E7E4",
+                          borderRadius: 16,
+                          padding: "18px 20px",
+                        }}>
+                          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                            <span style={{ fontSize: 36 }}>{selectedStimulus.imageEmoji}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                                <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1A1917" }}>{selectedStimulus.name}</h3>
+                                <span style={{
+                                  fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999,
+                                  background: selectedStimulus.modality === "auditory" ? "#06b6d412" : "#7C3AED12",
+                                  color: selectedStimulus.modality === "auditory" ? "#06b6d4" : "#7C3AED",
+                                  textTransform: "uppercase", letterSpacing: "0.06em",
+                                }}>
+                                  {selectedStimulus.modality}
+                                </span>
+                              </div>
+                              <p style={{ fontSize: 12, color: "#57534E", lineHeight: 1.55, marginBottom: 10 }}>
+                                {selectedStimulus.sceneDescription}
+                              </p>
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                                {selectedStimulus.features.map(f => (
+                                  <span key={f} style={{
+                                    fontSize: 11, padding: "3px 10px", borderRadius: 999,
+                                    background: "#F7F7F5", color: "#A8A29E", border: "1px solid #E8E7E4",
+                                  }}>
+                                    {f}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Signal Journey */}
+                        <div>
+                          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "#A8A29E", textTransform: "uppercase", marginBottom: 12 }}>Signal Journey</p>
+                          <SignalWaveform stages={displayResultsA} />
+                          <div style={{ marginTop: 12 }}>
+                            <DistortionTracker stages={displayResultsA} />
+                          </div>
+                        </div>
+
+                        {/* Brain + Feature survival */}
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                          <BrainHeatmap stages={displayResultsA} />
+                          <FeatureSurvivalGrid stimulus={selectedStimulus} stages={displayResultsA} />
+                        </div>
+
+                        {/* Stage breakdown */}
+                        <div>
+                          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "#A8A29E", textTransform: "uppercase", marginBottom: 14 }}>Stage-by-Stage Breakdown</p>
+                          <div>
+                            {displayResultsA.map((stage, i) => {
+                              const cfg = STAGE_CONFIG.find(c => c.id === stage.stage) ?? STAGE_CONFIG[i];
+                              const compStage = displayResultsB ? displayResultsB[i] : undefined;
+                              return (
+                                <div key={stage.stage}>
+                                  <StageCard stage={stage} config={cfg} index={i} comparisonStage={compStage} isComparisonMode={comparisonMode} />
+                                  {i < displayResultsA.length - 1 && (
+                                    <PathwayConnector fromVal={stage.signalStrength} toVal={displayResultsA[i+1].signalStrength} color={STAGE_CONFIG[i+1].color} />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <PipelineSummary stages={displayResultsA} stagesB={displayResultsB ?? undefined} />
+                      </>
+                    )}
+                  </main>
+                </div>
+              </section>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+      </div>
+    </>
   );
 }
 
@@ -3201,7 +3106,7 @@ function LearnTab() {
                     <span
                       key={r}
                       className="text-[11px] px-2.5 py-1 rounded-full"
-                      style={{ background: "rgba(250,249,247,0.92)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
+                      style={{ background: "rgba(255,255,255,0.95)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
                     >
                       {hasGlossary ? <GlossaryTerm term={glossaryKey}>{r}</GlossaryTerm> : r}
                     </span>
@@ -3416,7 +3321,7 @@ function NavBar({ activeTab, onTabChange }: NavBarProps) {
     <div
       className="sticky top-0 z-40 flex items-center px-6 py-3.5 md:px-10 gap-4"
       style={{
-        background: "rgba(250,249,247,0.92)",
+        background: "rgba(255,255,255,0.95)",
         backdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--color-border)",
       }}
@@ -3458,7 +3363,7 @@ function NavBar({ activeTab, onTabChange }: NavBarProps) {
       {/* Badge */}
       <div
         className="text-[11px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0"
-        style={{ background: "rgba(250,249,247,0.92)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
+        style={{ background: "rgba(255,255,255,0.95)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
       >
         PSYC 203
       </div>
@@ -3479,7 +3384,7 @@ function HeroSection() {
       className="relative flex flex-col items-center justify-center overflow-hidden"
       style={{
         minHeight: "100vh",
-        background: "radial-gradient(ellipse 90% 70% at 50% 30%, #EDE9FE 0%, #F5F3FF 35%, #FAF9F7 70%)",
+        background: "radial-gradient(ellipse 80% 60% at 50% 25%, #F0EDFF 0%, #F8F5FF 40%, #FFFFFF 70%)",
       }}
     >
       {/* Particle background */}
@@ -3545,7 +3450,7 @@ function HeroSection() {
       {/* Bottom gradient fade */}
       <div
         className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-10"
-        style={{ background: "linear-gradient(to bottom, transparent, #faf9f7)" }}
+        style={{ background: "linear-gradient(to bottom, transparent, #FFFFFF)" }}
       />
     </section>
   );

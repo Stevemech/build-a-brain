@@ -1,19 +1,21 @@
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 
 @theme {
-  /* ── Light off-white palette ── */
-  --color-bg:        #FAF9F7;
+  /* ── Pure white Claude-inspired palette ── */
+  --color-bg:        #FFFFFF;
   --color-surface:   #FFFFFF;
-  --color-surface-2: #F3F1EE;
-  --color-border:    #E4E0DA;
-  --color-text:      #2C2925;
-  --color-text-dim:  #6B6560;
-  --color-text-muted:#9E9890;
+  --color-surface-2: #F7F7F5;
+  --color-surface-3: #F0EFED;
+  --color-border:    #E8E7E4;
+  --color-border-2:  #D4D3CF;
+  --color-text:      #1A1917;
+  --color-text-dim:  #57534E;
+  --color-text-muted:#A8A29E;
   --color-accent:    #7C3AED;
   --color-accent-dim:#6D28D9;
 
-  /* ── Semantic colors (softened for light bg) ── */
+  /* ── Semantic colors ── */
   --color-amber:   #D97706;
   --color-violet:  #7C3AED;
   --color-indigo:  #4F46E5;
@@ -23,12 +25,12 @@
   --color-blue:    #2563EB;
   --color-red:     #DC2626;
 
-  --font-display: "Lora", Georgia, serif;
-  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  --font-display: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans:    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:    "JetBrains Mono", "Fira Code", monospace;
 }
 
-/* Tailwind v4 base layer already handles reset (box-sizing, margin, padding) */
+/* Tailwind v4 base layer already handles reset */
 
 html {
   scroll-behavior: smooth;
@@ -44,7 +46,7 @@ body {
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -54,28 +56,16 @@ body {
   border-radius: 3px;
 }
 
-/* Utility to hide scrollbar */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ─── Particle background animations ─────────────────────────────────────── */
+/* ─── Particle float ─────────────────────────────────────────────────────── */
 @keyframes particle-float {
-  0% {
-    transform: translateY(0px) translateX(0px);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-  }
-  80% {
-    opacity: 0.4;
-  }
-  100% {
-    transform: translateY(-120px) translateX(var(--drift, 20px));
-    opacity: 0;
-  }
+  0%   { transform: translateY(0px) translateX(0px); opacity: 0; }
+  10%  { opacity: 1; }
+  80%  { opacity: 0.3; }
+  100% { transform: translateY(-120px) translateX(var(--drift, 20px)); opacity: 0; }
 }
-
 .particle {
   position: absolute;
   border-radius: 50%;
@@ -83,37 +73,75 @@ body {
   pointer-events: none;
   animation: particle-float var(--duration, 6s) ease-in-out infinite;
   animation-delay: var(--delay, 0s);
-  box-shadow: 0 0 6px #7C3AED80, 0 0 12px #7C3AED30;
+  opacity: 0.3;
 }
 
-/* ─── Animated flow dot (pathway connector) ─────────────────────────────── */
+/* ─── Flow dot ───────────────────────────────────────────────────────────── */
 @keyframes flow-down {
-  0% { transform: translateY(-4px); opacity: 0; }
-  20% { opacity: 1; }
-  80% { opacity: 1; }
+  0%   { transform: translateY(-4px); opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
   100% { transform: translateY(28px); opacity: 0; }
 }
-
 .flow-dot {
   animation: flow-down var(--speed, 1.2s) ease-in-out infinite;
   animation-delay: var(--dot-delay, 0s);
 }
 
-/* ─── Pulse indicators for stage cards ─────────────────────────────────── */
-@keyframes pulse-strong {
-  0%, 100% { opacity: 1; box-shadow: 0 0 4px currentColor; }
-  50% { opacity: 0.6; box-shadow: 0 0 8px currentColor; }
+/* ─── Pulse indicators ───────────────────────────────────────────────────── */
+@keyframes pulse-strong   { 0%,100%{opacity:1;box-shadow:0 0 4px currentColor}50%{opacity:.6;box-shadow:0 0 8px currentColor} }
+@keyframes pulse-moderate { 0%,100%{opacity:.8;transform:scale(1)}50%{opacity:.4;transform:scale(.9)} }
+@keyframes pulse-weak     { 0%,33%{opacity:1}50%{opacity:.2}66%,100%{opacity:.8} }
+.pulse-strong   { animation: pulse-strong   2s   ease-in-out infinite; }
+.pulse-moderate { animation: pulse-moderate 2.5s ease-in-out infinite; }
+.pulse-weak     { animation: pulse-weak     0.8s linear    infinite; }
+
+/* ─── Smooth scroll snap for pipeline sections ───────────────────────────── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-@keyframes pulse-moderate {
-  0%, 100% { opacity: 0.8; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.9); }
-}
-@keyframes pulse-weak {
-  0%, 33% { opacity: 1; }
-  50% { opacity: 0.2; }
-  66%, 100% { opacity: 0.8; }
+.fade-slide-up {
+  animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.pulse-strong { animation: pulse-strong 2s ease-in-out infinite; }
-.pulse-moderate { animation: pulse-moderate 2.5s ease-in-out infinite; }
-.pulse-weak { animation: pulse-weak 0.8s linear infinite; }
+/* ─── Custom range input ─────────────────────────────────────────────────── */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #1A1917;
+  cursor: pointer;
+  border: 2.5px solid #FFFFFF;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  margin-top: -7px;
+  position: relative;
+  z-index: 2;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #1A1917;
+  cursor: pointer;
+  border: 2.5px solid #FFFFFF;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: transparent;
+  border-radius: 4px;
+}
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: transparent;
+  border-radius: 4px;
+}
+input[type="range"]:focus {
+  outline: none;
+}
+input[type="range"]:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.2), 0 1px 4px rgba(0,0,0,0.18);
+}
