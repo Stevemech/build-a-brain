@@ -2149,7 +2149,7 @@ function ResultSummary({ stimulus, params, stages, onContinue }: ResultSummaryPr
           transition={{ delay: 0.8 }}
           onClick={onContinue}
           style={{
-            background: "#1A1917",
+            background: "#7C3AED",
             color: "#FFFFFF",
             border: "none",
             borderRadius: 12,
@@ -2335,12 +2335,12 @@ function PipelineTab() {
                       width: "100%",
                       padding: "20px 18px",
                       borderRadius: 16,
-                      border: isSelected ? "2px solid #1A1917" : "1.5px solid #E8E7E4",
-                      background: isSelected ? "#1A1917" : "#FFFFFF",
+                      border: isSelected ? "2px solid #7C3AED" : "1.5px solid #E8E7E4",
+                      background: isSelected ? "#7C3AED" : "#FFFFFF",
                       cursor: "pointer",
                       textAlign: "left",
                       transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
-                      boxShadow: isSelected ? "0 4px 20px rgba(26,25,23,0.15)" : "none",
+                      boxShadow: isSelected ? "0 4px 24px rgba(124,58,237,0.3)" : "none",
                     }}
                   >
                     <div style={{
@@ -2533,7 +2533,7 @@ function PipelineTab() {
                 padding: "16px 24px",
                 borderRadius: 14,
                 border: "none",
-                background: "#1A1917",
+                background: "#7C3AED",
                 color: "#FFFFFF",
                 fontSize: 15,
                 fontWeight: 700,
@@ -2557,8 +2557,10 @@ function PipelineTab() {
           </ScrollFade>
         </section>
 
-        {/* ── SECTION 3: Full Dashboard (fades in after summary) ─────────── */}
-        <AnimatePresence>
+      </div>{/* end maxWidth:760 wrapper */}
+
+      {/* ── SECTION 3: Full Dashboard (fades in after summary) ─────────── */}
+      <AnimatePresence>
           {showDashboard && (
             <motion.div
               ref={dashboardRef}
@@ -2566,178 +2568,156 @@ function PipelineTab() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             >
-              <section style={{ paddingBottom: 80 }}>
+              <section style={{ paddingBottom: 80, padding: "0 32px 80px" }}>
                 {/* Section header */}
-                <div style={{ marginBottom: 32, paddingTop: 20 }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-                    <div>
-                      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", color: "#A8A29E", textTransform: "uppercase", marginBottom: 6 }}>
-                        Full Results
-                      </p>
-                      <h2 style={{ fontSize: 24, fontWeight: 700, color: "#1A1917", letterSpacing: "-0.02em" }}>
-                        Pipeline Dashboard
-                      </h2>
-                    </div>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <button
-                        onClick={toggleComparisonMode}
-                        style={{
-                          padding: "8px 14px",
-                          borderRadius: 10,
-                          border: comparisonMode ? "none" : "1.5px solid #E8E7E4",
-                          background: comparisonMode ? "#7C3AED" : "#FFFFFF",
-                          color: comparisonMode ? "#fff" : "#57534E",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                          transition: "all 0.2s ease",
-                        }}
-                      >
-                        <GitCompare size={13} />
-                        {comparisonMode ? "Exit Compare" : "A vs B Compare"}
-                      </button>
-                      <button
-                        onClick={handleReset}
-                        title="Reset"
-                        style={{
-                          padding: "8px",
-                          borderRadius: 10,
-                          border: "1.5px solid #E8E7E4",
-                          background: "#FFFFFF",
-                          color: "#A8A29E",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <RotateCcw size={14} />
-                      </button>
-                    </div>
+                <div style={{ marginBottom: 28, paddingTop: 28 }}>
+                  <div>
+                    <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", color: "#A8A29E", textTransform: "uppercase", marginBottom: 6 }}>Full Results</p>
+                    <h2 style={{ fontSize: 24, fontWeight: 700, color: "#1A1917", letterSpacing: "-0.02em" }}>Pipeline Dashboard</h2>
                   </div>
                 </div>
 
-                {/* Dashboard layout: sidebar + main */}
-                <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: 20, alignItems: "start" }}>
-                  {/* ── Sidebar ── */}
-                  <aside style={{ display: "flex", flexDirection: "column", gap: 14, position: "sticky", top: 80 }}>
-                    {/* Stimulus selector */}
-                    <div style={{
-                      background: "#FFFFFF",
-                      border: "1.5px solid #E8E7E4",
-                      borderRadius: 14,
-                      padding: "14px",
-                    }}>
-                      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#A8A29E", textTransform: "uppercase", marginBottom: 10 }}>
-                        Stimulus
-                      </p>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        {STIMULI.map(s => {
-                          const active = selectedStimulus.id === s.id;
-                          return (
-                            <button
-                              key={s.id}
-                              onClick={() => setSelectedStimulus(s)}
-                              style={{
-                                padding: "8px 10px",
-                                borderRadius: 9,
-                                border: active ? "1.5px solid #1A1917" : "1.5px solid transparent",
-                                background: active ? "#1A1917" : "#F7F7F5",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 8,
-                                transition: "all 0.15s ease",
-                              }}
-                            >
-                              <span style={{ fontSize: 16 }}>{s.imageEmoji}</span>
-                              <span style={{ fontSize: 11, fontWeight: 600, color: active ? "#FFFFFF" : "#57534E" }}>
-                                {s.name}
-                              </span>
-                            </button>
-                          );
-                        })}
+                {/* Dashboard layout: control strip + full-width results */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                  {/* ── Top control strip ── */}
+                  <aside style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {/* Row 1: Stimulus + Re-run + Compare controls */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#A8A29E", textTransform: "uppercase", flexShrink: 0 }}>Stimulus:</span>
+                      {STIMULI.map(s => {
+                        const active = selectedStimulus.id === s.id;
+                        return (
+                          <button
+                            key={s.id}
+                            onClick={() => setSelectedStimulus(s)}
+                            style={{
+                              padding: "7px 14px",
+                              borderRadius: 999,
+                              border: active ? "1.5px solid #7C3AED" : "1.5px solid #E8E7E4",
+                              background: active ? "#7C3AED" : "#FFFFFF",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                              transition: "all 0.15s ease",
+                            }}
+                          >
+                            <span style={{ fontSize: 14 }}>{s.imageEmoji}</span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: active ? "#FFFFFF" : "#57534E" }}>{s.name}</span>
+                          </button>
+                        );
+                      })}
+                      <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+                        <button
+                          onClick={handleDashboardRun}
+                          style={{
+                            padding: "8px 18px",
+                            borderRadius: 10,
+                            border: "none",
+                            background: "#7C3AED",
+                            color: "#fff",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            display: "flex", alignItems: "center", gap: 6,
+                            boxShadow: "0 2px 10px #7C3AED30",
+                            transition: "opacity 0.15s",
+                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.85"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+                        >
+                          <Play size={12} />
+                          Re-run
+                        </button>
+                        <button
+                          onClick={toggleComparisonMode}
+                          style={{
+                            padding: "8px 14px",
+                            borderRadius: 10,
+                            border: comparisonMode ? "none" : "1.5px solid #E8E7E4",
+                            background: comparisonMode ? "#7C3AED" : "#FFFFFF",
+                            color: comparisonMode ? "#fff" : "#57534E",
+                            fontSize: 12, fontWeight: 600, cursor: "pointer",
+                            display: "flex", alignItems: "center", gap: 6,
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          <GitCompare size={13} />
+                          {comparisonMode ? "Exit Compare" : "A vs B"}
+                        </button>
+                        <button
+                          onClick={handleReset}
+                          title="Reset"
+                          style={{
+                            padding: "8px",
+                            borderRadius: 10,
+                            border: "1.5px solid #E8E7E4",
+                            background: "#FFFFFF",
+                            color: "#A8A29E",
+                            cursor: "pointer",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                          }}
+                        >
+                          <RotateCcw size={14} />
+                        </button>
                       </div>
                     </div>
 
-                    {/* Params in sidebar */}
+                    {/* Row 2: All 5 params in a horizontal grid */}
                     <div style={{
                       background: "#FFFFFF",
                       border: comparisonMode
                         ? `1.5px solid ${activeSet === "A" ? "#7C3AED40" : "#60a5fa40"}`
                         : "1.5px solid #E8E7E4",
                       borderRadius: 14,
-                      padding: "14px",
+                      padding: "16px 20px",
                     }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#A8A29E", textTransform: "uppercase" }}>
-                          Parameters
-                        </p>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
+                        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#A8A29E", textTransform: "uppercase" }}>Parameters</p>
                         {comparisonMode && (
                           <div style={{ display: "flex", gap: 4 }}>
                             {(["A","B"] as const).map(set => (
                               <button key={set} onClick={() => setActiveSet(set)} style={{
-                                padding: "2px 8px",
+                                padding: "2px 10px",
                                 borderRadius: 5,
                                 border: activeSet === set ? "none" : "1px solid #E8E7E4",
                                 background: activeSet === set ? (set === "A" ? "#7C3AED" : "#60a5fa") : "transparent",
                                 color: activeSet === set ? "#fff" : "#A8A29E",
                                 fontSize: 10, fontWeight: 700, cursor: "pointer",
-                              }}>
-                                {set}
-                              </button>
+                              }}>{set}</button>
                             ))}
                           </div>
                         )}
+                        <div style={{ marginLeft: "auto" }}>
+                          <PresetsPanel onApply={handleApplyPreset} />
+                        </div>
                       </div>
-                      {PARAM_META.map(meta => (
-                        <ParamSlider
-                          key={meta.key}
-                          label={meta.label}
-                          description={meta.description}
-                          value={currentParams[meta.key]}
-                          color={meta.color}
-                          paramKey={meta.key}
-                          onChange={handleParam}
-                        />
-                      ))}
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }}>
+                        {PARAM_META.map(meta => (
+                          <div key={meta.key}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
+                              <div style={{ width: 7, height: 7, borderRadius: "50%", background: meta.color, flexShrink: 0 }} />
+                              <span style={{ fontSize: 11, fontWeight: 600, color: "#1A1917" }}>{meta.label}</span>
+                              <span style={{ fontSize: 11, fontWeight: 700, color: meta.color, marginLeft: "auto" }}>{currentParams[meta.key]}</span>
+                            </div>
+                            <div style={{ position: "relative", height: 20 }}>
+                              <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 4, borderRadius: 4, background: "#F0EFED", transform: "translateY(-50%)" }} />
+                              <div style={{ position: "absolute", top: "50%", left: 0, width: `${currentParams[meta.key]}%`, height: 4, borderRadius: 4, background: meta.color, transform: "translateY(-50%)", transition: "width 0.15s ease" }} />
+                              <input
+                                type="range" min={0} max={100}
+                                value={currentParams[meta.key]}
+                                onChange={e => handleParam(meta.key, Number(e.target.value))}
+                                style={{ position: "relative", width: "100%", height: 20, appearance: "none", WebkitAppearance: "none", background: "transparent", cursor: "pointer", margin: 0, zIndex: 1 }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-
-                    {/* Re-run */}
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        onClick={handleDashboardRun}
-                        style={{
-                          flex: 1,
-                          padding: "11px 0",
-                          borderRadius: 10,
-                          border: "none",
-                          background: "#7C3AED",
-                          color: "#fff",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          cursor: "pointer",
-                          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                          boxShadow: "0 2px 12px #7C3AED40",
-                          transition: "opacity 0.15s",
-                        }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.85"; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
-                      >
-                        <Play size={13} />
-                        Re-run
-                      </button>
-                    </div>
-
-                    {/* Presets */}
-                    <PresetsPanel onApply={handleApplyPreset} />
                   </aside>
 
                   {/* ── Main results ── */}
-                  <main style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 20 }}>
+                  <main style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                     {!displayResultsA ? (
                       <div style={{
                         background: "#F7F7F5",
@@ -2855,9 +2835,8 @@ function PipelineTab() {
               </section>
             </motion.div>
           )}
-        </AnimatePresence>
+      </AnimatePresence>
 
-      </div>
     </>
   );
 }
