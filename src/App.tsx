@@ -2663,55 +2663,56 @@ function PipelineTab() {
                       </div>
                     </div>
 
-                    {/* Row 2: All 5 params in a horizontal grid */}
+                    {/* Row 2: compact params strip */}
                     <div style={{
                       background: "#FFFFFF",
-                      border: comparisonMode
-                        ? `1.5px solid ${activeSet === "A" ? "#7C3AED40" : "#60a5fa40"}`
-                        : "1.5px solid #E8E7E4",
-                      borderRadius: 14,
-                      padding: "16px 20px",
+                      border: "1.5px solid #E8E7E4",
+                      borderRadius: 12,
+                      padding: "12px 16px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0,
                     }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
-                        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#A8A29E", textTransform: "uppercase" }}>Parameters</p>
-                        {comparisonMode && (
-                          <div style={{ display: "flex", gap: 4 }}>
-                            {(["A","B"] as const).map(set => (
-                              <button key={set} onClick={() => setActiveSet(set)} style={{
-                                padding: "2px 10px",
-                                borderRadius: 5,
-                                border: activeSet === set ? "none" : "1px solid #E8E7E4",
-                                background: activeSet === set ? (set === "A" ? "#7C3AED" : "#60a5fa") : "transparent",
-                                color: activeSet === set ? "#fff" : "#A8A29E",
-                                fontSize: 10, fontWeight: 700, cursor: "pointer",
-                              }}>{set}</button>
-                            ))}
-                          </div>
-                        )}
-                        <div style={{ marginLeft: "auto" }}>
-                          <PresetsPanel onApply={handleApplyPreset} />
+                      {/* label */}
+                      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#A8A29E", textTransform: "uppercase", flexShrink: 0, marginRight: 16 }}>Params</span>
+                      {comparisonMode && (
+                        <div style={{ display: "flex", gap: 3, marginRight: 12, flexShrink: 0 }}>
+                          {(["A","B"] as const).map(set => (
+                            <button key={set} onClick={() => setActiveSet(set)} style={{
+                              padding: "2px 8px", borderRadius: 4,
+                              border: activeSet === set ? "none" : "1px solid #E8E7E4",
+                              background: activeSet === set ? (set === "A" ? "#7C3AED" : "#60a5fa") : "transparent",
+                              color: activeSet === set ? "#fff" : "#A8A29E",
+                              fontSize: 10, fontWeight: 700, cursor: "pointer",
+                            }}>{set}</button>
+                          ))}
                         </div>
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }}>
+                      )}
+                      {/* 5 param sliders in one row */}
+                      <div style={{ display: "flex", gap: 12, flex: 1, minWidth: 0 }}>
                         {PARAM_META.map(meta => (
-                          <div key={meta.key}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
-                              <div style={{ width: 7, height: 7, borderRadius: "50%", background: meta.color, flexShrink: 0 }} />
-                              <span style={{ fontSize: 11, fontWeight: 600, color: "#1A1917" }}>{meta.label}</span>
-                              <span style={{ fontSize: 11, fontWeight: 700, color: meta.color, marginLeft: "auto" }}>{currentParams[meta.key]}</span>
+                          <div key={meta.key} style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
+                              <div style={{ width: 6, height: 6, borderRadius: "50%", background: meta.color, flexShrink: 0 }} />
+                              <span style={{ fontSize: 10, fontWeight: 600, color: "#57534E", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.label}</span>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: meta.color, marginLeft: "auto", flexShrink: 0 }}>{currentParams[meta.key]}</span>
                             </div>
-                            <div style={{ position: "relative", height: 20 }}>
-                              <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 4, borderRadius: 4, background: "#F0EFED", transform: "translateY(-50%)" }} />
-                              <div style={{ position: "absolute", top: "50%", left: 0, width: `${currentParams[meta.key]}%`, height: 4, borderRadius: 4, background: meta.color, transform: "translateY(-50%)", transition: "width 0.15s ease" }} />
+                            <div style={{ position: "relative", height: 16 }}>
+                              <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 3, borderRadius: 3, background: "#F0EFED", transform: "translateY(-50%)" }} />
+                              <div style={{ position: "absolute", top: "50%", left: 0, width: `${currentParams[meta.key]}%`, height: 3, borderRadius: 3, background: meta.color, transform: "translateY(-50%)", transition: "width 0.15s ease" }} />
                               <input
                                 type="range" min={0} max={100}
                                 value={currentParams[meta.key]}
                                 onChange={e => handleParam(meta.key, Number(e.target.value))}
-                                style={{ position: "relative", width: "100%", height: 20, appearance: "none", WebkitAppearance: "none", background: "transparent", cursor: "pointer", margin: 0, zIndex: 1 }}
+                                style={{ position: "relative", width: "100%", height: 16, appearance: "none", WebkitAppearance: "none", background: "transparent", cursor: "pointer", margin: 0, zIndex: 1 }}
                               />
                             </div>
                           </div>
                         ))}
+                      </div>
+                      {/* Presets inline */}
+                      <div style={{ marginLeft: 16, flexShrink: 0 }}>
+                        <PresetsPanel onApply={handleApplyPreset} />
                       </div>
                     </div>
                   </aside>
