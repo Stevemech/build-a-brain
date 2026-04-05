@@ -2184,6 +2184,50 @@ const PARAM_TOOLTIP: Record<string, string> = {
   retrievalCue: "How useful the context cues are when trying to recall. High = retrieval cues closely match encoding context; Low = mismatched or absent cues.",
 };
 
+// ── DashCard: scroll-triggered reveal card for dashboard sections ─────────────
+function DashCard({ children, label, delay = 0 }: { children: React.ReactNode; label: string; delay?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
+      { threshold: 0.06 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return (
+    <div ref={ref}>
+      <motion.div
+        initial={{ opacity: 0, y: 32 }}
+        animate={visible ? { opacity: 1, y: 0 } : { opacity: 0, y: 32 }}
+        transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay }}
+        style={{
+          background: "#FFFFFF",
+          border: "1.5px solid #E8E7E4",
+          borderRadius: 20,
+          padding: "28px 32px",
+          marginBottom: 20,
+        }}
+      >
+        <p style={{
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: "0.12em",
+          color: "#C4C0BB",
+          textTransform: "uppercase",
+          marginBottom: 20,
+        }}>
+          {label}
+        </p>
+        {children}
+      </motion.div>
+    </div>
+  );
+}
+
 function PipelineTab() {
   // ── Core state ──────────────────────────────────────────────────────────────
   const [selectedStimulus, setSelectedStimulus] = useState<Stimulus>(STIMULI[0]);
@@ -2311,15 +2355,15 @@ function PipelineTab() {
       <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 20px" }}>
 
         {/* ── SECTION 1: Choose a stimulus ───────────────────────────────── */}
-        <section style={{ padding: "80px 0 60px" }}>
+        <section style={{ padding: "100px 0 80px" }}>
           <ScrollFade>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", color: "#A8A29E", textTransform: "uppercase", marginBottom: 12 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.15em", color: "#A8A29E", textTransform: "uppercase", marginBottom: 14 }}>
               Step 1
             </p>
-            <h2 style={{ fontSize: 28, fontWeight: 700, color: "#1A1917", marginBottom: 8, letterSpacing: "-0.02em" }}>
+            <h2 style={{ fontSize: 38, fontWeight: 800, color: "#1A1917", marginBottom: 12, letterSpacing: "-0.03em" }}>
               Choose a stimulus
             </h2>
-            <p style={{ fontSize: 15, color: "#57534E", marginBottom: 36, lineHeight: 1.6 }}>
+            <p style={{ fontSize: 17, color: "#57534E", marginBottom: 44, lineHeight: 1.65 }}>
               Pick the sensory input your brain will process through the pipeline.
             </p>
           </ScrollFade>
@@ -2333,8 +2377,8 @@ function PipelineTab() {
                     onClick={() => handleStimulusSelect(s)}
                     style={{
                       width: "100%",
-                      padding: "20px 18px",
-                      borderRadius: 16,
+                      padding: "28px 24px",
+                      borderRadius: 20,
                       border: isSelected ? "2px solid #7C3AED" : "1.5px solid #E8E7E4",
                       background: isSelected ? "#7C3AED" : "#FFFFFF",
                       cursor: "pointer",
@@ -2389,15 +2433,15 @@ function PipelineTab() {
 
         {/* ── SECTION 2: Brain parameters ────────────────────────────────── */}
         <div ref={paramsRef} />
-        <section style={{ padding: "40px 0 60px" }}>
+        <section style={{ padding: "40px 0 80px" }}>
           <ScrollFade>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", color: "#A8A29E", textTransform: "uppercase", marginBottom: 12 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.15em", color: "#A8A29E", textTransform: "uppercase", marginBottom: 14 }}>
               Step 2
             </p>
-            <h2 style={{ fontSize: 28, fontWeight: 700, color: "#1A1917", marginBottom: 8, letterSpacing: "-0.02em" }}>
+            <h2 style={{ fontSize: 38, fontWeight: 800, color: "#1A1917", marginBottom: 12, letterSpacing: "-0.03em" }}>
               Set brain parameters
             </h2>
-            <p style={{ fontSize: 15, color: "#57534E", marginBottom: 36, lineHeight: 1.6 }}>
+            <p style={{ fontSize: 17, color: "#57534E", marginBottom: 44, lineHeight: 1.65 }}>
               Tune five cognitive knobs. Hover the <span style={{ background: "#F7F7F5", borderRadius: 4, padding: "1px 6px", fontSize: 12, fontWeight: 700, color: "#A8A29E", border: "1px solid #E8E7E4" }}>i</span> buttons to learn what each one does.
             </p>
           </ScrollFade>
@@ -2406,7 +2450,7 @@ function PipelineTab() {
             {PARAM_META.map((meta, i) => (
               <ScrollFade key={meta.key} delay={i * 0.06}>
                 <div style={{
-                  padding: "20px 0",
+                  padding: "26px 0",
                   borderBottom: "1px solid #F0EFED",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
@@ -2417,13 +2461,13 @@ function PipelineTab() {
                         background: meta.color,
                         flexShrink: 0,
                       }} />
-                      <span style={{ fontSize: 14, fontWeight: 600, color: "#1A1917", letterSpacing: "-0.01em" }}>
+                      <span style={{ fontSize: 16, fontWeight: 600, color: "#1A1917", letterSpacing: "-0.01em" }}>
                         {meta.label}
                       </span>
                       <InfoTooltip text={PARAM_TOOLTIP[meta.key] ?? meta.description} />
                     </div>
                     <span style={{
-                      fontSize: 13,
+                      fontSize: 15,
                       fontWeight: 700,
                       color: meta.color,
                       minWidth: 36,
@@ -2530,12 +2574,12 @@ function PipelineTab() {
               onClick={handleRun}
               style={{
                 width: "100%",
-                padding: "16px 24px",
-                borderRadius: 14,
+                padding: "20px 24px",
+                borderRadius: 16,
                 border: "none",
                 background: "#7C3AED",
                 color: "#FFFFFF",
-                fontSize: 15,
+                fontSize: 17,
                 fontWeight: 700,
                 cursor: "pointer",
                 display: "flex",
@@ -2543,7 +2587,7 @@ function PipelineTab() {
                 justifyContent: "center",
                 gap: 10,
                 letterSpacing: "-0.01em",
-                boxShadow: "0 4px 24px rgba(26,25,23,0.12)",
+                boxShadow: "0 4px 28px rgba(124,58,237,0.22)",
                 transition: "all 0.2s ease",
               }}
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.85"; }}
@@ -2747,29 +2791,31 @@ function PipelineTab() {
                     ) : (
                       <>
                         {comparisonMode && (
-                          <div style={{ display: "flex", gap: 8 }}>
-                            <span style={{ padding: "3px 10px", borderRadius: 999, background: "#7C3AED18", color: "#7C3AED", fontSize: 11, fontWeight: 700 }}>A: purple</span>
-                            <span style={{ padding: "3px 10px", borderRadius: 999, background: "#60a5fa18", color: "#60a5fa", fontSize: 11, fontWeight: 700 }}>B: blue</span>
+                          <div style={{ display: "flex", gap: 8, marginBottom: 4 }}>
+                            <span style={{ padding: "4px 12px", borderRadius: 999, background: "#7C3AED18", color: "#7C3AED", fontSize: 12, fontWeight: 700 }}>A: purple</span>
+                            <span style={{ padding: "4px 12px", borderRadius: 999, background: "#60a5fa18", color: "#60a5fa", fontSize: 12, fontWeight: 700 }}>B: blue</span>
                           </div>
                         )}
 
-                        <PipelineFlowDiagram stages={displayResultsA} />
-                        <ScenarioNarration params={comparisonMode ? (activeSet === "A" ? paramsA : paramsB) : params} />
+                        {/* 1 — Pipeline flow */}
+                        <DashCard delay={0} label="Signal Overview">
+                          <PipelineFlowDiagram stages={displayResultsA} />
+                        </DashCard>
 
-                        {/* Stimulus context card */}
-                        <div style={{
-                          background: "#FFFFFF",
-                          border: "1.5px solid #E8E7E4",
-                          borderRadius: 16,
-                          padding: "18px 20px",
-                        }}>
-                          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-                            <span style={{ fontSize: 36 }}>{selectedStimulus.imageEmoji}</span>
+                        {/* 2 — What happened */}
+                        <DashCard delay={0.1} label="What Happened">
+                          <ScenarioNarration params={comparisonMode ? (activeSet === "A" ? paramsA : paramsB) : params} />
+                        </DashCard>
+
+                        {/* 3 — Stimulus context */}
+                        <DashCard delay={0.18} label="Stimulus">
+                          <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
+                            <span style={{ fontSize: 52 }}>{selectedStimulus.imageEmoji}</span>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
-                                <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1A1917" }}>{selectedStimulus.name}</h3>
+                              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
+                                <h3 style={{ fontSize: 20, fontWeight: 700, color: "#1A1917", letterSpacing: "-0.02em" }}>{selectedStimulus.name}</h3>
                                 <span style={{
-                                  fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999,
+                                  fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999,
                                   background: selectedStimulus.modality === "auditory" ? "#06b6d412" : "#7C3AED12",
                                   color: selectedStimulus.modality === "auditory" ? "#06b6d4" : "#7C3AED",
                                   textTransform: "uppercase", letterSpacing: "0.06em",
@@ -2777,14 +2823,14 @@ function PipelineTab() {
                                   {selectedStimulus.modality}
                                 </span>
                               </div>
-                              <p style={{ fontSize: 12, color: "#57534E", lineHeight: 1.55, marginBottom: 10 }}>
+                              <p style={{ fontSize: 15, color: "#57534E", lineHeight: 1.65, marginBottom: 14 }}>
                                 {selectedStimulus.sceneDescription}
                               </p>
-                              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                                 {selectedStimulus.features.map(f => (
                                   <span key={f} style={{
-                                    fontSize: 11, padding: "3px 10px", borderRadius: 999,
-                                    background: "#F7F7F5", color: "#A8A29E", border: "1px solid #E8E7E4",
+                                    fontSize: 12, padding: "5px 14px", borderRadius: 999,
+                                    background: "#F7F7F5", color: "#78716C", border: "1px solid #E8E7E4",
                                   }}>
                                     {f}
                                   </span>
@@ -2792,43 +2838,44 @@ function PipelineTab() {
                               </div>
                             </div>
                           </div>
-                        </div>
+                        </DashCard>
 
-                        {/* Signal Journey */}
-                        <div>
-                          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "#A8A29E", textTransform: "uppercase", marginBottom: 12 }}>Signal Journey</p>
+                        {/* 4 — Signal Journey */}
+                        <DashCard delay={0.26} label="Signal Journey">
                           <SignalWaveform stages={displayResultsA} />
-                          <div style={{ marginTop: 12 }}>
+                          <div style={{ marginTop: 16 }}>
                             <DistortionTracker stages={displayResultsA} />
                           </div>
-                        </div>
+                        </DashCard>
 
-                        {/* Brain + Feature survival */}
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                          <BrainHeatmap stages={displayResultsA} />
-                          <FeatureSurvivalGrid stimulus={selectedStimulus} stages={displayResultsA} />
-                        </div>
-
-                        {/* Stage breakdown */}
-                        <div>
-                          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "#A8A29E", textTransform: "uppercase", marginBottom: 14 }}>Stage-by-Stage Breakdown</p>
-                          <div>
-                            {displayResultsA.map((stage, i) => {
-                              const cfg = STAGE_CONFIG.find(c => c.id === stage.stage) ?? STAGE_CONFIG[i];
-                              const compStage = displayResultsB ? displayResultsB[i] : undefined;
-                              return (
-                                <div key={stage.stage}>
-                                  <StageCard stage={stage} config={cfg} index={i} comparisonStage={compStage} isComparisonMode={comparisonMode} />
-                                  {i < displayResultsA.length - 1 && (
-                                    <PathwayConnector fromVal={stage.signalStrength} toVal={displayResultsA[i+1].signalStrength} color={STAGE_CONFIG[i+1].color} />
-                                  )}
-                                </div>
-                              );
-                            })}
+                        {/* 5 — Brain + Feature survival */}
+                        <DashCard delay={0.34} label="Brain Activity & Feature Survival">
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                            <BrainHeatmap stages={displayResultsA} />
+                            <FeatureSurvivalGrid stimulus={selectedStimulus} stages={displayResultsA} />
                           </div>
-                        </div>
+                        </DashCard>
 
-                        <PipelineSummary stages={displayResultsA} stagesB={displayResultsB ?? undefined} />
+                        {/* 6 — Stage breakdown */}
+                        <DashCard delay={0.42} label="Stage-by-Stage Breakdown">
+                          {displayResultsA.map((stage, i) => {
+                            const cfg = STAGE_CONFIG.find(c => c.id === stage.stage) ?? STAGE_CONFIG[i];
+                            const compStage = displayResultsB ? displayResultsB[i] : undefined;
+                            return (
+                              <div key={stage.stage}>
+                                <StageCard stage={stage} config={cfg} index={i} comparisonStage={compStage} isComparisonMode={comparisonMode} />
+                                {i < displayResultsA.length - 1 && (
+                                  <PathwayConnector fromVal={stage.signalStrength} toVal={displayResultsA[i+1].signalStrength} color={STAGE_CONFIG[i+1].color} />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </DashCard>
+
+                        {/* 7 — Summary */}
+                        <DashCard delay={0.5} label="Run Summary">
+                          <PipelineSummary stages={displayResultsA} stagesB={displayResultsB ?? undefined} />
+                        </DashCard>
                       </>
                     )}
                   </main>
