@@ -202,7 +202,7 @@ function GlossaryTerm({ term, children }: { term: string; children: React.ReactN
             transition={{ duration: 0.15 }}
             className="absolute z-50 left-0 bottom-full mb-2 w-64 rounded-lg p-3 text-[12px] leading-relaxed pointer-events-none"
             style={{
-              background: "rgba(255,255,255,0.95)",
+              background: "var(--color-surface)",
               border: "1px solid #7C3AED50",
               color: "var(--color-text-dim)",
               boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px #7C3AED20",
@@ -231,7 +231,7 @@ function BrainFallback() {
           style={{
             width: 220,
             height: 220,
-            background: "radial-gradient(circle, #7C3AED40, transparent)",
+            background: "transparent",
             animationDuration: "1.8s",
           }}
         />
@@ -240,7 +240,7 @@ function BrainFallback() {
           style={{
             width: 160,
             height: 160,
-            background: "radial-gradient(circle, #7C3AED30 40%, transparent 80%)",
+            background: "transparent",
             animation: "pulse 2s ease-in-out infinite",
           }}
         />
@@ -917,7 +917,7 @@ function StageCard({ stage, config, index, comparisonStage, isComparisonMode }: 
                         <span
                           key={f}
                           className="text-[11px] px-2 py-0.5 rounded-full"
-                          style={{ background: "rgba(255,255,255,0.95)", color: "var(--color-text-dim)" }}
+                          style={{ background: "var(--color-surface)", color: "var(--color-text-dim)" }}
                         >
                           {f}
                         </span>
@@ -1311,7 +1311,7 @@ function PipelineSummary({ stages, stagesB }: { stages: StageResult[]; stagesB?:
           <div
             key={stat.label}
             className="rounded-lg p-3 text-center"
-            style={{ background: "rgba(255,255,255,0.95)", border: "1px solid var(--color-border)" }}
+            style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
           >
             <p className="text-[11px] mb-1" style={{ color: "var(--color-text-muted)" }}>
               {stat.label}
@@ -1354,7 +1354,7 @@ function PipelineSummary({ stages, stagesB }: { stages: StageResult[]; stagesB?:
         return (
           <div
             className="rounded-xl p-4"
-            style={{ background: "rgba(255,255,255,0.95)", border: "1px solid var(--color-border)" }}
+            style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
           >
             <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--color-text-muted)" }}>
               Confidence vs. Accuracy
@@ -1514,7 +1514,7 @@ function PresetsPanel({ onApply }: PresetsPanelProps) {
                     key={preset.id}
                     className="rounded-lg p-3"
                     style={{
-                      background: "rgba(255,255,255,0.95)",
+                      background: "var(--color-surface)",
                       border: "1px solid var(--color-border)",
                     }}
                   >
@@ -3133,7 +3133,7 @@ function LearnTab() {
                     <span
                       key={r}
                       className="text-[11px] px-2.5 py-1 rounded-full"
-                      style={{ background: "rgba(255,255,255,0.95)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
+                      style={{ background: "var(--color-surface)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
                     >
                       {hasGlossary ? <GlossaryTerm term={glossaryKey}>{r}</GlossaryTerm> : r}
                     </span>
@@ -3348,7 +3348,7 @@ function NavBar({ activeTab, onTabChange }: NavBarProps) {
     <div
       className="sticky top-0 z-40 flex items-center px-6 py-3.5 md:px-10 gap-4"
       style={{
-        background: "rgba(255,255,255,0.95)",
+        background: "var(--color-surface)",
         backdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--color-border)",
       }}
@@ -3390,7 +3390,7 @@ function NavBar({ activeTab, onTabChange }: NavBarProps) {
       {/* Badge */}
       <div
         className="text-[11px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0"
-        style={{ background: "rgba(255,255,255,0.95)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
+        style={{ background: "var(--color-surface)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
       >
         PSYC 203
       </div>
@@ -3411,7 +3411,7 @@ function HeroSection() {
       className="relative flex flex-col items-center justify-center overflow-hidden"
       style={{
         minHeight: "100vh",
-        background: "radial-gradient(ellipse 80% 60% at 50% 25%, #EDE8FF 0%, #F5F1FF 40%, #F7F2E4 70%)",
+        background: "var(--color-bg)",
       }}
     >
       {/* Particle background */}
@@ -3421,7 +3421,7 @@ function HeroSection() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse 60% 40% at 50% 55%, #7C3AED14 0%, transparent 70%)",
+          background: "transparent",
         }}
       />
 
@@ -3477,7 +3477,7 @@ function HeroSection() {
       {/* Bottom gradient fade */}
       <div
         className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-10"
-        style={{ background: "linear-gradient(to bottom, transparent, #F7F2E4)" }}
+        style={{ background: "linear-gradient(to bottom, transparent, var(--color-bg))" }}
       />
     </section>
   );
