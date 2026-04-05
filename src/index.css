@@ -3,12 +3,12 @@
 
 @theme {
   /* ── Creamy warm palette ── */
-  --color-bg:        #FAF8F4;
-  --color-surface:   #FDFCF9;
-  --color-surface-2: #F5F2EC;
-  --color-surface-3: #EDE9E1;
-  --color-border:    #E2DDD5;
-  --color-border-2:  #CEC8BE;
+  --color-bg:        #F7F2E4;
+  --color-surface:   #FBF7EC;
+  --color-surface-2: #F0E9D6;
+  --color-surface-3: #E6DCCA;
+  --color-border:    #D9CFBB;
+  --color-border-2:  #C8BCAA;
   --color-text:      #1C1916;
   --color-text-dim:  #5C5650;
   --color-text-muted:#A39E96;

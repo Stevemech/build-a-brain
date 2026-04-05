@@ -1077,7 +1077,7 @@ function RadarChart({ stages, stagesB }: { stages: StageResult[]; stagesB?: Stag
             cy={cy + r * val * Math.sin(angle)}
             r={4}
             fill={cfg.color}
-            stroke="#FDFCF9"
+            stroke="#FBF7EC"
             strokeWidth={1.5}
             style={{ transition: "all 0.4s ease" }}
           />
@@ -1887,7 +1887,7 @@ function InfoTooltip({ text }: { text: string }) {
           width: 18, height: 18,
           borderRadius: "50%",
           border: "1.5px solid #D4D3CF",
-          background: "#F5F2EC",
+          background: "#F0E9D6",
           color: "#A39E96",
           fontSize: 10,
           fontWeight: 700,
@@ -2032,7 +2032,7 @@ function ResultSummary({ stimulus, params, stages, onContinue }: ResultSummaryPr
         position: "fixed",
         inset: 0,
         zIndex: 200,
-        background: "#FDFCF9",
+        background: "#FBF7EC",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -2122,7 +2122,7 @@ function ResultSummary({ stimulus, params, stages, onContinue }: ResultSummaryPr
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
           style={{
-            background: "#F5F2EC",
+            background: "#F0E9D6",
             borderRadius: 16,
             padding: "20px 24px",
             marginBottom: 32,
@@ -2150,7 +2150,7 @@ function ResultSummary({ stimulus, params, stages, onContinue }: ResultSummaryPr
           onClick={onContinue}
           style={{
             background: "#7C3AED",
-            color: "#FDFCF9",
+            color: "#FBF7EC",
             border: "none",
             borderRadius: 12,
             padding: "14px 32px",
@@ -2205,8 +2205,8 @@ function DashCard({ children, label, delay = 0 }: { children: React.ReactNode; l
         animate={visible ? { opacity: 1, y: 0 } : { opacity: 0, y: 32 }}
         transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay }}
         style={{
-          background: "#FDFCF9",
-          border: "1.5px solid #E2DDD5",
+          background: "#FBF7EC",
+          border: "1.5px solid #D9CFBB",
           borderRadius: 20,
           padding: "28px 32px",
           marginBottom: 20,
@@ -2379,8 +2379,8 @@ function PipelineTab() {
                       width: "100%",
                       padding: "28px 24px",
                       borderRadius: 20,
-                      border: isSelected ? "2px solid #7C3AED" : "1.5px solid #E2DDD5",
-                      background: isSelected ? "#7C3AED" : "#FDFCF9",
+                      border: isSelected ? "2px solid #7C3AED" : "1.5px solid #D9CFBB",
+                      background: isSelected ? "#7C3AED" : "#FBF7EC",
                       cursor: "pointer",
                       textAlign: "left",
                       transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
@@ -2388,7 +2388,7 @@ function PipelineTab() {
                     }}
                   >
                     <div style={{
-                      color: isSelected ? "#FDFCF9" : "#5C5650",
+                      color: isSelected ? "#FBF7EC" : "#5C5650",
                       marginBottom: 12,
                       opacity: 0.85,
                     }}>
@@ -2397,7 +2397,7 @@ function PipelineTab() {
                     <p style={{
                       fontSize: 15,
                       fontWeight: 700,
-                      color: isSelected ? "#FDFCF9" : "#1C1916",
+                      color: isSelected ? "#FBF7EC" : "#1C1916",
                       marginBottom: 4,
                       letterSpacing: "-0.01em",
                     }}>
@@ -2419,7 +2419,7 @@ function PipelineTab() {
                       textTransform: "uppercase",
                       padding: "3px 8px",
                       borderRadius: 999,
-                      background: isSelected ? "rgba(255,255,255,0.15)" : "#F5F2EC",
+                      background: isSelected ? "rgba(255,255,255,0.15)" : "#F0E9D6",
                       color: isSelected ? "rgba(255,255,255,0.75)" : "#A39E96",
                     }}>
                       {s.modality}
@@ -2442,7 +2442,7 @@ function PipelineTab() {
               Set brain parameters
             </h2>
             <p style={{ fontSize: 17, color: "#5C5650", marginBottom: 44, lineHeight: 1.65 }}>
-              Tune five cognitive knobs. Hover the <span style={{ background: "#F5F2EC", borderRadius: 4, padding: "1px 6px", fontSize: 12, fontWeight: 700, color: "#A39E96", border: "1px solid #E2DDD5" }}>i</span> buttons to learn what each one does.
+              Tune five cognitive knobs. Hover the <span style={{ background: "#F0E9D6", borderRadius: 4, padding: "1px 6px", fontSize: 12, fontWeight: 700, color: "#A39E96", border: "1px solid #D9CFBB" }}>i</span> buttons to learn what each one does.
             </p>
           </ScrollFade>
 
@@ -2451,7 +2451,7 @@ function PipelineTab() {
               <ScrollFade key={meta.key} delay={i * 0.06}>
                 <div style={{
                   padding: "26px 0",
-                  borderBottom: "1px solid #EDE9E1",
+                  borderBottom: "1px solid #E6DCCA",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -2484,7 +2484,7 @@ function PipelineTab() {
                       right: 0,
                       height: 4,
                       borderRadius: 4,
-                      background: "#EDE9E1",
+                      background: "#E6DCCA",
                       transform: "translateY(-50%)",
                     }} />
                     <div style={{
@@ -2540,8 +2540,8 @@ function PipelineTab() {
                     style={{
                       padding: "6px 14px",
                       borderRadius: 999,
-                      border: "1.5px solid #E2DDD5",
-                      background: "#FDFCF9",
+                      border: "1.5px solid #D9CFBB",
+                      background: "#FBF7EC",
                       fontSize: 12,
                       fontWeight: 500,
                       color: "#5C5650",
@@ -2556,7 +2556,7 @@ function PipelineTab() {
                       (e.currentTarget as HTMLButtonElement).style.color = "#1C1916";
                     }}
                     onMouseLeave={e => {
-                      (e.currentTarget as HTMLButtonElement).style.borderColor = "#E2DDD5";
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = "#D9CFBB";
                       (e.currentTarget as HTMLButtonElement).style.color = "#5C5650";
                     }}
                   >
@@ -2578,7 +2578,7 @@ function PipelineTab() {
                 borderRadius: 16,
                 border: "none",
                 background: "#7C3AED",
-                color: "#FDFCF9",
+                color: "#FBF7EC",
                 fontSize: 17,
                 fontWeight: 700,
                 cursor: "pointer",
@@ -2637,8 +2637,8 @@ function PipelineTab() {
                             style={{
                               padding: "7px 14px",
                               borderRadius: 999,
-                              border: active ? "1.5px solid #7C3AED" : "1.5px solid #E2DDD5",
-                              background: active ? "#7C3AED" : "#FDFCF9",
+                              border: active ? "1.5px solid #7C3AED" : "1.5px solid #D9CFBB",
+                              background: active ? "#7C3AED" : "#FBF7EC",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
@@ -2647,7 +2647,7 @@ function PipelineTab() {
                             }}
                           >
                             <span style={{ fontSize: 14 }}>{s.imageEmoji}</span>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: active ? "#FDFCF9" : "#5C5650" }}>{s.name}</span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: active ? "#FBF7EC" : "#5C5650" }}>{s.name}</span>
                           </button>
                         );
                       })}
@@ -2678,8 +2678,8 @@ function PipelineTab() {
                           style={{
                             padding: "8px 14px",
                             borderRadius: 10,
-                            border: comparisonMode ? "none" : "1.5px solid #E2DDD5",
-                            background: comparisonMode ? "#7C3AED" : "#FDFCF9",
+                            border: comparisonMode ? "none" : "1.5px solid #D9CFBB",
+                            background: comparisonMode ? "#7C3AED" : "#FBF7EC",
                             color: comparisonMode ? "#fff" : "#5C5650",
                             fontSize: 12, fontWeight: 600, cursor: "pointer",
                             display: "flex", alignItems: "center", gap: 6,
@@ -2695,8 +2695,8 @@ function PipelineTab() {
                           style={{
                             padding: "8px",
                             borderRadius: 10,
-                            border: "1.5px solid #E2DDD5",
-                            background: "#FDFCF9",
+                            border: "1.5px solid #D9CFBB",
+                            background: "#FBF7EC",
                             color: "#A39E96",
                             cursor: "pointer",
                             display: "flex", alignItems: "center", justifyContent: "center",
@@ -2709,8 +2709,8 @@ function PipelineTab() {
 
                     {/* Row 2: compact params strip */}
                     <div style={{
-                      background: "#FDFCF9",
-                      border: "1.5px solid #E2DDD5",
+                      background: "#FBF7EC",
+                      border: "1.5px solid #D9CFBB",
                       borderRadius: 12,
                       padding: "12px 16px",
                       display: "flex",
@@ -2724,7 +2724,7 @@ function PipelineTab() {
                           {(["A","B"] as const).map(set => (
                             <button key={set} onClick={() => setActiveSet(set)} style={{
                               padding: "2px 8px", borderRadius: 4,
-                              border: activeSet === set ? "none" : "1px solid #E2DDD5",
+                              border: activeSet === set ? "none" : "1px solid #D9CFBB",
                               background: activeSet === set ? (set === "A" ? "#7C3AED" : "#60a5fa") : "transparent",
                               color: activeSet === set ? "#fff" : "#A39E96",
                               fontSize: 10, fontWeight: 700, cursor: "pointer",
@@ -2742,7 +2742,7 @@ function PipelineTab() {
                               <span style={{ fontSize: 10, fontWeight: 700, color: meta.color, marginLeft: "auto", flexShrink: 0 }}>{currentParams[meta.key]}</span>
                             </div>
                             <div style={{ position: "relative", height: 16 }}>
-                              <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 3, borderRadius: 3, background: "#EDE9E1", transform: "translateY(-50%)" }} />
+                              <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 3, borderRadius: 3, background: "#E6DCCA", transform: "translateY(-50%)" }} />
                               <div style={{ position: "absolute", top: "50%", left: 0, width: `${currentParams[meta.key]}%`, height: 3, borderRadius: 3, background: meta.color, transform: "translateY(-50%)", transition: "width 0.15s ease" }} />
                               <input
                                 type="range" min={0} max={100}
@@ -2765,14 +2765,14 @@ function PipelineTab() {
                   <main style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                     {!displayResultsA ? (
                       <div style={{
-                        background: "#F5F2EC",
+                        background: "#F0E9D6",
                         borderRadius: 18,
                         padding: "60px 24px",
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
                         textAlign: "center",
-                        border: "1.5px solid #E2DDD5",
+                        border: "1.5px solid #D9CFBB",
                       }}>
                         <div style={{
                           width: 56, height: 56,
@@ -2830,7 +2830,7 @@ function PipelineTab() {
                                 {selectedStimulus.features.map(f => (
                                   <span key={f} style={{
                                     fontSize: 12, padding: "5px 14px", borderRadius: 999,
-                                    background: "#F5F2EC", color: "#78716C", border: "1px solid #E2DDD5",
+                                    background: "#F0E9D6", color: "#78716C", border: "1px solid #D9CFBB",
                                   }}>
                                     {f}
                                   </span>
@@ -3411,7 +3411,7 @@ function HeroSection() {
       className="relative flex flex-col items-center justify-center overflow-hidden"
       style={{
         minHeight: "100vh",
-        background: "radial-gradient(ellipse 80% 60% at 50% 25%, #EDE8FF 0%, #F5F1FF 40%, #FAF8F4 70%)",
+        background: "radial-gradient(ellipse 80% 60% at 50% 25%, #EDE8FF 0%, #F5F1FF 40%, #F7F2E4 70%)",
       }}
     >
       {/* Particle background */}
@@ -3477,7 +3477,7 @@ function HeroSection() {
       {/* Bottom gradient fade */}
       <div
         className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-10"
-        style={{ background: "linear-gradient(to bottom, transparent, #FAF8F4)" }}
+        style={{ background: "linear-gradient(to bottom, transparent, #F7F2E4)" }}
       />
     </section>
   );
