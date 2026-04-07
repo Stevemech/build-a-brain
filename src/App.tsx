@@ -1470,7 +1470,7 @@ interface PresetsPanelProps {
 }
 
 function PresetsPanel({ onApply }: PresetsPanelProps) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [activeVariants, setActiveVariants] = useState<Record<string, "A" | "B">>({});
 
   return (
@@ -1481,13 +1481,13 @@ function PresetsPanel({ onApply }: PresetsPanelProps) {
       {/* Header */}
       <button
         className="w-full flex items-center justify-between px-4 py-3 cursor-pointer"
-        style={{ background: "none", border: "none", color: "inherit" }}
+        style={{ background: "#7C3AED", border: "none", color: "#fff", borderRadius: open ? "12px 12px 0 0" : 12 }}
         onClick={() => setOpen((o) => !o)}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--color-text-muted)" }}>
+        <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "#fff" }}>
           ⚡ Quick Experiments
         </p>
-        <div style={{ color: "var(--color-text-muted)" }}>
+        <div style={{ color: "rgba(255,255,255,0.8)" }}>
           {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </div>
       </button>
