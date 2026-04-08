@@ -2935,7 +2935,7 @@ const LEARN_SECTIONS = [
     color: "#10b981",
     title: "Storage",
     subtitle: "The Multi-Store Model",
-    body: "Atkinson & Shiffrin's Multi-Store Model (1968) describes memory as three interconnected stores: Sensory Memory (250ms-2s), Short-Term/Working Memory (15-30s, 7±2 items), and Long-Term Memory (potentially unlimited). Information moves from short-term to long-term through rehearsal and consolidation — a process where the hippocampus plays a central role, gradually transferring memories to the neocortex.",
+    body: "Atkinson & Shiffrin's Multi-Store Model (1968) describes memory as three interconnected stores: Sensory Memory (~250ms for visual/iconic, 2–4s for auditory/echoic), Short-Term/Working Memory (15–30s without rehearsal, limited to a few items), and Long-Term Memory (potentially unlimited capacity and duration). Information moves from short-term to long-term through rehearsal and consolidation — a process where the hippocampus plays a central role, gradually transferring memories to the neocortex.",
     concept: "Atkinson-Shiffrin Multi-Store Model (1968)",
     refs: ["Sensory Register", "Working Memory (Baddeley)", "Hippocampal Consolidation", "Decay vs. Interference"],
   },
@@ -2998,11 +2998,11 @@ const MYTHS = [
   },
   {
     myth: "Confident memories are accurate memories",
-    reality: "Confidence and accuracy are surprisingly independent. Loftus & Palmer (1974) showed that leading questions can create vivid but entirely false memories that people report with high confidence.",
+    reality: "Confidence and accuracy are surprisingly independent. Loftus & Palmer (1974) showed that subtle wording changes in questions could distort eyewitness reports, and later work by Loftus demonstrated that suggestion can produce vivid false memories reported with high confidence.",
   },
   {
     myth: "Studying = memorizing",
-    reality: "Craik & Lockhart (1972) showed that HOW you process information matters more than HOW LONG. One minute of deep semantic processing beats an hour of rote repetition.",
+    reality: "Craik & Lockhart (1972) showed that HOW you process information matters more than HOW LONG. Deep semantic processing — connecting material to meaning — produces far stronger memory traces than extended rote repetition.",
   },
 ];
 
@@ -3315,7 +3315,7 @@ function AboutTab() {
             Source Code
           </p>
           <p className="text-[12px]" style={{ color: "var(--color-text-muted)" }}>
-            github.com/psyc203/build-a-brain — open source educational project
+            github.com/Stevemech/build-a-brain — open source educational project
           </p>
         </div>
       </div>
