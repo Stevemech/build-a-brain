@@ -57,31 +57,31 @@ const PARAM_META = [
   {
     key: "attentionalFocus" as keyof PipelineParams,
     label: "Attentional Focus",
-    description: "High = narrow deep focus, Low = diffuse awareness",
+    description: "How tightly the brain focuses. High = laser focus, Low = zoned out.",
     color: "#7C3AED",
   },
   {
     key: "perceptualNoise" as keyof PipelineParams,
     label: "Perceptual Noise",
-    description: "High = degraded/unclear signal, Low = crisp input",
+    description: "Background static in the environment. High = foggy, Low = crystal clear.",
     color: "#ef4444",
   },
   {
     key: "priorExpectation" as keyof PipelineParams,
     label: "Prior Expectations",
-    description: "High = strong top-down shaping, Low = data-driven",
+    description: "How much prior beliefs shape what you see. High = brain fills in gaps.",
     color: "#6366f1",
   },
   {
     key: "encodingStrength" as keyof PipelineParams,
     label: "Encoding Strength",
-    description: "High = deep semantic encoding, Low = shallow structural",
+    description: "Depth of processing. High = connected to meaning, Low = surface-level.",
     color: "#14b8a6",
   },
   {
     key: "retrievalCue" as keyof PipelineParams,
     label: "Retrieval Cue",
-    description: "High = strong context cue, Low = weak/absent cue",
+    description: "How good the recall hints are. High = perfect match, Low = no hints.",
     color: "#06b6d4",
   },
 ];
@@ -114,28 +114,28 @@ const PRESETS: Preset[] = [
     id: "noisy-room",
     emoji: "🔊",
     name: "The Noisy Room",
-    description: "Signal degradation from high perceptual noise",
+    description: "Cranks up environmental static. The brain struggles to detect the signal at all — like trying to hear someone at a loud concert.",
     params: { perceptualNoise: 85, attentionalFocus: 50, priorExpectation: 40, encodingStrength: 30, retrievalCue: 35 },
   },
   {
     id: "biased-observer",
     emoji: "🕶️",
     name: "The Biased Observer",
-    description: "Top-down distortion and false memories",
+    description: "Strong expectations fill in the blanks. The brain sees what it expects, not what’s actually there. This is how false memories form.",
     params: { perceptualNoise: 15, attentionalFocus: 80, priorExpectation: 90, encodingStrength: 60, retrievalCue: 55 },
   },
   {
     id: "inattentional-blindness",
     emoji: "👁️",
     name: "Inattentional Blindness",
-    description: "Attention as gatekeeper — missing the obvious",
+    description: "Attention is almost off. The brain misses things hiding in plain sight — the gorilla-in-the-room effect.",
     params: { perceptualNoise: 20, attentionalFocus: 15, priorExpectation: 25, encodingStrength: 50, retrievalCue: 50 },
   },
   {
     id: "deep-vs-shallow",
     emoji: "📚",
     name: "Deep vs. Shallow",
-    description: "Toggle between deep and shallow encoding strategies",
+    description: "Compare two study strategies side by side. Deep encoding connects to meaning; shallow encoding just skims the surface.",
     params: { perceptualNoise: 20, attentionalFocus: 65, priorExpectation: 40, encodingStrength: 90, retrievalCue: 60 },
     variantB: { perceptualNoise: 20, attentionalFocus: 65, priorExpectation: 40, encodingStrength: 15, retrievalCue: 60 },
     variantALabel: "Deep (enc=90)",
@@ -145,7 +145,7 @@ const PRESETS: Preset[] = [
     id: "tip-of-tongue",
     emoji: "💭",
     name: "Tip of the Tongue",
-    description: "Retrieval failure despite solid encoding",
+    description: "The memory is stored well, but the retrieval cues are wrong. You know that you know it — you just can’t reach it.",
     params: { perceptualNoise: 15, attentionalFocus: 75, priorExpectation: 45, encodingStrength: 85, retrievalCue: 15 },
   },
 ];
@@ -2177,11 +2177,11 @@ function ResultSummary({ stimulus, params, stages, onContinue }: ResultSummaryPr
 
 // ── Param tooltip descriptions (richer than PARAM_META.description) ──────────
 const PARAM_TOOLTIP: Record<string, string> = {
-  attentionalFocus: "How narrowly focused your attention is. High = deep focus on a few features; Low = diffuse, superficial awareness of everything at once.",
-  perceptualNoise: "Environmental interference degrading the signal. High = like listening in a noisy room or seeing through fog. Low = crystal-clear input.",
-  priorExpectation: "How strongly your prior knowledge shapes perception. High = brain fills in gaps from expectations; Low = purely data-driven, unbiased processing.",
-  encodingStrength: "Depth of memory formation. High = rich semantic encoding (connected to meaning); Low = shallow structural encoding (just the surface form).",
-  retrievalCue: "How useful the context cues are when trying to recall. High = retrieval cues closely match encoding context; Low = mismatched or absent cues.",
+  attentionalFocus: "Controls how tightly the brain zeroes in. Turn it up and the brain catches fine details but misses the big picture. Turn it down and everything gets a quick glance but nothing sticks. This is Broadbent's bottleneck in action — you can't attend to everything at once.",
+  perceptualNoise: "Adds static to the incoming signal, like fog on a highway or chatter in a café. The noisier the environment, the harder the brain has to work just to detect what's there. In signal-detection theory this is the noise that competes with the true signal.",
+  priorExpectation: "Sets how much the brain relies on what it already believes. High expectations mean the brain fills in gaps with past experience — helpful when it's right, dangerous when it's wrong. This is top-down processing: your beliefs literally change what you perceive.",
+  encodingStrength: "Determines how deeply the brain processes what it perceives. High means connecting to meaning (semantic encoding); low means just skimming the surface (structural encoding). Craik & Lockhart showed that depth matters more than time spent studying.",
+  retrievalCue: "How well the recall context matches the original experience. Strong cues act like a key that fits the lock perfectly. Weak cues leave you with that tip-of-the-tongue feeling — the memory is in there, you just can't reach it. This is Tulving's encoding specificity principle.",
 };
 
 // ── DashCard: scroll-triggered reveal card for dashboard sections ─────────────
@@ -2218,10 +2218,15 @@ function DashCard({ children, label, delay = 0 }: { children: React.ReactNode; l
           letterSpacing: "0.12em",
           color: "#C4C0BB",
           textTransform: "uppercase",
-          marginBottom: 20,
+          marginBottom: subtitle ? 6 : 20,
         }}>
           {label}
         </p>
+        {subtitle && (
+          <p style={{ fontSize: 14, color: "var(--color-text-dim)", marginBottom: 18, lineHeight: 1.55 }}>
+            {subtitle}
+          </p>
+        )}
         {children}
       </motion.div>
     </div>
@@ -2798,17 +2803,17 @@ function PipelineTab() {
                         )}
 
                         {/* 1 — Pipeline flow */}
-                        <DashCard delay={0} label="Signal Overview">
+                        <DashCard delay={0} label="Signal Overview" subtitle="How strong the signal was at each stage. Watch where it drops — that's where information was lost.">
                           <PipelineFlowDiagram stages={displayResultsA} />
                         </DashCard>
 
                         {/* 2 — What happened */}
-                        <DashCard delay={0.1} label="What Happened">
+                        <DashCard delay={0.1} label="What Happened" subtitle="A plain-English summary of how the brain processed this stimulus from start to finish.">
                           <ScenarioNarration params={comparisonMode ? (activeSet === "A" ? paramsA : paramsB) : params} />
                         </DashCard>
 
                         {/* 3 — Stimulus context */}
-                        <DashCard delay={0.18} label="Stimulus">
+                        <DashCard delay={0.18} label="Stimulus" subtitle="The raw sensory input the brain received. These are the features it had to work with.">
                           <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
                             <span style={{ fontSize: 52 }}>{selectedStimulus.imageEmoji}</span>
                             <div style={{ flex: 1, minWidth: 0 }}>
@@ -2841,7 +2846,7 @@ function PipelineTab() {
                         </DashCard>
 
                         {/* 4 — Signal Journey */}
-                        <DashCard delay={0.26} label="Signal Journey">
+                        <DashCard delay={0.26} label="Signal Journey" subtitle="The signal's path through all seven stages. Peaks mean the brain held on; dips mean something was lost or distorted.">
                           <SignalWaveform stages={displayResultsA} />
                           <div style={{ marginTop: 16 }}>
                             <DistortionTracker stages={displayResultsA} />
@@ -2849,7 +2854,7 @@ function PipelineTab() {
                         </DashCard>
 
                         {/* 5 — Brain + Feature survival */}
-                        <DashCard delay={0.34} label="Brain Activity & Feature Survival">
+                        <DashCard delay={0.34} label="Brain Activity & Feature Survival" subtitle="Left: which brain regions were most active. Right: which features made it through and which were dropped or altered.">
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
                             <BrainHeatmap stages={displayResultsA} />
                             <FeatureSurvivalGrid stimulus={selectedStimulus} stages={displayResultsA} />
@@ -2857,7 +2862,7 @@ function PipelineTab() {
                         </DashCard>
 
                         {/* 6 — Stage breakdown */}
-                        <DashCard delay={0.42} label="Stage-by-Stage Breakdown">
+                        <DashCard delay={0.42} label="Stage-by-Stage Breakdown" subtitle="Each of the seven cognitive stages, expanded. See exactly what happened, what the psychology says, and why.">
                           {displayResultsA.map((stage, i) => {
                             const cfg = STAGE_CONFIG.find(c => c.id === stage.stage) ?? STAGE_CONFIG[i];
                             const compStage = displayResultsB ? displayResultsB[i] : undefined;
@@ -2873,7 +2878,7 @@ function PipelineTab() {
                         </DashCard>
 
                         {/* 7 — Summary */}
-                        <DashCard delay={0.5} label="Run Summary">
+                        <DashCard delay={0.5} label="Run Summary" subtitle="The final scorecard. How faithful was the brain's output compared to the original stimulus?">
                           <PipelineSummary stages={displayResultsA} stagesB={displayResultsB ?? undefined} />
                         </DashCard>
                       </>
