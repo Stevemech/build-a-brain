@@ -217,12 +217,12 @@ export function runPipeline(stimulus: Stimulus, params: PipelineParams): StageRe
     signalStrength: encodingResult,
     details: `Encoding level: ${encodingType}. ${
       params.encodingStrength > 70
-        ? "Deep encoding — creating rich semantic connections and meaningful associations. This information is being linked to existing knowledge networks, making it far more likely to be remembered (Levels of Processing theory)."
+        ? "Deep encoding — creating rich semantic connections and meaningful associations. Processing depth matters more than processing duration: this kind of engagement with meaning produces far stronger traces than extended rote repetition (Craik & Lockhart, 1972)."
         : params.encodingStrength > 35
           ? "Moderate encoding — some meaningful connections are forming, but the trace may not be robust enough for long-term retention."
-          : "Shallow encoding — only surface features (shape, sound) are being stored. Without deeper processing, this trace will fade quickly."
+          : "Shallow encoding — attending only to structural or phonological features, not meaning. Without deeper semantic engagement, this trace will fade quickly regardless of how long it is rehearsed."
     }`,
-    concept: "Encoding is the process of transforming perceived information into a memory trace. Craik & Lockhart's Levels of Processing theory shows that deeper, more meaningful encoding (semantic) produces stronger, more durable memories than shallow (structural or phonemic) encoding.",
+    concept: "Encoding transforms perceived information into a memory trace. Craik & Lockhart's (1972) Levels of Processing framework shows that what matters is not how long you process information, but how deeply: shallow processing (attending to structure or sound) leaves fragile traces, while deep semantic processing (connecting to meaning) produces durable ones.",
     subMetrics: [
       { label: "Semantic Depth", value: semanticDepth, description: "Meaning-based processing depth" },
       { label: "Elaboration", value: elaboration, description: "Connection to existing knowledge" },
@@ -285,7 +285,7 @@ export function runPipeline(stimulus: Stimulus, params: PipelineParams): StageRe
           ? "Moderate retrieval cues provide some access, but details may be incomplete or reconstructed."
           : "Weak retrieval cues — the memory trace exists but is hard to access. Like having a word 'on the tip of your tongue' (TOT phenomenon)."
     }`,
-    concept: "Retrieval is the process of accessing stored memories. Tulving's encoding specificity principle states that retrieval is most successful when the cues present at retrieval match those present during encoding. Memory isn't like reading a file — it's a reconstructive process.",
+    concept: "Retrieval is the process of accessing stored memories. Tulving's encoding specificity principle states that retrieval is most successful when cues at retrieval match those present during encoding. Every act of retrieval is also reconstructive — subtly altering the trace and making it susceptible to post-event distortion. Loftus & Palmer (1974) showed that even subtle wording changes in questions (e.g., 'smashed' vs. 'hit') can distort what people report remembering.",
     subMetrics: [
       { label: "Cue Effectiveness", value: cueEffectiveness, description: "How well cues activate memory" },
       { label: "Context Match", value: contextMatch, description: "Encoding-retrieval overlap" },
@@ -326,7 +326,7 @@ export function runPipeline(stimulus: Stimulus, params: PipelineParams): StageRe
         ? `Distortions: ${distortions.join("; ")}.` 
         : "The pipeline preserved the signal well — minimal distortion across all stages."
     } This demonstrates that what we remember is not a perfect recording, but a reconstruction shaped by every stage of cognitive processing.`,
-    concept: "The final report — what we consciously experience and remember — is the product of every preceding stage. It shows that cognition is not a camera recording reality, but an active, constructive process where sensation, attention, perception, and memory all interact to create our subjective experience.",
+    concept: "The final report — what we consciously experience and remember — is the product of every preceding stage. Cognition is not a camera recording reality but an active, constructive process. Loftus's research showed that suggestion can produce entirely false memories reported with high confidence — the gap between confidence and accuracy is one of the most striking findings in cognitive psychology.",
     subMetrics: [
       { label: "Fidelity", value: fidelity, description: "How true to original stimulus" },
       { label: "Completeness", value: completeness, description: "% of original features recalled" },
