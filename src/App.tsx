@@ -4,9 +4,6 @@ import {
   ChevronDown,
   ChevronUp,
   Brain,
-  Zap,
-  BookOpen,
-  Info,
   RotateCcw,
   Play,
   AlertTriangle,
@@ -251,43 +248,6 @@ function BrainFallback() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PARTICLE BACKGROUND
-// ─────────────────────────────────────────────────────────────────────────────
-const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
-  id: i,
-  size: 2 + Math.random() * 3,
-  left: 5 + Math.random() * 90,
-  bottom: 5 + Math.random() * 40,
-  duration: 5 + Math.random() * 6,
-  delay: Math.random() * 7,
-  drift: (Math.random() - 0.5) * 50,
-  opacity: 0.15 + Math.random() * 0.25,
-}));
-
-function ParticleBackground() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {PARTICLES.map((p) => (
-        <div
-          key={p.id}
-          className="particle"
-          style={{
-            width: p.size,
-            height: p.size,
-            left: `${p.left}%`,
-            bottom: `${p.bottom}%`,
-            opacity: p.opacity,
-            "--duration": `${p.duration}s`,
-            "--delay": `${p.delay}s`,
-            "--drift": `${p.drift}px`,
-          } as React.CSSProperties}
-        />
-      ))}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // SLIDER COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 interface SliderProps {
@@ -525,13 +485,7 @@ function SignalWaveform({ stages }: { stages: StageResult[] }) {
   const gradientId = "waveform-gradient";
 
   return (
-    <div
-      className="rounded-2xl p-5"
-      style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
-    >
-      <p className="text-xs font-medium mb-3" style={{ color: "var(--color-text-muted)" }}>
-        Signal waveform across stages
-      </p>
+    <div>
       <div style={{ overflowX: "auto" }}>
         <svg viewBox={`0 0 ${width} ${height}`} style={{ width: "100%", minWidth: 280, height: 90 }}>
           <defs>
@@ -1077,7 +1031,7 @@ function RadarChart({ stages, stagesB }: { stages: StageResult[]; stagesB?: Stag
             cy={cy + r * val * Math.sin(angle)}
             r={4}
             fill={cfg.color}
-            stroke="#FBF7EC"
+            stroke="#FFFFFF"
             strokeWidth={1.5}
             style={{ transition: "all 0.4s ease" }}
           />
@@ -1126,12 +1080,10 @@ function RadarChart({ stages, stagesB }: { stages: StageResult[]; stagesB?: Stag
 function FeatureSurvivalGrid({ stimulus, stages }: { stimulus: Stimulus; stages: StageResult[] }) {
   const allFeatures = stimulus.features;
   return (
-    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}>
-      <div className="px-3 pt-3 pb-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
-          Feature Survival
-        </p>
-      </div>
+    <div className="overflow-hidden">
+      <p className="text-[11px] font-medium mb-2" style={{ color: "var(--color-text-muted)", letterSpacing: "0.02em" }}>
+        Feature survival
+      </p>
       <div className="overflow-x-auto">
         <table className="w-full text-[11px]" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
           <thead>
@@ -1226,15 +1178,12 @@ function BrainHeatmap({ stages }: { stages: StageResult[] }) {
   const regionOpacity = (idx: number) => clamp(stages[idx]?.signalStrength ?? 0) / 100;
 
   return (
-    <div
-      className="rounded-xl flex flex-col items-center justify-center p-4"
-      style={{ border: "1px solid var(--color-border)", background: "var(--color-surface)" }}
-    >
-      <p className="text-[11px] font-semibold uppercase tracking-wider mb-3 self-start" style={{ color: "var(--color-text-muted)" }}>
-        Brain Activity Map
+    <div className="flex flex-col items-center justify-center">
+      <p className="text-[11px] font-medium mb-3 self-start" style={{ color: "var(--color-text-muted)", letterSpacing: "0.02em" }}>
+        Brain activity
       </p>
       <svg viewBox="0 0 200 180" style={{ width: "100%", maxWidth: 200 }}>
-        <ellipse cx={100} cy={90} rx={85} ry={78} fill="#F3F1EE" stroke="#E4E0DA" strokeWidth={1.5} />
+        <ellipse cx={100} cy={90} rx={85} ry={78} fill="#F4F5F7" stroke="#E4E7EC" strokeWidth={1.5} />
         <ellipse cx={100} cy={148} rx={40} ry={22} fill={`rgba(245,158,11,${regionOpacity(0) * 0.7})`} style={{ transition: "fill 0.4s" }} />
         <ellipse cx={100} cy={42} rx={50} ry={30} fill={`rgba(139,92,246,${regionOpacity(1) * 0.7})`} style={{ transition: "fill 0.4s" }} />
         <ellipse cx={52} cy={100} rx={30} ry={38} fill={`rgba(99,102,241,${regionOpacity(2) * 0.7})`} style={{ transition: "fill 0.4s" }} />
@@ -1242,8 +1191,8 @@ function BrainHeatmap({ stages }: { stages: StageResult[] }) {
         <ellipse cx={100} cy={90} rx={28} ry={28} fill={`rgba(16,185,129,${regionOpacity(4) * 0.7})`} style={{ transition: "fill 0.4s" }} />
         <ellipse cx={78} cy={55} rx={22} ry={18} fill={`rgba(6,182,212,${regionOpacity(5) * 0.7})`} style={{ transition: "fill 0.4s" }} />
         <ellipse cx={122} cy={55} rx={22} ry={18} fill={`rgba(59,130,246,${regionOpacity(6) * 0.7})`} style={{ transition: "fill 0.4s" }} />
-        <ellipse cx={100} cy={90} rx={85} ry={78} fill="none" stroke="#E4E0DA" strokeWidth={1.5} />
-        <rect x={86} y={164} width={28} height={14} rx={6} fill="#F3F1EE" stroke="#E4E0DA" strokeWidth={1} />
+        <ellipse cx={100} cy={90} rx={85} ry={78} fill="none" stroke="#E4E7EC" strokeWidth={1.5} />
+        <rect x={86} y={164} width={28} height={14} rx={6} fill="#F4F5F7" stroke="#E4E7EC" strokeWidth={1} />
       </svg>
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-3 w-full">
         {STAGE_CONFIG.map((cfg, i) => (
@@ -1287,11 +1236,11 @@ function PipelineSummary({ stages, stagesB }: { stages: StageResult[]; stagesB?:
   const scoreLabel = outputSignal >= 70 ? "High Fidelity" : outputSignal >= 45 ? "Partial Fidelity" : "Low Fidelity";
 
   return (
-    <div className="rounded-xl p-4 space-y-4" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold" style={{ color: "var(--color-text)", fontFamily: "var(--font-display)", fontSize: "1rem" }}>
-          Pipeline Summary
-        </h3>
+        <span className="text-[11px] font-medium uppercase" style={{ color: "var(--color-text-muted)", letterSpacing: "0.02em" }}>
+          Fidelity score
+        </span>
         <span
           className="text-xs font-semibold px-2.5 py-1 rounded-full"
           style={{ background: `${scoreColor}20`, color: scoreColor }}
@@ -1363,8 +1312,8 @@ function PipelineSummary({ stages, stagesB }: { stages: StageResult[]; stagesB?:
               <div className="flex-shrink-0">
                 <svg viewBox="0 0 120 120" style={{ width: 120, height: 120 }}>
                   {/* Background tracks */}
-                  <path d={arcPath(60, 60, 46, -45, 225)} fill="none" stroke="#E4E0DA22" strokeWidth={8} strokeLinecap="round" />
-                  <path d={arcPath(60, 60, 32, -45, 225)} fill="none" stroke="#E4E0DA22" strokeWidth={8} strokeLinecap="round" />
+                  <path d={arcPath(60, 60, 46, -45, 225)} fill="none" stroke="#E4E7EC22" strokeWidth={8} strokeLinecap="round" />
+                  <path d={arcPath(60, 60, 32, -45, 225)} fill="none" stroke="#E4E7EC22" strokeWidth={8} strokeLinecap="round" />
                   {/* Fidelity arc (inner) */}
                   {fidelAngle > 0 && (
                     <motion.path
@@ -1582,85 +1531,6 @@ function PresetsPanel({ onApply }: PresetsPanelProps) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PIPELINE INFORMATION FLOW DIAGRAM (mini circles)
-// ─────────────────────────────────────────────────────────────────────────────
-function PipelineFlowDiagram({ stages }: { stages: StageResult[] }) {
-  const avg = Math.round(stages.reduce((a, s) => a + clamp(s.signalStrength), 0) / stages.length);
-  const emoji = avg >= 70 ? "🌟" : avg >= 50 ? "👍" : avg >= 30 ? "🌤" : "🌧";
-  const summaryText = avg >= 70
-    ? "Your brain processed this really well — strong signal throughout."
-    : avg >= 50
-    ? "A solid processing run — most stages held up nicely."
-    : avg >= 30
-    ? "Some signal faded along the way — a few stages struggled."
-    : "This was a tough one — the signal had a hard time getting through.";
-
-  return (
-    <div
-      className="rounded-2xl p-5"
-      style={{ background: "linear-gradient(135deg, var(--color-surface), var(--color-surface-2))", border: "1px solid var(--color-border)" }}
-    >
-      {/* Friendly summary */}
-      <div className="flex items-center gap-3 mb-5">
-        <span className="text-2xl">{emoji}</span>
-        <div>
-          <p className="text-sm font-medium" style={{ color: "var(--color-text)" }}>{summaryText}</p>
-          <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>Average signal strength: {avg}%</p>
-        </div>
-      </div>
-
-      {/* Stage flow — generous spacing */}
-      <div className="flex items-center justify-between gap-0 px-2">
-        {stages.map((s, i) => {
-          const cfg = STAGE_CONFIG[i];
-          const signal = clamp(s.signalStrength) / 100;
-          const size = 28 + signal * 12;
-          const nextSignal = i < stages.length - 1 ? clamp(stages[i + 1].signalStrength) / 100 : null;
-
-          return (
-            <div key={cfg.id} className="flex items-center flex-1 min-w-0">
-              <div className="flex flex-col items-center gap-1.5 flex-shrink-0" style={{ minWidth: 44 }}>
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: i * 0.08, type: "spring", stiffness: 180, damping: 14 }}
-                  style={{
-                    width: size,
-                    height: size,
-                    borderRadius: "50%",
-                    background: `${cfg.color}18`,
-                    border: `2px solid ${cfg.color}80`,
-                    boxShadow: `0 0 ${signal * 16}px ${cfg.color}30`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "all 0.5s ease",
-                  }}
-                >
-                  <span style={{ fontSize: 12, color: cfg.color, fontWeight: 700 }}>{Math.round(clamp(s.signalStrength))}</span>
-                </motion.div>
-                <span className="text-[10px] font-medium" style={{ color: cfg.color }}>{cfg.shortLabel}</span>
-              </div>
-              {nextSignal !== null && (
-                <div className="flex-1 flex items-center justify-center px-0.5" style={{ minWidth: 8 }}>
-                  <div
-                    className="rounded-full w-full"
-                    style={{
-                      height: Math.max(2, nextSignal * 4),
-                      background: `linear-gradient(to right, ${cfg.color}50, ${STAGE_CONFIG[i + 1].color}50)`,
-                      transition: "all 0.5s ease",
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DISTORTION TRACKER
@@ -1686,11 +1556,8 @@ function DistortionTracker({ stages }: { stages: StageResult[] }) {
   const troughCfg = STAGE_CONFIG.find(c => c.id === troughStage.stage)!;
 
   return (
-    <div
-      className="rounded-2xl p-5 space-y-4"
-      style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}
-    >
-      <p className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
+    <div className="space-y-4">
+      <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
         How the signal changed at each stage
       </p>
 
@@ -1772,18 +1639,16 @@ function ScenarioNarration({ params }: { params: PipelineParams }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="rounded-2xl p-5"
-      style={{ background: "var(--color-surface)", border: "1px solid #7C3AED18" }}
+      transition={{ duration: 0.4 }}
     >
       <div className="flex items-start gap-4">
         <div
-          className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: "#7C3AED10", border: "1px solid #7C3AED20" }}
+          className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
+          style={{ background: "#7C3AED0D" }}
         >
-          <Quote size={16} color="#7C3AED" />
+          <Quote size={14} color="#7C3AED" />
         </div>
         <div className="flex-1">
           <p className="text-xs font-medium mb-2" style={{ color: "#7C3AED" }}>
@@ -1886,9 +1751,9 @@ function InfoTooltip({ text }: { text: string }) {
         style={{
           width: 18, height: 18,
           borderRadius: "50%",
-          border: "1.5px solid #D4D3CF",
-          background: "#F0E9D6",
-          color: "#A39E96",
+          border: "1.5px solid #CDD2DB",
+          background: "#F0F2F5",
+          color: "#8B93A0",
           fontSize: 10,
           fontWeight: 700,
           cursor: "pointer",
@@ -1914,7 +1779,7 @@ function InfoTooltip({ text }: { text: string }) {
               bottom: "calc(100% + 6px)",
               left: "50%",
               transform: "translateX(-50%)",
-              background: "#1C1916",
+              background: "#0B0D10",
               color: "#fff",
               padding: "8px 12px",
               borderRadius: 10,
@@ -1932,7 +1797,7 @@ function InfoTooltip({ text }: { text: string }) {
               transform: "translateX(-50%)",
               borderLeft: "5px solid transparent",
               borderRight: "5px solid transparent",
-              borderTop: "5px solid #1C1916",
+              borderTop: "5px solid #0B0D10",
             }} />
           </motion.div>
         )}
@@ -1942,7 +1807,7 @@ function InfoTooltip({ text }: { text: string }) {
 }
 
 // ── Scroll-fade wrapper ───────────────────────────────────────────────────────
-function ScrollFade({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+function ScrollFade({ children, delay = 0, stretch = false }: { children: React.ReactNode; delay?: number; stretch?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   useEffect(() => {
@@ -1955,12 +1820,16 @@ function ScrollFade({ children, delay = 0 }: { children: React.ReactNode; delay?
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
+  // When `stretch` is on, the wrapper expands to fill its parent grid/flex
+  // track so children can equalize their height (used by the stimulus card
+  // grid). When off, children stack as normal block flow.
   return (
-    <div ref={ref}>
+    <div ref={ref} style={stretch ? { height: "100%", display: "flex" } : undefined}>
       <motion.div
         initial={{ opacity: 0, y: 28 }}
         animate={visible ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
-        transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay }}
+        style={stretch ? { width: "100%", display: "flex" } : undefined}
       >
         {children}
       </motion.div>
@@ -2032,7 +1901,7 @@ function ResultSummary({ stimulus, params, stages, onContinue }: ResultSummaryPr
         position: "fixed",
         inset: 0,
         zIndex: 200,
-        background: "#FBF7EC",
+        background: "#FFFFFF",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -2074,17 +1943,17 @@ function ResultSummary({ stimulus, params, stages, onContinue }: ResultSummaryPr
           transition={{ delay: 0.35, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
           style={{ marginBottom: 8 }}
         >
-          <span style={{ fontSize: 80, fontWeight: 700, color: "#1C1916", lineHeight: 1, fontFamily: "Lora, Georgia, serif" }}>
+          <span style={{ fontSize: 80, fontWeight: 700, color: "#0B0D10", lineHeight: 1, fontFamily: "Inter, system-ui, sans-serif" }}>
             {Math.round(finalSignal)}
           </span>
-          <span style={{ fontSize: 28, fontWeight: 400, color: "#A39E96" }}>/100</span>
+          <span style={{ fontSize: 28, fontWeight: 400, color: "#8B93A0" }}>/100</span>
         </motion.div>
 
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.45 }}
-          style={{ color: "#A39E96", fontSize: 13, marginBottom: 32, letterSpacing: "0.04em" }}
+          style={{ color: "#8B93A0", fontSize: 13, marginBottom: 32, letterSpacing: "0.04em" }}
         >
           final signal · avg {Math.round(avgSignal)} across 7 stages
         </motion.p>
@@ -2108,7 +1977,7 @@ function ResultSummary({ stimulus, params, stages, onContinue }: ResultSummaryPr
                   opacity: s.signalStrength / 100,
                   minOpacity: 0.2,
                 }} />
-                <span style={{ fontSize: 9, color: "#A39E96", fontWeight: 600, letterSpacing: "0.05em" }}>
+                <span style={{ fontSize: 9, color: "#8B93A0", fontWeight: 600, letterSpacing: "0.05em" }}>
                   {cfg.shortLabel}
                 </span>
               </div>
@@ -2122,7 +1991,7 @@ function ResultSummary({ stimulus, params, stages, onContinue }: ResultSummaryPr
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
           style={{
-            background: "#F0E9D6",
+            background: "#F0F2F5",
             borderRadius: 16,
             padding: "20px 24px",
             marginBottom: 32,
@@ -2135,7 +2004,7 @@ function ResultSummary({ stimulus, params, stages, onContinue }: ResultSummaryPr
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.65 + i * 0.1, duration: 0.4 }}
-              style={{ fontSize: 14, color: "#5C5650", lineHeight: 1.6, marginBottom: i < summaryLines.length - 1 ? 10 : 0 }}
+              style={{ fontSize: 14, color: "#4A5058", lineHeight: 1.6, marginBottom: i < summaryLines.length - 1 ? 10 : 0 }}
             >
               {line}
             </motion.p>
@@ -2150,7 +2019,7 @@ function ResultSummary({ stimulus, params, stages, onContinue }: ResultSummaryPr
           onClick={onContinue}
           style={{
             background: "#7C3AED",
-            color: "#FBF7EC",
+            color: "#FFFFFF",
             border: "none",
             borderRadius: 12,
             padding: "14px 32px",
@@ -2184,8 +2053,115 @@ const PARAM_TOOLTIP: Record<string, string> = {
   retrievalCue: "How well the recall context matches the original experience. Strong cues act like a key that fits the lock perfectly. Weak cues leave you with that tip-of-the-tongue feeling — the memory is in there, you just can't reach it. This is Tulving's encoding specificity principle.",
 };
 
+// ── ActiveSetPill: small "A" / "B" indicator shown in compare mode ───────────
+function ActiveSetPill({ set }: { set: "A" | "B" }) {
+  const color = set === "A" ? "#7C3AED" : "#2563EB";
+  return (
+    <span
+      aria-label={`Viewing set ${set}`}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "2px 10px",
+        borderRadius: 999,
+        background: `${color}14`,
+        color,
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        lineHeight: 1.4,
+      }}
+    >
+      <span
+        aria-hidden
+        style={{ width: 6, height: 6, borderRadius: 999, background: color, display: "inline-block" }}
+      />
+      Viewing {set}
+    </span>
+  );
+}
+
+// ── Collapsible: lazy-reveal section for heavier/optional content ────────────
+function Collapsible({ children, label, delay = 0, defaultOpen = false }: { children: React.ReactNode; label: string; delay?: number; defaultOpen?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
+      { threshold: 0.06 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return (
+    <div ref={ref}>
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={visible ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay }}
+        style={{
+          background: "#FFFFFF",
+          border: "1px solid #E4E7EC",
+          borderRadius: 12,
+          marginBottom: 12,
+          overflow: "hidden",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          aria-expanded={open}
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            background: "transparent",
+            border: "none",
+            padding: "16px 24px",
+            cursor: "pointer",
+            textAlign: "left",
+            color: "#0B0D10",
+            fontSize: 14,
+            fontWeight: 600,
+            letterSpacing: "-0.01em",
+          }}
+        >
+          <span>{label}</span>
+          <ChevronDown
+            size={16}
+            color="#8B93A0"
+            style={{ transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s ease" }}
+          />
+        </button>
+        <AnimatePresence initial={false}>
+          {open && (
+            <motion.div
+              key="content"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              style={{ overflow: "hidden" }}
+            >
+              <div style={{ padding: "6px 24px 22px" }}>
+                {children}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </div>
+  );
+}
+
 // ── DashCard: scroll-triggered reveal card for dashboard sections ─────────────
-function DashCard({ children, label, delay = 0 }: { children: React.ReactNode; label: string; delay?: number }) {
+function DashCard({ children, label, subtitle, trailing, delay = 0 }: { children: React.ReactNode; label: string; subtitle?: string; trailing?: React.ReactNode; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   useEffect(() => {
@@ -2201,29 +2177,37 @@ function DashCard({ children, label, delay = 0 }: { children: React.ReactNode; l
   return (
     <div ref={ref}>
       <motion.div
-        initial={{ opacity: 0, y: 32 }}
-        animate={visible ? { opacity: 1, y: 0 } : { opacity: 0, y: 32 }}
-        transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay }}
+        initial={{ opacity: 0, y: 16 }}
+        animate={visible ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay }}
         style={{
-          background: "#FBF7EC",
-          border: "1.5px solid #D9CFBB",
-          borderRadius: 20,
-          padding: "28px 32px",
-          marginBottom: 20,
+          background: "#FFFFFF",
+          border: "1px solid #E4E7EC",
+          borderRadius: 12,
+          padding: "22px 24px",
+          marginBottom: 12,
         }}
       >
-        <p style={{
-          fontSize: 11,
-          fontWeight: 700,
-          letterSpacing: "0.12em",
-          color: "#C4C0BB",
-          textTransform: "uppercase",
-          marginBottom: subtitle ? 6 : 20,
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          marginBottom: subtitle ? 4 : 16,
         }}>
-          {label}
-        </p>
+          <h3 style={{
+            fontSize: 14,
+            fontWeight: 600,
+            color: "#0B0D10",
+            letterSpacing: "-0.01em",
+            margin: 0,
+          }}>
+            {label}
+          </h3>
+          {trailing}
+        </div>
         {subtitle && (
-          <p style={{ fontSize: 14, color: "var(--color-text-dim)", marginBottom: 18, lineHeight: 1.55 }}>
+          <p style={{ fontSize: 13, color: "#8B93A0", marginBottom: 18, lineHeight: 1.55 }}>
             {subtitle}
           </p>
         )}
@@ -2249,6 +2233,11 @@ function PipelineTab() {
   const [paramsB, setParamsB] = useState<PipelineParams>({ ...DEFAULT_PARAMS });
   const [resultsA, setResultsA] = useState<StageResult[] | null>(null);
   const [resultsB, setResultsB] = useState<StageResult[] | null>(null);
+
+  // Monotonically increasing id that bumps on every explicit Re-run.
+  // Used as a remount key so charts visibly re-animate, giving clear feedback
+  // even when results happen to be identical to the previous run.
+  const [runId, setRunId] = useState(0);
 
   // ── Refs for scroll ──────────────────────────────────────────────────────────
   const paramsRef = useRef<HTMLDivElement>(null);
@@ -2285,6 +2274,7 @@ function PipelineTab() {
       setResults(runPipeline(selectedStimulus, params));
     }
     setHasRun(true);
+    setRunId(id => id + 1);
   };
 
   const handleReset = () => {
@@ -2323,8 +2313,15 @@ function PipelineTab() {
     setComparisonMode(c => !c);
   };
 
-  const displayResultsA = comparisonMode ? resultsA : results;
-  const displayResultsB = comparisonMode ? resultsB : null;
+  // In compare mode, the "primary" data shown in all charts follows the
+  // currently-selected set (A or B) so toggling the A/B tabs actually swaps
+  // the visualization. The "secondary" is the other set, used for overlays.
+  const displayResultsA = comparisonMode
+    ? (activeSet === "A" ? resultsA : resultsB)
+    : results;
+  const displayResultsB = comparisonMode
+    ? (activeSet === "A" ? resultsB : resultsA)
+    : null;
   const currentParams = comparisonMode ? (activeSet === "A" ? paramsA : paramsB) : params;
 
   const handleStimulusSelect = (s: Stimulus) => {
@@ -2362,13 +2359,13 @@ function PipelineTab() {
         {/* ── SECTION 1: Choose a stimulus ───────────────────────────────── */}
         <section style={{ padding: "100px 0 80px" }}>
           <ScrollFade>
-            <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.15em", color: "#A39E96", textTransform: "uppercase", marginBottom: 14 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.15em", color: "#8B93A0", textTransform: "uppercase", marginBottom: 14 }}>
               Step 1
             </p>
-            <h2 style={{ fontSize: 38, fontWeight: 700, color: "#1C1916", marginBottom: 12, letterSpacing: "-0.02em", fontFamily: "Lora, Georgia, serif" }}>
+            <h2 style={{ fontSize: 38, fontWeight: 700, color: "#0B0D10", marginBottom: 12, letterSpacing: "-0.02em", fontFamily: "Inter, system-ui, sans-serif" }}>
               Choose a stimulus
             </h2>
-            <p style={{ fontSize: 17, color: "#5C5650", marginBottom: 44, lineHeight: 1.65 }}>
+            <p style={{ fontSize: 17, color: "#4A5058", marginBottom: 44, lineHeight: 1.65 }}>
               Pick the sensory input your brain will process through the pipeline.
             </p>
           </ScrollFade>
@@ -2377,57 +2374,65 @@ function PipelineTab() {
             {STIMULI.map((s, i) => {
               const isSelected = selectedStimulus.id === s.id;
               return (
-                <ScrollFade key={s.id} delay={i * 0.08}>
+                <ScrollFade key={s.id} delay={i * 0.08} stretch>
                   <button
                     onClick={() => handleStimulusSelect(s)}
+                    className={isSelected ? undefined : "card-hover"}
                     style={{
                       width: "100%",
-                      padding: "28px 24px",
-                      borderRadius: 20,
-                      border: isSelected ? "2px solid #7C3AED" : "1.5px solid #D9CFBB",
-                      background: isSelected ? "#7C3AED" : "#FBF7EC",
+                      padding: "22px 22px",
+                      borderRadius: 12,
+                      border: isSelected ? "1px solid #0B0D10" : "1px solid #E4E7EC",
+                      background: isSelected ? "#0B0D10" : "#FFFFFF",
                       cursor: "pointer",
                       textAlign: "left",
-                      transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
-                      boxShadow: isSelected ? "0 4px 24px rgba(124,58,237,0.3)" : "none",
+                      transition: "all 0.18s ease",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-start",
                     }}
                   >
                     <div style={{
-                      color: isSelected ? "#FBF7EC" : "#5C5650",
-                      marginBottom: 12,
-                      opacity: 0.85,
+                      color: isSelected ? "#FFFFFF" : "#4A5058",
+                      marginBottom: 10,
+                      opacity: isSelected ? 0.95 : 0.85,
                     }}>
-                      {STIMULUS_ICONS[s.name] ?? <span style={{ fontSize: 28 }}>{s.imageEmoji}</span>}
+                      {STIMULUS_ICONS[s.name] ?? <span style={{ fontSize: 26 }}>{s.imageEmoji}</span>}
                     </div>
                     <p style={{
-                      fontSize: 15,
-                      fontWeight: 700,
-                      color: isSelected ? "#FBF7EC" : "#1C1916",
+                      fontSize: 14.5,
+                      fontWeight: 600,
+                      color: isSelected ? "#FFFFFF" : "#0B0D10",
                       marginBottom: 4,
                       letterSpacing: "-0.01em",
                     }}>
                       {s.name}
                     </p>
                     <p style={{
-                      fontSize: 12,
-                      color: isSelected ? "rgba(255,255,255,0.6)" : "#A39E96",
+                      fontSize: 12.5,
+                      color: isSelected ? "rgba(255,255,255,0.65)" : "#8B93A0",
                       lineHeight: 1.45,
                     }}>
                       {s.sceneDescription.slice(0, 60)}…
                     </p>
                     <span style={{
                       display: "inline-block",
-                      marginTop: 10,
-                      fontSize: 10,
-                      fontWeight: 700,
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                      padding: "3px 8px",
-                      borderRadius: 999,
-                      background: isSelected ? "rgba(255,255,255,0.15)" : "#F0E9D6",
-                      color: isSelected ? "rgba(255,255,255,0.75)" : "#A39E96",
+                      marginTop: "auto",
+                      paddingTop: 12,
                     }}>
-                      {s.modality}
+                      <span style={{
+                        display: "inline-block",
+                        fontSize: 10,
+                        fontWeight: 600,
+                        letterSpacing: "0.1em",
+                        textTransform: "uppercase",
+                        padding: "3px 8px",
+                        borderRadius: 999,
+                        background: isSelected ? "rgba(255,255,255,0.12)" : "#F0F2F5",
+                        color: isSelected ? "rgba(255,255,255,0.8)" : "#8B93A0",
+                      }}>
+                        {s.modality}
+                      </span>
                     </span>
                   </button>
                 </ScrollFade>
@@ -2440,14 +2445,14 @@ function PipelineTab() {
         <div ref={paramsRef} />
         <section style={{ padding: "40px 0 80px" }}>
           <ScrollFade>
-            <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.15em", color: "#A39E96", textTransform: "uppercase", marginBottom: 14 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.15em", color: "#8B93A0", textTransform: "uppercase", marginBottom: 14 }}>
               Step 2
             </p>
-            <h2 style={{ fontSize: 38, fontWeight: 700, color: "#1C1916", marginBottom: 12, letterSpacing: "-0.02em", fontFamily: "Lora, Georgia, serif" }}>
+            <h2 style={{ fontSize: 38, fontWeight: 700, color: "#0B0D10", marginBottom: 12, letterSpacing: "-0.02em", fontFamily: "Inter, system-ui, sans-serif" }}>
               Set brain parameters
             </h2>
-            <p style={{ fontSize: 17, color: "#5C5650", marginBottom: 44, lineHeight: 1.65 }}>
-              Tune five cognitive knobs. Hover the <span style={{ background: "#F0E9D6", borderRadius: 4, padding: "1px 6px", fontSize: 12, fontWeight: 700, color: "#A39E96", border: "1px solid #D9CFBB" }}>i</span> buttons to learn what each one does.
+            <p style={{ fontSize: 17, color: "#4A5058", marginBottom: 44, lineHeight: 1.65 }}>
+              Tune five cognitive knobs. Hover the <span style={{ background: "#F0F2F5", borderRadius: 4, padding: "1px 6px", fontSize: 12, fontWeight: 700, color: "#8B93A0", border: "1px solid #E4E7EC" }}>i</span> buttons to learn what each one does.
             </p>
           </ScrollFade>
 
@@ -2456,7 +2461,7 @@ function PipelineTab() {
               <ScrollFade key={meta.key} delay={i * 0.06}>
                 <div style={{
                   padding: "26px 0",
-                  borderBottom: "1px solid #E6DCCA",
+                  borderBottom: "1px solid #E6E9EE",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -2466,7 +2471,7 @@ function PipelineTab() {
                         background: meta.color,
                         flexShrink: 0,
                       }} />
-                      <span style={{ fontSize: 16, fontWeight: 600, color: "#1C1916", letterSpacing: "-0.01em" }}>
+                      <span style={{ fontSize: 16, fontWeight: 600, color: "#0B0D10", letterSpacing: "-0.01em" }}>
                         {meta.label}
                       </span>
                       <InfoTooltip text={PARAM_TOOLTIP[meta.key] ?? meta.description} />
@@ -2489,7 +2494,7 @@ function PipelineTab() {
                       right: 0,
                       height: 4,
                       borderRadius: 4,
-                      background: "#E6DCCA",
+                      background: "#E6E9EE",
                       transform: "translateY(-50%)",
                     }} />
                     <div style={{
@@ -2523,8 +2528,8 @@ function PipelineTab() {
                     />
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                    <span style={{ fontSize: 10, color: "#C4C0BB" }}>{meta.description.split(",")[0].split("=")[1]?.trim() ?? "Low"}</span>
-                    <span style={{ fontSize: 10, color: "#C4C0BB" }}>{meta.description.split(",")[1]?.split("=")[1]?.trim() ?? "High"}</span>
+                    <span style={{ fontSize: 10, color: "#8B93A0" }}>{meta.description.split(",")[0].split("=")[1]?.trim() ?? "Low"}</span>
+                    <span style={{ fontSize: 10, color: "#8B93A0" }}>{meta.description.split(",")[1]?.split("=")[1]?.trim() ?? "High"}</span>
                   </div>
                 </div>
               </ScrollFade>
@@ -2534,7 +2539,7 @@ function PipelineTab() {
           {/* Quick presets */}
           <ScrollFade delay={0.3}>
             <div style={{ marginTop: 24, marginBottom: 32 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#A39E96", textTransform: "uppercase", marginBottom: 10 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#8B93A0", textTransform: "uppercase", marginBottom: 10 }}>
                 Quick Experiments
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -2545,11 +2550,11 @@ function PipelineTab() {
                     style={{
                       padding: "6px 14px",
                       borderRadius: 999,
-                      border: "1.5px solid #D9CFBB",
-                      background: "#FBF7EC",
+                      border: "1.5px solid #E4E7EC",
+                      background: "#FFFFFF",
                       fontSize: 12,
                       fontWeight: 500,
-                      color: "#5C5650",
+                      color: "#4A5058",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
@@ -2557,12 +2562,12 @@ function PipelineTab() {
                       transition: "all 0.15s ease",
                     }}
                     onMouseEnter={e => {
-                      (e.currentTarget as HTMLButtonElement).style.borderColor = "#1C1916";
-                      (e.currentTarget as HTMLButtonElement).style.color = "#1C1916";
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = "#0B0D10";
+                      (e.currentTarget as HTMLButtonElement).style.color = "#0B0D10";
                     }}
                     onMouseLeave={e => {
-                      (e.currentTarget as HTMLButtonElement).style.borderColor = "#D9CFBB";
-                      (e.currentTarget as HTMLButtonElement).style.color = "#5C5650";
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = "#E4E7EC";
+                      (e.currentTarget as HTMLButtonElement).style.color = "#4A5058";
                     }}
                   >
                     <span style={{ fontSize: 13 }}>{p.emoji}</span>
@@ -2579,29 +2584,28 @@ function PipelineTab() {
               onClick={handleRun}
               style={{
                 width: "100%",
-                padding: "20px 24px",
-                borderRadius: 16,
+                padding: "16px 20px",
+                borderRadius: 10,
                 border: "none",
-                background: "#7C3AED",
-                color: "#FBF7EC",
-                fontSize: 17,
-                fontWeight: 700,
+                background: "#0B0D10",
+                color: "#FFFFFF",
+                fontSize: 14,
+                fontWeight: 600,
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 10,
-                letterSpacing: "-0.01em",
-                boxShadow: "0 4px 28px rgba(124,58,237,0.22)",
-                transition: "all 0.2s ease",
+                letterSpacing: "-0.005em",
+                transition: "transform 0.15s ease, background 0.15s ease",
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.85"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#7C3AED"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#0B0D10"; }}
             >
-              <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16">
+              <svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13">
                 <path d="M3 2.5a.5.5 0 01.776-.416l10 5.5a.5.5 0 010 .832l-10 5.5A.5.5 0 013 13.5v-11z"/>
               </svg>
-              Run the Pipeline
+              Run pipeline
             </button>
           </ScrollFade>
         </section>
@@ -2621,8 +2625,8 @@ function PipelineTab() {
                 {/* Section header */}
                 <div style={{ marginBottom: 28, paddingTop: 28 }}>
                   <div>
-                    <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", color: "#A39E96", textTransform: "uppercase", marginBottom: 6 }}>Full Results</p>
-                    <h2 style={{ fontSize: 24, fontWeight: 700, color: "#1C1916", letterSpacing: "-0.02em", fontFamily: "Lora, Georgia, serif" }}>Pipeline Dashboard</h2>
+                    <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", color: "#8B93A0", textTransform: "uppercase", marginBottom: 6 }}>Full Results</p>
+                    <h2 style={{ fontSize: 24, fontWeight: 700, color: "#0B0D10", letterSpacing: "-0.02em", fontFamily: "Inter, system-ui, sans-serif" }}>Pipeline Dashboard</h2>
                   </div>
                 </div>
 
@@ -2632,7 +2636,7 @@ function PipelineTab() {
                   <aside style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                     {/* Row 1: Stimulus + Re-run + Compare controls */}
                     <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#A39E96", textTransform: "uppercase", flexShrink: 0 }}>Stimulus:</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#8B93A0", textTransform: "uppercase", flexShrink: 0 }}>Stimulus:</span>
                       {STIMULI.map(s => {
                         const active = selectedStimulus.id === s.id;
                         return (
@@ -2642,8 +2646,8 @@ function PipelineTab() {
                             style={{
                               padding: "7px 14px",
                               borderRadius: 999,
-                              border: active ? "1.5px solid #7C3AED" : "1.5px solid #D9CFBB",
-                              background: active ? "#7C3AED" : "#FBF7EC",
+                              border: active ? "1.5px solid #7C3AED" : "1.5px solid #E4E7EC",
+                              background: active ? "#7C3AED" : "#FFFFFF",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
@@ -2652,40 +2656,40 @@ function PipelineTab() {
                             }}
                           >
                             <span style={{ fontSize: 14 }}>{s.imageEmoji}</span>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: active ? "#FBF7EC" : "#5C5650" }}>{s.name}</span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: active ? "#FFFFFF" : "#4A5058" }}>{s.name}</span>
                           </button>
                         );
                       })}
                       <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-                        <button
+                        <motion.button
                           onClick={handleDashboardRun}
+                          whileTap={{ scale: 0.96 }}
                           style={{
                             padding: "8px 18px",
                             borderRadius: 10,
                             border: "none",
-                            background: "#7C3AED",
+                            background: "#0B0D10",
                             color: "#fff",
                             fontSize: 12,
-                            fontWeight: 700,
+                            fontWeight: 600,
                             cursor: "pointer",
                             display: "flex", alignItems: "center", gap: 6,
-                            boxShadow: "0 2px 10px #7C3AED30",
-                            transition: "opacity 0.15s",
+                            transition: "background 0.15s",
                           }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.85"; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#7C3AED"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#0B0D10"; }}
                         >
                           <Play size={12} />
                           Re-run
-                        </button>
+                        </motion.button>
                         <button
                           onClick={toggleComparisonMode}
                           style={{
                             padding: "8px 14px",
                             borderRadius: 10,
-                            border: comparisonMode ? "none" : "1.5px solid #D9CFBB",
-                            background: comparisonMode ? "#7C3AED" : "#FBF7EC",
-                            color: comparisonMode ? "#fff" : "#5C5650",
+                            border: comparisonMode ? "none" : "1.5px solid #E4E7EC",
+                            background: comparisonMode ? "#7C3AED" : "#FFFFFF",
+                            color: comparisonMode ? "#fff" : "#4A5058",
                             fontSize: 12, fontWeight: 600, cursor: "pointer",
                             display: "flex", alignItems: "center", gap: 6,
                             transition: "all 0.2s ease",
@@ -2700,9 +2704,9 @@ function PipelineTab() {
                           style={{
                             padding: "8px",
                             borderRadius: 10,
-                            border: "1.5px solid #D9CFBB",
-                            background: "#FBF7EC",
-                            color: "#A39E96",
+                            border: "1.5px solid #E4E7EC",
+                            background: "#FFFFFF",
+                            color: "#8B93A0",
                             cursor: "pointer",
                             display: "flex", alignItems: "center", justifyContent: "center",
                           }}
@@ -2714,8 +2718,8 @@ function PipelineTab() {
 
                     {/* Row 2: compact params strip */}
                     <div style={{
-                      background: "#FBF7EC",
-                      border: "1.5px solid #D9CFBB",
+                      background: "#FFFFFF",
+                      border: "1.5px solid #E4E7EC",
                       borderRadius: 12,
                       padding: "12px 16px",
                       display: "flex",
@@ -2723,18 +2727,48 @@ function PipelineTab() {
                       gap: 0,
                     }}>
                       {/* label */}
-                      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#A39E96", textTransform: "uppercase", flexShrink: 0, marginRight: 16 }}>Params</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#8B93A0", textTransform: "uppercase", flexShrink: 0, marginRight: 16 }}>Params</span>
                       {comparisonMode && (
-                        <div style={{ display: "flex", gap: 3, marginRight: 12, flexShrink: 0 }}>
-                          {(["A","B"] as const).map(set => (
-                            <button key={set} onClick={() => setActiveSet(set)} style={{
-                              padding: "2px 8px", borderRadius: 4,
-                              border: activeSet === set ? "none" : "1px solid #D9CFBB",
-                              background: activeSet === set ? (set === "A" ? "#7C3AED" : "#60a5fa") : "transparent",
-                              color: activeSet === set ? "#fff" : "#A39E96",
-                              fontSize: 10, fontWeight: 700, cursor: "pointer",
-                            }}>{set}</button>
-                          ))}
+                        <div
+                          role="tablist"
+                          aria-label="Compare set"
+                          style={{
+                            display: "flex",
+                            gap: 2,
+                            padding: 3,
+                            marginRight: 14,
+                            flexShrink: 0,
+                            background: "#F0F2F5",
+                            border: "1px solid #E4E7EC",
+                            borderRadius: 8,
+                          }}
+                        >
+                          {(["A","B"] as const).map(set => {
+                            const isActive = activeSet === set;
+                            const setColor = set === "A" ? "#7C3AED" : "#2563EB";
+                            return (
+                              <button
+                                key={set}
+                                role="tab"
+                                aria-selected={isActive}
+                                onClick={() => setActiveSet(set)}
+                                style={{
+                                  padding: "3px 14px",
+                                  borderRadius: 6,
+                                  border: "none",
+                                  background: isActive ? setColor : "transparent",
+                                  color: isActive ? "#FFFFFF" : "#4A5058",
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  letterSpacing: "0.04em",
+                                  cursor: "pointer",
+                                  transition: "background 0.18s ease, color 0.18s ease",
+                                }}
+                              >
+                                {set}
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                       {/* 5 param sliders in one row */}
@@ -2743,11 +2777,11 @@ function PipelineTab() {
                           <div key={meta.key} style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
                               <div style={{ width: 6, height: 6, borderRadius: "50%", background: meta.color, flexShrink: 0 }} />
-                              <span style={{ fontSize: 10, fontWeight: 600, color: "#5C5650", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.label}</span>
+                              <span style={{ fontSize: 10, fontWeight: 600, color: "#4A5058", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.label}</span>
                               <span style={{ fontSize: 10, fontWeight: 700, color: meta.color, marginLeft: "auto", flexShrink: 0 }}>{currentParams[meta.key]}</span>
                             </div>
                             <div style={{ position: "relative", height: 16 }}>
-                              <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 3, borderRadius: 3, background: "#E6DCCA", transform: "translateY(-50%)" }} />
+                              <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 3, borderRadius: 3, background: "#E6E9EE", transform: "translateY(-50%)" }} />
                               <div style={{ position: "absolute", top: "50%", left: 0, width: `${currentParams[meta.key]}%`, height: 3, borderRadius: 3, background: meta.color, transform: "translateY(-50%)", transition: "width 0.15s ease" }} />
                               <input
                                 type="range" min={0} max={100}
@@ -2767,17 +2801,17 @@ function PipelineTab() {
                   </aside>
 
                   {/* ── Main results ── */}
-                  <main style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                  <main key={`run-${runId}-${activeSet}`} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                     {!displayResultsA ? (
                       <div style={{
-                        background: "#F0E9D6",
+                        background: "#F0F2F5",
                         borderRadius: 18,
                         padding: "60px 24px",
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
                         textAlign: "center",
-                        border: "1.5px solid #D9CFBB",
+                        border: "1.5px solid #E4E7EC",
                       }}>
                         <div style={{
                           width: 56, height: 56,
@@ -2788,81 +2822,72 @@ function PipelineTab() {
                         }}>
                           <Brain size={28} color="#7C3AED" strokeWidth={1.5} />
                         </div>
-                        <p style={{ fontSize: 15, fontWeight: 600, color: "#1C1916", marginBottom: 6 }}>Ready when you are</p>
-                        <p style={{ fontSize: 13, color: "#A39E96", maxWidth: 280, lineHeight: 1.6 }}>
+                        <p style={{ fontSize: 15, fontWeight: 600, color: "#0B0D10", marginBottom: 6 }}>Ready when you are</p>
+                        <p style={{ fontSize: 13, color: "#8B93A0", maxWidth: 280, lineHeight: 1.6 }}>
                           Adjust the parameters on the left and hit Re-run to see how your brain processes the stimulus.
                         </p>
                       </div>
                     ) : (
                       <>
-                        {comparisonMode && (
-                          <div style={{ display: "flex", gap: 8, marginBottom: 4 }}>
-                            <span style={{ padding: "4px 12px", borderRadius: 999, background: "#7C3AED18", color: "#7C3AED", fontSize: 12, fontWeight: 700 }}>A: purple</span>
-                            <span style={{ padding: "4px 12px", borderRadius: 999, background: "#60a5fa18", color: "#60a5fa", fontSize: 12, fontWeight: 700 }}>B: blue</span>
-                          </div>
-                        )}
-
-                        {/* 1 — Pipeline flow */}
-                        <DashCard delay={0} label="Signal Overview" subtitle="How strong the signal was at each stage. Watch where it drops — that's where information was lost.">
-                          <PipelineFlowDiagram stages={displayResultsA} />
-                        </DashCard>
-
-                        {/* 2 — What happened */}
-                        <DashCard delay={0.1} label="What Happened" subtitle="A plain-English summary of how the brain processed this stimulus from start to finish.">
-                          <ScenarioNarration params={comparisonMode ? (activeSet === "A" ? paramsA : paramsB) : params} />
-                        </DashCard>
-
-                        {/* 3 — Stimulus context */}
-                        <DashCard delay={0.18} label="Stimulus" subtitle="The raw sensory input the brain received. These are the features it had to work with.">
-                          <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
-                            <span style={{ fontSize: 52 }}>{selectedStimulus.imageEmoji}</span>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
-                                <h3 style={{ fontSize: 20, fontWeight: 700, color: "#1C1916", letterSpacing: "-0.02em", fontFamily: "Lora, Georgia, serif" }}>{selectedStimulus.name}</h3>
-                                <span style={{
-                                  fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999,
-                                  background: selectedStimulus.modality === "auditory" ? "#06b6d412" : "#7C3AED12",
-                                  color: selectedStimulus.modality === "auditory" ? "#06b6d4" : "#7C3AED",
-                                  textTransform: "uppercase", letterSpacing: "0.06em",
-                                }}>
-                                  {selectedStimulus.modality}
-                                </span>
-                              </div>
-                              <p style={{ fontSize: 15, color: "#5C5650", lineHeight: 1.65, marginBottom: 14 }}>
-                                {selectedStimulus.sceneDescription}
-                              </p>
-                              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                                {selectedStimulus.features.map(f => (
-                                  <span key={f} style={{
-                                    fontSize: 12, padding: "5px 14px", borderRadius: 999,
-                                    background: "#F0E9D6", color: "#78716C", border: "1px solid #D9CFBB",
-                                  }}>
-                                    {f}
-                                  </span>
-                                ))}
-                              </div>
+                        {/* 1 — Stimulus header (compact, no label chrome) */}
+                        <div style={{
+                          display: "flex", alignItems: "center", gap: 16,
+                          padding: "16px 20px",
+                          background: "#FFFFFF",
+                          border: "1px solid #E4E7EC",
+                          borderRadius: 12,
+                          marginBottom: 12,
+                        }}>
+                          <span style={{ fontSize: 36, lineHeight: 1 }}>{selectedStimulus.imageEmoji}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                              <h3 style={{ fontSize: 16, fontWeight: 600, color: "#0B0D10", letterSpacing: "-0.01em" }}>
+                                {selectedStimulus.name}
+                              </h3>
+                              <span style={{
+                                fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 999,
+                                background: "#F0F2F5", color: "#8B93A0",
+                                textTransform: "uppercase", letterSpacing: "0.08em",
+                              }}>
+                                {selectedStimulus.modality}
+                              </span>
+                              {comparisonMode && <ActiveSetPill set={activeSet} />}
                             </div>
+                            <p style={{ fontSize: 13, color: "#8B93A0", lineHeight: 1.55 }}>
+                              {selectedStimulus.sceneDescription}
+                            </p>
                           </div>
-                        </DashCard>
+                        </div>
 
-                        {/* 4 — Signal Journey */}
-                        <DashCard delay={0.26} label="Signal Journey" subtitle="The signal's path through all seven stages. Peaks mean the brain held on; dips mean something was lost or distorted.">
+                        {/* 2 — Signal Journey (main chart) */}
+                        <DashCard
+                          delay={0.06}
+                          label="Signal journey"
+                          trailing={comparisonMode ? <ActiveSetPill set={activeSet} /> : undefined}
+                        >
                           <SignalWaveform stages={displayResultsA} />
-                          <div style={{ marginTop: 16 }}>
-                            <DistortionTracker stages={displayResultsA} />
-                          </div>
                         </DashCard>
 
-                        {/* 5 — Brain + Feature survival */}
-                        <DashCard delay={0.34} label="Brain Activity & Feature Survival" subtitle="Left: which brain regions were most active. Right: which features made it through and which were dropped or altered.">
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                            <BrainHeatmap stages={displayResultsA} />
-                            <FeatureSurvivalGrid stimulus={selectedStimulus} stages={displayResultsA} />
-                          </div>
+                        {/* 3 — Plain-English narration */}
+                        <DashCard
+                          delay={0.12}
+                          label="What happened"
+                          trailing={comparisonMode ? <ActiveSetPill set={activeSet} /> : undefined}
+                        >
+                          <ScenarioNarration params={currentParams} />
                         </DashCard>
 
-                        {/* 6 — Stage breakdown */}
-                        <DashCard delay={0.42} label="Stage-by-Stage Breakdown" subtitle="Each of the seven cognitive stages, expanded. See exactly what happened, what the psychology says, and why.">
+                        {/* 4 — Run summary (compact scorecard) */}
+                        <DashCard
+                          delay={0.18}
+                          label="Run summary"
+                          trailing={comparisonMode ? <ActiveSetPill set={activeSet} /> : undefined}
+                        >
+                          <PipelineSummary stages={displayResultsA} stagesB={displayResultsB ?? undefined} />
+                        </DashCard>
+
+                        {/* 5 — Collapsible details: per-stage breakdown, brain activity, distortion */}
+                        <Collapsible label="Stage-by-stage details" delay={0.24}>
                           {displayResultsA.map((stage, i) => {
                             const cfg = STAGE_CONFIG.find(c => c.id === stage.stage) ?? STAGE_CONFIG[i];
                             const compStage = displayResultsB ? displayResultsB[i] : undefined;
@@ -2875,12 +2900,18 @@ function PipelineTab() {
                               </div>
                             );
                           })}
-                        </DashCard>
+                        </Collapsible>
 
-                        {/* 7 — Summary */}
-                        <DashCard delay={0.5} label="Run Summary" subtitle="The final scorecard. How faithful was the brain's output compared to the original stimulus?">
-                          <PipelineSummary stages={displayResultsA} stagesB={displayResultsB ?? undefined} />
-                        </DashCard>
+                        <Collapsible label="Brain activity & feature survival" delay={0.28}>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                            <BrainHeatmap stages={displayResultsA} />
+                            <FeatureSurvivalGrid stimulus={selectedStimulus} stages={displayResultsA} />
+                          </div>
+                        </Collapsible>
+
+                        <Collapsible label="Signal distortion map" delay={0.32}>
+                          <DistortionTracker stages={displayResultsA} />
+                        </Collapsible>
                       </>
                     )}
                   </main>
@@ -3343,61 +3374,91 @@ interface NavBarProps {
 }
 
 function NavBar({ activeTab, onTabChange }: NavBarProps) {
-  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "pipeline", label: "Pipeline", icon: <Zap size={14} /> },
-    { id: "learn", label: "Learn", icon: <BookOpen size={14} /> },
-    { id: "about", label: "About", icon: <Info size={14} /> },
+  const tabs: { id: Tab; label: string }[] = [
+    { id: "pipeline", label: "Pipeline" },
+    { id: "learn", label: "Learn" },
+    { id: "about", label: "About" },
   ];
 
   return (
     <div
-      className="sticky top-0 z-40 flex items-center px-6 py-3.5 md:px-10 gap-4"
+      className="sticky top-0 z-40 flex items-center gap-8 px-6 md:px-10"
       style={{
-        background: "var(--color-surface)",
-        backdropFilter: "blur(12px)",
+        height: 56,
+        background: "color-mix(in srgb, var(--color-surface) 80%, transparent)",
+        backdropFilter: "saturate(140%) blur(14px)",
+        WebkitBackdropFilter: "saturate(140%) blur(14px)",
         borderBottom: "1px solid var(--color-border)",
       }}
     >
       {/* Logo */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        <Brain size={20} color="#7C3AED" strokeWidth={1.5} />
-        <span className="text-sm font-bold hidden sm:block" style={{ color: "var(--color-text)" }}>
-          Build-A-<span style={{ color: "#7C3AED" }}>Brain</span>
+        <span
+          aria-hidden
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: 6,
+            background: "linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%)",
+            display: "inline-block",
+            boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12)",
+          }}
+        />
+        <span className="text-[13px] font-semibold tracking-tight" style={{ color: "var(--color-text)" }}>
+          Build-A-Brain
         </span>
       </div>
 
-      {/* Tab pills */}
-      <div
-        className="flex items-center gap-1 mx-auto rounded-full p-1"
-        style={{ background: "var(--color-surface-2)", border: "1px solid var(--color-border)" }}
-      >
+      {/* Tabs — minimal underline style */}
+      <nav className="flex items-center gap-6" aria-label="Primary">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200"
+              className="relative text-[13px] font-medium transition-colors"
               style={{
-                background: isActive ? "#7C3AED" : "transparent",
-                color: isActive ? "#fff" : "var(--color-text-muted)",
+                height: 56,
+                color: isActive ? "var(--color-text)" : "var(--color-text-muted)",
+                background: "transparent",
                 border: "none",
                 cursor: "pointer",
+                padding: "0 2px",
               }}
             >
-              {tab.icon}
               {tab.label}
+              <span
+                aria-hidden
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  bottom: -1,
+                  height: 2,
+                  borderRadius: 2,
+                  background: isActive ? "var(--color-accent)" : "transparent",
+                  transition: "background 0.18s ease",
+                }}
+              />
             </button>
           );
         })}
-      </div>
+      </nav>
 
-      {/* Badge */}
-      <div
-        className="text-[11px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0"
-        style={{ background: "var(--color-surface)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
-      >
-        PSYC 203
+      <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+        <span
+          className="text-[10px] font-semibold uppercase tracking-[0.14em]"
+          style={{
+            padding: "4px 8px",
+            borderRadius: 999,
+            background: "var(--color-surface-2)",
+            color: "var(--color-text-muted)",
+            border: "1px solid var(--color-border)",
+          }}
+        >
+          PSYC 203
+        </span>
       </div>
     </div>
   );
@@ -3413,61 +3474,74 @@ function HeroSection() {
 
   return (
     <section
-      className="relative flex flex-col items-center justify-center overflow-hidden"
+      className="relative flex flex-col items-center justify-center overflow-hidden bg-grid"
       style={{
         minHeight: "100vh",
         background: "var(--color-bg)",
       }}
     >
-      {/* Particle background */}
-      <ParticleBackground />
-
-      {/* Ambient glow */}
+      {/* Subtle radial wash behind brain for depth (no particles) */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        aria-hidden
+        className="absolute pointer-events-none"
         style={{
-          background: "transparent",
+          top: "10%",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 680,
+          height: 680,
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(124,58,237,0.10) 0%, rgba(124,58,237,0) 60%)",
+          filter: "blur(8px)",
         }}
       />
 
-      {/* PSYC 203 badge */}
+      {/* Dotted grid overlay (very subtle) */}
       <div
-        className="relative z-10 mb-6 text-[12px] font-semibold uppercase tracking-[0.2em] px-4 py-1.5 rounded-full"
-        style={{ border: "1px solid #7C3AED30", color: "#7C3AED", background: "#EDE9FE" }}
-      >
-        PSYC 203
-      </div>
+        aria-hidden
+        className="absolute inset-0 pointer-events-none bg-grid"
+        style={{ opacity: 0.35, maskImage: "radial-gradient(ellipse at center, black 40%, transparent 80%)", WebkitMaskImage: "radial-gradient(ellipse at center, black 40%, transparent 80%)" }}
+      />
 
       {/* 3D Brain */}
-      <div className="relative z-10 w-full max-w-sm h-64 sm:h-80 md:h-96 mb-4">
+      <div className="relative z-10 w-full max-w-sm h-64 sm:h-80 md:h-96 mb-2">
         <Suspense fallback={<BrainFallback />}>
           <BrainScene />
         </Suspense>
       </div>
 
       {/* Title */}
-      <div className="relative z-10 text-center px-4">
-        <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold leading-tight mb-3" style={{ fontFamily: "var(--font-display)" }}>
-          Build-A-<span style={{ color: "#7C3AED" }}>Brain</span>
+      <div className="relative z-10 text-center px-4 max-w-xl">
+        <h1
+          className="text-5xl sm:text-6xl md:text-7xl font-bold leading-[0.95] mb-4"
+          style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.04em" }}
+        >
+          Build-A-Brain
         </h1>
-        <p className="text-base sm:text-lg md:text-xl mb-8" style={{ color: "var(--color-text-muted)", letterSpacing: "0.02em" }}>
-          Cognitive Pipeline Simulator
+        <p
+          className="text-base sm:text-lg mb-10"
+          style={{ color: "var(--color-text-dim)", letterSpacing: "-0.005em", lineHeight: 1.5 }}
+        >
+          An interactive simulator for the stages of cognitive processing.
         </p>
 
         {/* CTA */}
         <button
           onClick={scrollToSimulator}
-          className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full text-sm font-semibold transition-all duration-200 hover:opacity-90 active:scale-[0.97]"
+          className="inline-flex items-center gap-2 text-[13px] font-medium transition-all duration-200 active:scale-[0.98]"
           style={{
-            background: "linear-gradient(135deg, #7C3AED, #7c3aed)",
-            color: "#ffffff",
+            padding: "12px 22px",
+            borderRadius: 10,
+            background: "var(--color-text)",
+            color: "#fff",
             border: "none",
             cursor: "pointer",
-            boxShadow: "0 8px 32px #7C3AED40",
           }}
         >
-          Explore the Pipeline
-          <ChevronDown size={16} />
+          Launch simulator
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" width="14" height="14">
+            <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </button>
       </div>
 
@@ -3476,12 +3550,13 @@ function HeroSection() {
         className="absolute bottom-8 text-[11px] uppercase tracking-[0.18em] z-10"
         style={{ color: "var(--color-text-muted)" }}
       >
-        Move your cursor to rotate the brain
+        Move cursor to rotate
       </p>
 
-      {/* Bottom gradient fade */}
+      {/* Bottom fade */}
       <div
-        className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-10"
+        aria-hidden
+        className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-[5]"
         style={{ background: "linear-gradient(to bottom, transparent, var(--color-bg))" }}
       />
     </section>

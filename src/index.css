@@ -1,21 +1,22 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:wght@300;400;500;600;700&display=swap");
 
 @theme {
-  /* ── Creamy warm palette ── */
-  --color-bg:        #F7F2E4;
-  --color-surface:   #FBF7EC;
-  --color-surface-2: #F0E9D6;
-  --color-surface-3: #E6DCCA;
-  --color-border:    #D9CFBB;
-  --color-border-2:  #C8BCAA;
-  --color-text:      #1C1916;
-  --color-text-dim:  #5C5650;
-  --color-text-muted:#A39E96;
+  /* ── Cool neutral palette (sleek, high-tech) ── */
+  --color-bg:        #F6F7F9;
+  --color-surface:   #FFFFFF;
+  --color-surface-2: #F0F2F5;
+  --color-surface-3: #E6E9EE;
+  --color-border:    #E4E7EC;
+  --color-border-2:  #CDD2DB;
+  --color-text:      #0B0D10;
+  --color-text-dim:  #4A5058;
+  --color-text-muted:#8B93A0;
   --color-accent:    #7C3AED;
   --color-accent-dim:#6D28D9;
+  --color-accent-wash:#F3EFFF;
 
-  /* ── Semantic colors ── */
+  /* ── Semantic colors (unchanged for stage identity) ── */
   --color-amber:   #D97706;
   --color-violet:  #7C3AED;
   --color-indigo:  #4F46E5;
@@ -25,12 +26,10 @@
   --color-blue:    #2563EB;
   --color-red:     #DC2626;
 
-  --font-display: "Lora", Georgia, "Times New Roman", serif;
-  --font-sans:    "Source Sans 3", "Source Sans Pro", system-ui, sans-serif;
-  --font-mono:    "JetBrains Mono", "Fira Code", monospace;
+  --font-display: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans:    "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
-
-/* Tailwind v4 base layer already handles reset */
 
 html {
   scroll-behavior: smooth;
@@ -40,98 +39,89 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  letter-spacing: -0.005em;
 }
 
 h1, h2, h3, h4 {
   font-family: var(--font-display);
+  letter-spacing: -0.02em;
 }
 
-::-webkit-scrollbar {
-  width: 5px;
+::selection {
+  background: var(--color-accent);
+  color: #fff;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 3px;
+  background: var(--color-border-2);
+  border-radius: 999px;
+  border: 3px solid var(--color-bg);
 }
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ─── Particle float ─────────────────────────────────────────────────────── */
-@keyframes particle-float {
-  0%   { transform: translateY(0px) translateX(0px); opacity: 0; }
-  10%  { opacity: 1; }
-  80%  { opacity: 0.3; }
-  100% { transform: translateY(-120px) translateX(var(--drift, 20px)); opacity: 0; }
-}
-.particle {
-  position: absolute;
-  border-radius: 50%;
-  background: #7C3AED;
-  pointer-events: none;
-  animation: particle-float var(--duration, 6s) ease-in-out infinite;
-  animation-delay: var(--delay, 0s);
-  opacity: 0.3;
-}
+/* ─── Subtle pulse indicators (kept for functional signal) ──────────────── */
+@keyframes pulse-strong   { 0%,100%{opacity:1}50%{opacity:.55} }
+@keyframes pulse-moderate { 0%,100%{opacity:.85}50%{opacity:.5} }
+@keyframes pulse-weak     { 0%,33%{opacity:.9}50%{opacity:.25}66%,100%{opacity:.8} }
+.pulse-strong   { animation: pulse-strong   2.4s ease-in-out infinite; }
+.pulse-moderate { animation: pulse-moderate 2.8s ease-in-out infinite; }
+.pulse-weak     { animation: pulse-weak     1.6s ease-in-out infinite; }
 
-/* ─── Flow dot ───────────────────────────────────────────────────────────── */
-@keyframes flow-down {
-  0%   { transform: translateY(-4px); opacity: 0; }
-  20%  { opacity: 1; }
-  80%  { opacity: 1; }
-  100% { transform: translateY(28px); opacity: 0; }
-}
-.flow-dot {
-  animation: flow-down var(--speed, 1.2s) ease-in-out infinite;
-  animation-delay: var(--dot-delay, 0s);
-}
-
-/* ─── Pulse indicators ───────────────────────────────────────────────────── */
-@keyframes pulse-strong   { 0%,100%{opacity:1;box-shadow:0 0 4px currentColor}50%{opacity:.6;box-shadow:0 0 8px currentColor} }
-@keyframes pulse-moderate { 0%,100%{opacity:.8;transform:scale(1)}50%{opacity:.4;transform:scale(.9)} }
-@keyframes pulse-weak     { 0%,33%{opacity:1}50%{opacity:.2}66%,100%{opacity:.8} }
-.pulse-strong   { animation: pulse-strong   2s   ease-in-out infinite; }
-.pulse-moderate { animation: pulse-moderate 2.5s ease-in-out infinite; }
-.pulse-weak     { animation: pulse-weak     0.8s linear    infinite; }
-
-/* ─── Smooth scroll snap for pipeline sections ───────────────────────────── */
+/* ─── Fade / slide entrance ─────────────────────────────────────────────── */
 @keyframes fadeSlideUp {
-  from { opacity: 0; transform: translateY(24px); }
+  from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 .fade-slide-up {
-  animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeSlideUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* ─── Custom range input ─────────────────────────────────────────────────── */
+/* ─── Signal flow indicator (subtle) ────────────────────────────────────── */
+@keyframes flow-down {
+  0%   { transform: translateY(-4px); opacity: 0; }
+  25%  { opacity: 1; }
+  75%  { opacity: 1; }
+  100% { transform: translateY(28px); opacity: 0; }
+}
+.flow-dot {
+  animation: flow-down var(--speed, 1.4s) ease-in-out infinite;
+  animation-delay: var(--dot-delay, 0s);
+}
+
+/* ─── Range input: refined, high-tech ───────────────────────────────────── */
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: #1C1916;
+  background: var(--color-text);
   cursor: pointer;
-  border: 2.5px solid #FAF8F4;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
-  margin-top: -7px;
-  position: relative;
-  z-index: 2;
+  border: 2px solid var(--color-surface);
+  box-shadow: 0 1px 2px rgba(11,13,16,0.12), 0 0 0 1px var(--color-border-2);
+  margin-top: -6px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
 }
 input[type="range"]::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: #1C1916;
+  background: var(--color-text);
   cursor: pointer;
-  border: 2.5px solid #FAF8F4;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  border: 2px solid var(--color-surface);
+  box-shadow: 0 1px 2px rgba(11,13,16,0.12), 0 0 0 1px var(--color-border-2);
 }
 input[type="range"]::-webkit-slider-runnable-track {
   height: 4px;
@@ -143,9 +133,33 @@ input[type="range"]::-moz-range-track {
   background: transparent;
   border-radius: 4px;
 }
-input[type="range"]:focus {
-  outline: none;
-}
+input[type="range"]:focus { outline: none; }
 input[type="range"]:focus::-webkit-slider-thumb {
-  box-shadow: 0 0 0 3px rgba(124,58,237,0.2), 0 1px 4px rgba(0,0,0,0.18);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 25%, transparent),
+              0 1px 2px rgba(11,13,16,0.12);
+}
+
+/* ─── Card hover affordance ────────────────────────────────────────────── */
+.card-hover {
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  border-color: var(--color-border-2);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px -12px rgba(11,13,16,0.08);
+}
+
+/* ─── Focus ring ────────────────────────────────────────────────────────── */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ─── Dotted grid background utility (optional high-tech texture) ──────── */
+.bg-grid {
+  background-image:
+    radial-gradient(circle at 1px 1px, var(--color-border-2) 1px, transparent 0);
+  background-size: 24px 24px;
 }
