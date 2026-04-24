@@ -1001,6 +1001,9 @@ function RadarChart({ stages, stagesB }: { stages: StageResult[]; stagesB?: Stag
 // ─────────────────────────────────────────────────────────────────────────────
 function FeatureSurvivalGrid({ stimulus, stages }: { stimulus: Stimulus; stages: StageResult[] }) {
   const allFeatures = stimulus.features;
+  // Semantic colors: green = survived, red = lost, neutral = not yet in play.
+  const SURVIVED = "#059669";
+  const LOST = "#DC2626";
   return (
     <div className="overflow-hidden">
       <p className="text-[11px] font-medium mb-2" style={{ color: "var(--color-text-muted)", letterSpacing: "0.02em" }}>
@@ -1020,7 +1023,7 @@ function FeatureSurvivalGrid({ stimulus, stages }: { stimulus: Stimulus; stages:
                 <th
                   key={cfg.id}
                   className="px-1 py-1.5 font-semibold text-center"
-                  style={{ color: cfg.color, minWidth: 34 }}
+                  style={{ color: "var(--color-text-muted)", minWidth: 34 }}
                 >
                   {cfg.shortLabel}
                 </th>
@@ -1043,14 +1046,16 @@ function FeatureSurvivalGrid({ stimulus, stages }: { stimulus: Stimulus; stages:
                   const inStage = stage.featuresIn.some(
                     (f) => f.toLowerCase().includes(feature.toLowerCase()) || feature.toLowerCase().includes(f.toLowerCase().split(" ")[0])
                   );
-                  const cfg = STAGE_CONFIG[si];
                   let bg = "var(--color-surface-2)";
-                  let title = "N/A";
+                  let borderColor = "transparent";
+                  let title = "Not present";
                   if (inStage && survived) {
-                    bg = `${cfg.color}35`;
+                    bg = `${SURVIVED}22`;
+                    borderColor = `${SURVIVED}66`;
                     title = "Survived";
                   } else if (inStage && !survived) {
-                    bg = "#ef444428";
+                    bg = `${LOST}22`;
+                    borderColor = `${LOST}66`;
                     title = "Lost";
                   }
                   return (
@@ -1062,8 +1067,8 @@ function FeatureSurvivalGrid({ stimulus, stages }: { stimulus: Stimulus; stages:
                           width: 20,
                           height: 20,
                           background: bg,
-                          border: inStage && survived ? `1px solid ${cfg.color}60` : inStage ? "1px solid #ef444440" : "1px solid transparent",
-                          transition: "background 0.3s",
+                          border: `1px solid ${borderColor}`,
+                          transition: "background 0.3s, border-color 0.3s",
                         }}
                       />
                     </td>
@@ -1075,18 +1080,18 @@ function FeatureSurvivalGrid({ stimulus, stages }: { stimulus: Stimulus; stages:
         </table>
       </div>
       {/* Legend */}
-      <div className="flex gap-4 px-3 pt-2 pb-3">
+      <div className="flex gap-4 px-3 pt-3 pb-3">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm" style={{ background: "#7C3AED35", border: "1px solid #7C3AED60" }} />
+          <div className="w-3 h-3 rounded-sm" style={{ background: `${SURVIVED}22`, border: `1px solid ${SURVIVED}66` }} />
           <span className="text-[11px]" style={{ color: "var(--color-text-muted)" }}>Survived</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm" style={{ background: "#ef444428", border: "1px solid #ef444440" }} />
+          <div className="w-3 h-3 rounded-sm" style={{ background: `${LOST}22`, border: `1px solid ${LOST}66` }} />
           <span className="text-[11px]" style={{ color: "var(--color-text-muted)" }}>Lost</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm" style={{ background: "var(--color-surface-2)" }} />
-          <span className="text-[11px]" style={{ color: "var(--color-text-muted)" }}>N/A</span>
+          <div className="w-3 h-3 rounded-sm" style={{ background: "var(--color-surface-2)", border: "1px solid transparent" }} />
+          <span className="text-[11px]" style={{ color: "var(--color-text-muted)" }}>Not present</span>
         </div>
       </div>
     </div>
@@ -1096,8 +1101,39 @@ function FeatureSurvivalGrid({ stimulus, stages }: { stimulus: Stimulus; stages:
 // ─────────────────────────────────────────────────────────────────────────────
 // BRAIN HEATMAP SVG
 // ─────────────────────────────────────────────────────────────────────────────
+// Semantic heat scale used by both BrainHeatmap and DistortionTracker.
+// Red = weak, amber = moderate, green = strong. Returns fill + label + tier.
+function signalTier(v: number): { color: string; label: string; tier: "weak" | "moderate" | "strong" } {
+  const c = clamp(v);
+  if (c < 40) return { color: "#DC2626", label: "Weak", tier: "weak" };       // red
+  if (c < 70) return { color: "#D97706", label: "Moderate", tier: "moderate" }; // amber
+  return { color: "#059669", label: "Strong", tier: "strong" };                  // green
+}
+
 function BrainHeatmap({ stages }: { stages: StageResult[] }) {
-  const regionOpacity = (idx: number) => clamp(stages[idx]?.signalStrength ?? 0) / 100;
+  const fillFor = (idx: number) => {
+    const v = clamp(stages[idx]?.signalStrength ?? 0);
+    const { color } = signalTier(v);
+    // Alpha scales with activation so stronger regions appear more saturated.
+    const alpha = Math.max(0.18, v / 100);
+    const [r, g, b] = color === "#DC2626" ? [220, 38, 38]
+                     : color === "#D97706" ? [217, 119, 6]
+                     : [5, 150, 105];
+    return `rgba(${r},${g},${b},${alpha})`;
+  };
+
+  // Map brain regions → cognitive stage index, in the anatomical order shown
+  // in the SVG below (occipital, prefrontal, temporal-L, temporal-R,
+  // hippocampus, frontal-L, frontal-R).
+  const regions = [
+    { label: "Occipital (visual input)",        stageIdx: 0 },
+    { label: "Prefrontal (attention)",          stageIdx: 1 },
+    { label: "Temporal L (perception)",         stageIdx: 2 },
+    { label: "Temporal R (encoding)",           stageIdx: 3 },
+    { label: "Hippocampus (storage)",           stageIdx: 4 },
+    { label: "Frontal L (retrieval)",           stageIdx: 5 },
+    { label: "Frontal R (report)",              stageIdx: 6 },
+  ];
 
   return (
     <div className="flex flex-col items-center justify-center">
@@ -1106,29 +1142,65 @@ function BrainHeatmap({ stages }: { stages: StageResult[] }) {
       </p>
       <svg viewBox="0 0 200 180" style={{ width: "100%", maxWidth: 200 }}>
         <ellipse cx={100} cy={90} rx={85} ry={78} fill="#F4F5F7" stroke="#E4E7EC" strokeWidth={1.5} />
-        <ellipse cx={100} cy={148} rx={40} ry={22} fill={`rgba(245,158,11,${regionOpacity(0) * 0.7})`} style={{ transition: "fill 0.4s" }} />
-        <ellipse cx={100} cy={42} rx={50} ry={30} fill={`rgba(139,92,246,${regionOpacity(1) * 0.7})`} style={{ transition: "fill 0.4s" }} />
-        <ellipse cx={52} cy={100} rx={30} ry={38} fill={`rgba(99,102,241,${regionOpacity(2) * 0.7})`} style={{ transition: "fill 0.4s" }} />
-        <ellipse cx={148} cy={100} rx={30} ry={38} fill={`rgba(20,184,166,${regionOpacity(3) * 0.7})`} style={{ transition: "fill 0.4s" }} />
-        <ellipse cx={100} cy={90} rx={28} ry={28} fill={`rgba(16,185,129,${regionOpacity(4) * 0.7})`} style={{ transition: "fill 0.4s" }} />
-        <ellipse cx={78} cy={55} rx={22} ry={18} fill={`rgba(6,182,212,${regionOpacity(5) * 0.7})`} style={{ transition: "fill 0.4s" }} />
-        <ellipse cx={122} cy={55} rx={22} ry={18} fill={`rgba(59,130,246,${regionOpacity(6) * 0.7})`} style={{ transition: "fill 0.4s" }} />
-        <ellipse cx={100} cy={90} rx={85} ry={78} fill="none" stroke="#E4E7EC" strokeWidth={1.5} />
-        <rect x={86} y={164} width={28} height={14} rx={6} fill="#F4F5F7" stroke="#E4E7EC" strokeWidth={1} />
+        <ellipse cx={100} cy={148} rx={40} ry={22} fill={fillFor(0)} style={{ transition: "fill 0.4s" }} />
+        <ellipse cx={100} cy={42}  rx={50} ry={30} fill={fillFor(1)} style={{ transition: "fill 0.4s" }} />
+        <ellipse cx={52}  cy={100} rx={30} ry={38} fill={fillFor(2)} style={{ transition: "fill 0.4s" }} />
+        <ellipse cx={148} cy={100} rx={30} ry={38} fill={fillFor(3)} style={{ transition: "fill 0.4s" }} />
+        <ellipse cx={100} cy={90}  rx={28} ry={28} fill={fillFor(4)} style={{ transition: "fill 0.4s" }} />
+        <ellipse cx={78}  cy={55}  rx={22} ry={18} fill={fillFor(5)} style={{ transition: "fill 0.4s" }} />
+        <ellipse cx={122} cy={55}  rx={22} ry={18} fill={fillFor(6)} style={{ transition: "fill 0.4s" }} />
+        <ellipse cx={100} cy={90}  rx={85} ry={78} fill="none" stroke="#E4E7EC" strokeWidth={1.5} />
+        <rect    x={86}   y={164}  width={28} height={14} rx={6} fill="#F4F5F7" stroke="#E4E7EC" strokeWidth={1} />
       </svg>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-3 w-full">
-        {STAGE_CONFIG.map((cfg, i) => (
-          <div key={cfg.id} className="flex items-center gap-1.5">
-            <div
-              className="w-2 h-2 rounded-full flex-shrink-0"
-              style={{ background: cfg.color, opacity: 0.4 + regionOpacity(i) * 0.6 }}
-            />
-            <span className="text-[10px]" style={{ color: "var(--color-text-muted)" }}>
-              {cfg.label}
-            </span>
-          </div>
-        ))}
+
+      {/* Activation legend — all three tiers shown */}
+      <div style={{ width: "100%", marginTop: 12 }}>
+        <p style={{ fontSize: 10, fontWeight: 600, color: "#8B93A0", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
+          Activation
+        </p>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <LegendSwatch color="#DC2626" label="Weak · 0–39%" />
+          <LegendSwatch color="#D97706" label="Moderate · 40–69%" />
+          <LegendSwatch color="#059669" label="Strong · 70–100%" />
+        </div>
       </div>
+
+      {/* Region → stage map */}
+      <div style={{ width: "100%", marginTop: 14 }}>
+        <p style={{ fontSize: 10, fontWeight: 600, color: "#8B93A0", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
+          Regions
+        </p>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+          {regions.map((r, i) => {
+            const v = clamp(stages[r.stageIdx]?.signalStrength ?? 0);
+            const { color } = signalTier(v);
+            return (
+              <div key={i} className="flex items-center gap-1.5">
+                <div
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ background: color, opacity: 0.35 + (v / 100) * 0.65 }}
+                />
+                <span className="text-[10px]" style={{ color: "var(--color-text-muted)" }}>
+                  {r.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Small colored-square legend row used throughout the dashboard
+function LegendSwatch({ color, label }: { color: string; label: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <span
+        aria-hidden
+        style={{ width: 10, height: 10, borderRadius: 3, background: color, display: "inline-block" }}
+      />
+      <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>{label}</span>
     </div>
   );
 }
@@ -1462,19 +1534,22 @@ function PresetsPanel({ onApply }: PresetsPanelProps) {
 // ─────────────────────────────────────────────────────────────────────────────
 // DISTORTION TRACKER
 // ─────────────────────────────────────────────────────────────────────────────
+// Classify a per-stage signal delta into one of three semantic bands.
+// Kept strict and symmetric so the legend maps 1:1 to what's rendered.
+function distortionTier(delta: number): { color: string; label: string; tier: "boost" | "steady" | "degrade" } {
+  if (delta >= 3) return { color: "#059669", label: "Boosted", tier: "boost" };    // green
+  if (delta <= -3) return { color: "#DC2626", label: "Degraded", tier: "degrade" }; // red
+  return { color: "#8B93A0", label: "Steady", tier: "steady" };                     // neutral
+}
+
 function DistortionTracker({ stages }: { stages: StageResult[] }) {
   const segments = stages.map((s, i) => {
     const curr = clamp(s.signalStrength);
     const prev = i === 0 ? curr : clamp(stages[i - 1].signalStrength);
-    const delta = curr - prev;
-    let status: "boost" | "shift" | "steady" | "dip";
-    let color: string;
-    let label: string;
-    if (delta > 2) { status = "boost"; color = "#10b981"; label = "+" + Math.round(delta) + "%"; }
-    else if (delta >= -10) { status = "shift"; color = "#8B5CF6"; label = Math.round(delta) + "%"; }
-    else { status = "dip"; color = "#f59e0b"; label = Math.round(delta) + "%"; }
-    if (Math.abs(delta) <= 1) { status = "steady"; color = "#6366f1"; label = "~0%"; }
-    return { ...STAGE_CONFIG[i], delta, status, color, label, signal: curr };
+    const delta = Math.round(curr - prev);
+    const tier = distortionTier(delta);
+    const label = delta > 0 ? `+${delta}%` : delta < 0 ? `${delta}%` : "±0%";
+    return { ...STAGE_CONFIG[i], delta, ...tier, label, signal: curr };
   });
 
   const peakStage = [...stages].sort((a, b) => b.signalStrength - a.signalStrength)[0];
@@ -1484,41 +1559,38 @@ function DistortionTracker({ stages }: { stages: StageResult[] }) {
 
   return (
     <div className="space-y-4">
-      <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-        How the signal changed at each stage
-      </p>
-
-      {/* Horizontal bar segments */}
-      <div className="flex rounded-xl overflow-hidden" style={{ height: 40 }}>
+      {/* Horizontal bar segments — one per stage, colored by its delta tier */}
+      <div className="flex rounded-xl overflow-hidden" style={{ height: 48 }}>
         {segments.map((seg, i) => (
           <motion.div
             key={seg.id}
             initial={{ opacity: 0, scaleY: 0 }}
             animate={{ opacity: 1, scaleY: 1 }}
-            transition={{ delay: i * 0.08, duration: 0.35 }}
+            transition={{ delay: i * 0.06, duration: 0.35 }}
             className="flex-1 flex flex-col items-center justify-center relative"
-            title={`${seg.label} — ${seg.id}`}
-            style={{ background: `${seg.color}15`, borderRight: i < segments.length - 1 ? "1px solid var(--color-bg)" : "none" }}
+            title={`${seg.id}: ${seg.label} (${seg.tier})`}
+            style={{
+              background: `${seg.color}18`,
+              borderRight: i < segments.length - 1 ? "1px solid var(--color-bg)" : "none",
+            }}
           >
             <span className="text-[10px] font-semibold" style={{ color: seg.color }}>{seg.shortLabel}</span>
-            <span className="text-[9px] font-mono opacity-80" style={{ color: seg.color }}>{seg.label}</span>
+            <span className="text-[10px] font-mono" style={{ color: seg.color, opacity: 0.85 }}>{seg.label}</span>
           </motion.div>
         ))}
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4">
-        {([{color:"#10b981",label:"Boosted"},{color:"#6366f1",label:"Steady"},{color:"#8B5CF6",label:"Slight shift"},{color:"#f59e0b",label:"Noticeable dip"}] as const).map(item => (
-          <div key={item.label} className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
-            <span className="text-[11px]" style={{ color: "var(--color-text-muted)" }}>{item.label}</span>
-          </div>
-        ))}
+      {/* Legend — shows every color used above */}
+      <div className="flex flex-wrap gap-4 pt-1">
+        <LegendSwatch color="#059669" label="Boosted · Δ ≥ +3%" />
+        <LegendSwatch color="#8B93A0" label="Steady · Δ within ±2%" />
+        <LegendSwatch color="#DC2626" label="Degraded · Δ ≤ −3%" />
       </div>
 
-      {/* Friendly narration */}
+      {/* Narration */}
       <p className="text-[13px] leading-relaxed" style={{ color: "var(--color-text-dim)" }}>
-        The signal was strongest at <span style={{ color: peakCfg.color, fontWeight: 600 }}>{peakCfg.label}</span> ({Math.round(clamp(peakStage.signalStrength))}%) and softest at <span style={{ color: troughCfg.color, fontWeight: 600 }}>{troughCfg.label}</span> ({Math.round(clamp(troughStage.signalStrength))}%).
+        Peak signal occurred at <span style={{ color: peakCfg.color, fontWeight: 600 }}>{peakCfg.label}</span> ({Math.round(clamp(peakStage.signalStrength))}%);
+        the lowest point was at <span style={{ color: troughCfg.color, fontWeight: 600 }}>{troughCfg.label}</span> ({Math.round(clamp(troughStage.signalStrength))}%).
       </p>
     </div>
   );
@@ -2194,7 +2266,7 @@ function ActiveSetPill({ set }: { set: "A" | "B" }) {
 }
 
 // ── Collapsible: lazy-reveal section for heavier/optional content ────────────
-function Collapsible({ children, label, delay = 0, defaultOpen = false }: { children: React.ReactNode; label: string; delay?: number; defaultOpen?: boolean }) {
+function Collapsible({ children, label, subtitle, delay = 0, defaultOpen = false }: { children: React.ReactNode; label: string; subtitle?: string; delay?: number; defaultOpen?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [open, setOpen] = useState(defaultOpen);
@@ -2231,22 +2303,27 @@ function Collapsible({ children, label, delay = 0, defaultOpen = false }: { chil
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: 16,
             background: "transparent",
             border: "none",
-            padding: "16px 24px",
+            padding: "14px 24px",
             cursor: "pointer",
             textAlign: "left",
             color: "#0B0D10",
-            fontSize: 14,
-            fontWeight: 600,
-            letterSpacing: "-0.01em",
           }}
         >
-          <span>{label}</span>
+          <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em" }}>{label}</span>
+            {subtitle && (
+              <span style={{ fontSize: 12, fontWeight: 400, color: "#8B93A0", lineHeight: 1.45 }}>
+                {subtitle}
+              </span>
+            )}
+          </span>
           <ChevronDown
             size={16}
             color="#8B93A0"
-            style={{ transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s ease" }}
+            style={{ flexShrink: 0, transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s ease" }}
           />
         </button>
         <AnimatePresence initial={false}>
@@ -3001,6 +3078,7 @@ function PipelineTab() {
                         <DashCard
                           delay={0.06}
                           label="Signal journey"
+                          subtitle="Signal-strength trace across the seven cognitive stages. Peaks indicate well-preserved information; troughs mark bottlenecks where the signal was degraded or lost."
                           trailing={comparisonMode ? <ActiveSetPill set={activeSet} /> : undefined}
                         >
                           <SignalWaveform stages={displayResultsA} />
@@ -3040,14 +3118,22 @@ function PipelineTab() {
                           })}
                         </Collapsible>
 
-                        <Collapsible label="Brain activity & feature survival" delay={0.28}>
+                        <Collapsible
+                          label="Brain activity & feature survival"
+                          subtitle="Left: which cortical regions were most active per stage. Right: which input features survived each stage of processing."
+                          delay={0.28}
+                        >
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
                             <BrainHeatmap stages={displayResultsA} />
                             <FeatureSurvivalGrid stimulus={selectedStimulus} stages={displayResultsA} />
                           </div>
                         </Collapsible>
 
-                        <Collapsible label="Signal distortion map" delay={0.32}>
+                        <Collapsible
+                          label="Signal distortion map"
+                          subtitle="Per-stage change in signal strength relative to the previous stage — where information was amplified, held steady, or degraded."
+                          delay={0.32}
+                        >
                           <DistortionTracker stages={displayResultsA} />
                         </Collapsible>
                       </>
