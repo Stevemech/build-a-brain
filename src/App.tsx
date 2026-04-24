@@ -3361,31 +3361,29 @@ function HeroSection() {
         background: "var(--color-bg)",
       }}
     >
-      {/* Subtle radial wash behind brain for depth (no particles) */}
+      {/* Edge-to-edge radial wash behind brain (no fixed square bounds) */}
       <div
         aria-hidden
-        className="absolute pointer-events-none"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          top: "10%",
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: 680,
-          height: 680,
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(124,58,237,0.10) 0%, rgba(124,58,237,0) 60%)",
-          filter: "blur(8px)",
+          background:
+            "radial-gradient(ellipse 60% 55% at 50% 38%, rgba(124,58,237,0.16) 0%, rgba(124,58,237,0.08) 35%, rgba(124,58,237,0) 72%)",
         }}
       />
 
-      {/* Dotted grid overlay (very subtle) */}
+      {/* Dotted grid overlay — fade extends to the edges so no visible rectangle */}
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none bg-grid"
-        style={{ opacity: 0.35, maskImage: "radial-gradient(ellipse at center, black 40%, transparent 80%)", WebkitMaskImage: "radial-gradient(ellipse at center, black 40%, transparent 80%)" }}
+        style={{
+          opacity: 0.4,
+          maskImage: "radial-gradient(ellipse 65% 60% at center, black 0%, black 55%, transparent 100%)",
+          WebkitMaskImage: "radial-gradient(ellipse 65% 60% at center, black 0%, black 55%, transparent 100%)",
+        }}
       />
 
       {/* 3D Brain */}
-      <div className="relative z-10 w-full max-w-sm h-64 sm:h-80 md:h-96 mb-2">
+      <div className="relative z-10 w-full max-w-2xl h-80 sm:h-[28rem] md:h-[34rem] mb-2">
         <Suspense fallback={<BrainFallback />}>
           <BrainScene />
         </Suspense>
