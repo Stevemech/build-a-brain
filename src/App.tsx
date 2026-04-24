@@ -248,88 +248,6 @@ function BrainFallback() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SLIDER COMPONENT
-// ─────────────────────────────────────────────────────────────────────────────
-interface SliderProps {
-  label: string;
-  description: string;
-  value: number;
-  color: string;
-  paramKey: keyof PipelineParams;
-  onChange: (key: keyof PipelineParams, val: number) => void;
-}
-
-function ParamSlider({ label, description, value, color, paramKey, onChange }: SliderProps) {
-  return (
-    <div className="mb-4">
-      <div className="flex justify-between items-baseline mb-1.5">
-        <span className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
-          {label}
-        </span>
-        <span
-          className="text-xs font-mono font-semibold px-1.5 py-0.5 rounded"
-          style={{
-            color,
-            background: `${color}18`,
-            fontFamily: "var(--font-mono)",
-          }}
-        >
-          {value}
-        </span>
-      </div>
-      <div className="relative mb-1.5">
-        <input
-          type="range"
-          min={0}
-          max={100}
-          value={value}
-          onChange={(e) => onChange(paramKey, Number(e.target.value))}
-          className="w-full h-2 rounded-full appearance-none cursor-pointer"
-          style={
-            {
-              background: `linear-gradient(to right, ${color} ${value}%, var(--color-surface-2) ${value}%)`,
-              "--thumb-color": color,
-            } as React.CSSProperties
-          }
-        />
-      </div>
-      <p className="text-[11px]" style={{ color: "var(--color-text-muted)" }}>
-        {description}
-      </p>
-      <style>{`
-        input[type="range"] {
-          -webkit-appearance: none;
-          outline: none;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background: var(--thumb-color, #7C3AED);
-          cursor: pointer;
-          border: 2px solid rgba(255,255,255,0.15);
-          box-shadow: 0 0 8px var(--thumb-color, #7C3AED);
-          transition: transform 0.1s;
-        }
-        input[type="range"]::-webkit-slider-thumb:hover {
-          transform: scale(1.2);
-        }
-        input[type="range"]::-moz-range-thumb {
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background: var(--thumb-color, #7C3AED);
-          cursor: pointer;
-          border: 2px solid rgba(255,255,255,0.15);
-          box-shadow: 0 0 8px var(--thumb-color, #7C3AED);
-        }
-      `}</style>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // SIGNAL PROGRESS BAR
 // ─────────────────────────────────────────────────────────────────────────────
 function SignalBar({ value, gradient }: { value: number; gradient: string }) {
@@ -1415,7 +1333,7 @@ function PipelineSummary({ stages, stagesB }: { stages: StageResult[]; stagesB?:
 // PRESETS PANEL
 // ─────────────────────────────────────────────────────────────────────────────
 interface PresetsPanelProps {
-  onApply: (params: PipelineParams) => void;
+  onApply: (preset: Preset) => void;
 }
 
 function PresetsPanel({ onApply }: PresetsPanelProps) {
@@ -1456,7 +1374,12 @@ function PresetsPanel({ onApply }: PresetsPanelProps) {
             >
               {PRESETS.map((preset) => {
                 const variant = activeVariants[preset.id] ?? "A";
-                const activeParams = variant === "B" && preset.variantB ? preset.variantB : preset.params;
+                // When the user clicks "Apply & Run" on a specific variant, pass a
+                // preset whose base params are that variant so `handleApplyPreset`
+                // applies the right knob values.
+                const presetForApply: Preset = variant === "B" && preset.variantB
+                  ? { ...preset, params: preset.variantB }
+                  : preset;
 
                 return (
                   <div
@@ -1507,7 +1430,7 @@ function PresetsPanel({ onApply }: PresetsPanelProps) {
                           {preset.description}
                         </p>
                         <button
-                          onClick={() => onApply(activeParams)}
+                          onClick={() => onApply(presetForApply)}
                           className="w-full py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:opacity-90 active:scale-[0.97]"
                           style={{
                             background: "linear-gradient(135deg, #7C3AED, #7c3aed)",
@@ -1668,47 +1591,6 @@ function ScenarioNarration({ params }: { params: PipelineParams }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // PIPELINE TAB  — new scroll-driven single-page flow
 // ─────────────────────────────────────────────────────────────────────────────
-
-// ── Unique SVG icons per stage ────────────────────────────────────────────────
-const STAGE_ICONS_SVG: Record<string, React.ReactNode> = {
-  sensation: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-    </svg>
-  ),
-  attention: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-      <circle cx="12" cy="12" r="3"/>
-    </svg>
-  ),
-  perception: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-    </svg>
-  ),
-  encoding: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
-      <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
-    </svg>
-  ),
-  storage: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
-      <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4.03 3-9 3S3 13.66 3 12"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/>
-    </svg>
-  ),
-  retrieval: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
-      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-    </svg>
-  ),
-  report: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
-      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-    </svg>
-  ),
-};
 
 // ── Stimulus display icons ────────────────────────────────────────────────────
 const STIMULUS_ICONS: Record<string, React.ReactNode> = {
@@ -1974,8 +1856,7 @@ function ResultSummary({ stimulus, params, stages, onContinue }: ResultSummaryPr
                   height: 5,
                   borderRadius: 3,
                   background: `linear-gradient(to right, ${cfg.color}, ${cfg.color}88)`,
-                  opacity: s.signalStrength / 100,
-                  minOpacity: 0.2,
+                  opacity: Math.max(0.2, s.signalStrength / 100),
                 }} />
                 <span style={{ fontSize: 9, color: "#8B93A0", fontWeight: 600, letterSpacing: "0.05em" }}>
                   {cfg.shortLabel}

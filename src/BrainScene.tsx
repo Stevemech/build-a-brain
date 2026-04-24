@@ -1,4 +1,4 @@
-import { useRef, useMemo, useState } from "react";
+import { useRef, useMemo } from "react";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { Float, Environment } from "@react-three/drei";
 import * as THREE from "three";
@@ -6,7 +6,6 @@ import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 
 // ── Breathing cycle constants ──
 const BREATH_PERIOD = 6; // seconds per full breath cycle
-const WIRE_PHASE = 0.35; // fraction of cycle spent in wireframe state
 
 function BrainModel() {
   const groupRef = useRef<THREE.Group>(null);
@@ -194,7 +193,7 @@ function NeuralParticles() {
   const particlesRef = useRef<THREE.Points>(null);
   const count = 350;
 
-  const { positions, sizes, phases } = useMemo(() => {
+  const { positions, phases } = useMemo(() => {
     const pos = new Float32Array(count * 3);
     const sz = new Float32Array(count);
     const ph = new Float32Array(count);
@@ -208,7 +207,8 @@ function NeuralParticles() {
       sz[i] = 0.01 + Math.random() * 0.025;
       ph[i] = Math.random() * Math.PI * 2;
     }
-    return { positions: pos, sizes: sz, phases: ph };
+    void sz;
+    return { positions: pos, phases: ph };
   }, []);
 
   const basePositions = useMemo(() => new Float32Array(positions), [positions]);
