@@ -3629,14 +3629,19 @@ function NavBar({ activeTab, onTabChange }: NavBarProps) {
         <span
           aria-hidden
           style={{
-            width: 22,
-            height: 22,
-            borderRadius: 6,
+            width: 28,
+            height: 28,
+            borderRadius: 8,
             background: "linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%)",
-            display: "inline-block",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
             boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12)",
+            color: "#FFFFFF",
           }}
-        />
+        >
+          <Brain size={16} strokeWidth={2} />
+        </span>
         <span className="text-[13px] font-semibold tracking-tight" style={{ color: "var(--color-text)" }}>
           Build-A-Brain
         </span>
