@@ -2036,24 +2036,52 @@ function ResultSummary({ stimulus, params, stages, onContinue }: ResultSummaryPr
           final signal · avg {Math.round(avgSignal)} across 7 stages
         </motion.p>
 
-        {/* Stage mini-bar */}
+        {/* Per-stage signal strength — vertical mini bar chart.
+            Fill height encodes signal% so the chart is actually readable
+            at a glance; numeric value above, stage short-label below. */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.5 }}
-          style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 32 }}
+          style={{ display: "flex", gap: 10, justifyContent: "center", alignItems: "flex-end", marginBottom: 32 }}
         >
           {stages.map((s, i) => {
             const cfg = STAGE_CONFIG[i];
+            const value = Math.round(clamp(s.signalStrength));
+            const trackH = 56;
             return (
-              <div key={s.stage} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+              <div key={s.stage} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, width: 40 }}>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: cfg.color,
+                  fontVariantNumeric: "tabular-nums",
+                  lineHeight: 1,
+                }}>
+                  {value}
+                </span>
                 <div style={{
-                  width: 36,
-                  height: 5,
+                  position: "relative",
+                  width: 12,
+                  height: trackH,
                   borderRadius: 3,
-                  background: `linear-gradient(to right, ${cfg.color}, ${cfg.color}88)`,
-                  opacity: Math.max(0.2, s.signalStrength / 100),
-                }} />
+                  background: "#F0F2F5",
+                  overflow: "hidden",
+                }}>
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: `${value}%` }}
+                    transition={{ delay: 0.55 + i * 0.05, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      background: cfg.color,
+                      borderRadius: 3,
+                    }}
+                  />
+                </div>
                 <span style={{ fontSize: 9, color: "#8B93A0", fontWeight: 600, letterSpacing: "0.05em" }}>
                   {cfg.shortLabel}
                 </span>
