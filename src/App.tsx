@@ -1845,44 +1845,53 @@ function HoverTooltip({
       {children}
       <AnimatePresence>
         {show && (
-          <motion.div
-            role="tooltip"
-            initial={{ opacity: 0, y: 4, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.97 }}
-            transition={{ duration: 0.15 }}
+          // Static wrapper owns the horizontal centering (left:50% +
+          // translateX(-50%)). The motion.div inside only drives enter/exit
+          // transforms so Framer Motion can't overwrite the centering.
+          <div
             style={{
               position: "absolute",
               bottom: "calc(100% + 8px)",
               left: "50%",
               transform: "translateX(-50%)",
-              background: "#0B0D10",
-              color: "#fff",
-              padding: "10px 14px",
-              borderRadius: 10,
-              width: 260,
               zIndex: 100,
               pointerEvents: "none",
-              boxShadow: "0 8px 28px rgba(0,0,0,0.22)",
-              textAlign: "left",
             }}
           >
-            {title && (
-              <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: "-0.005em", marginBottom: 4, color: "#fff" }}>
-                {title}
+            <motion.div
+              role="tooltip"
+              initial={{ opacity: 0, y: 4, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 4, scale: 0.97 }}
+              transition={{ duration: 0.15 }}
+              style={{
+                background: "#0B0D10",
+                color: "#fff",
+                padding: "10px 14px",
+                borderRadius: 10,
+                width: 260,
+                boxShadow: "0 8px 28px rgba(0,0,0,0.22)",
+                textAlign: "left",
+                position: "relative",
+              }}
+            >
+              {title && (
+                <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: "-0.005em", marginBottom: 4, color: "#fff" }}>
+                  {title}
+                </p>
+              )}
+              <p style={{ fontSize: 12, lineHeight: 1.5, color: "rgba(255,255,255,0.82)" }}>
+                {body}
               </p>
-            )}
-            <p style={{ fontSize: 12, lineHeight: 1.5, color: "rgba(255,255,255,0.82)" }}>
-              {body}
-            </p>
-            <div style={{
-              position: "absolute", top: "100%", left: "50%",
-              transform: "translateX(-50%)",
-              borderLeft: "5px solid transparent",
-              borderRight: "5px solid transparent",
-              borderTop: "5px solid #0B0D10",
-            }} />
-          </motion.div>
+              <div style={{
+                position: "absolute", top: "100%", left: "50%",
+                transform: "translateX(-50%)",
+                borderLeft: "5px solid transparent",
+                borderRight: "5px solid transparent",
+                borderTop: "5px solid #0B0D10",
+              }} />
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </span>
