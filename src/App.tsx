@@ -1761,9 +1761,12 @@ function HoverTooltip({
   const [show, setShow] = useState(false);
   return (
     <span
-      className="relative inline-flex"
-      onMouseEnter={() => setShow(true)}
-      onMouseLeave={() => setShow(false)}
+      // Explicit inline-flex + relative. Using inline styles (not Tailwind
+      // classes) guarantees the wrapper has a real bounding box, which is
+      // required for onMouseEnter to fire reliably.
+      style={{ position: "relative", display: "inline-flex" }}
+      onMouseOver={() => setShow(true)}
+      onMouseOut={() => setShow(false)}
       onFocus={() => setShow(true)}
       onBlur={() => setShow(false)}
     >
@@ -1793,7 +1796,7 @@ function HoverTooltip({
             }}
           >
             {title && (
-              <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: "-0.005em", marginBottom: 4 }}>
+              <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: "-0.005em", marginBottom: 4, color: "#fff" }}>
                 {title}
               </p>
             )}
@@ -3587,24 +3590,27 @@ function HeroSection() {
         background: "var(--color-bg)",
       }}
     >
-      {/* Edge-to-edge radial wash behind brain (no fixed square bounds) */}
+      {/* Edge-to-edge radial wash behind brain. A single smooth two-stop
+          gradient that reaches full transparency *past* the viewport edges,
+          so neither the gradient's elliptical falloff nor its container box
+          ever show as a visible rectangle or ring. */}
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse 60% 55% at 50% 38%, rgba(124,58,237,0.16) 0%, rgba(124,58,237,0.08) 35%, rgba(124,58,237,0) 72%)",
+            "radial-gradient(ellipse 110% 100% at 50% 40%, rgba(124,58,237,0.18) 0%, rgba(124,58,237,0) 85%)",
         }}
       />
 
-      {/* Dotted grid overlay — fade extends to the edges so no visible rectangle */}
+      {/* Dotted grid overlay with an equally smooth two-stop mask. */}
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none bg-grid"
         style={{
-          opacity: 0.4,
-          maskImage: "radial-gradient(ellipse 65% 60% at center, black 0%, black 55%, transparent 100%)",
-          WebkitMaskImage: "radial-gradient(ellipse 65% 60% at center, black 0%, black 55%, transparent 100%)",
+          opacity: 0.35,
+          maskImage: "radial-gradient(ellipse 110% 100% at center, black 0%, transparent 85%)",
+          WebkitMaskImage: "radial-gradient(ellipse 110% 100% at center, black 0%, transparent 85%)",
         }}
       />
 
