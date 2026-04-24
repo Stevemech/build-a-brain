@@ -50,35 +50,39 @@ const DEFAULT_PARAMS: PipelineParams = {
   retrievalCue: 55,
 };
 
+// Endpoint labels on each slider are parsed from `description` using the
+// literal pattern "Low = X, High = Y". LEFT label = what follows the first
+// "=", RIGHT label = what follows the second. Keep this order so the labels
+// align with 0→100 on the track.
 const PARAM_META = [
   {
     key: "attentionalFocus" as keyof PipelineParams,
     label: "Attentional Focus",
-    description: "How tightly the brain focuses. High = laser focus, Low = zoned out.",
+    description: "Low = diffuse attention, High = selective focus",
     color: "#7C3AED",
   },
   {
     key: "perceptualNoise" as keyof PipelineParams,
     label: "Perceptual Noise",
-    description: "Background static in the environment. High = foggy, Low = crystal clear.",
+    description: "Low = clear signal, High = degraded signal",
     color: "#ef4444",
   },
   {
     key: "priorExpectation" as keyof PipelineParams,
     label: "Prior Expectations",
-    description: "How much prior beliefs shape what you see. High = brain fills in gaps.",
+    description: "Low = data-driven, High = expectation-driven",
     color: "#6366f1",
   },
   {
     key: "encodingStrength" as keyof PipelineParams,
     label: "Encoding Strength",
-    description: "Depth of processing. High = connected to meaning, Low = surface-level.",
+    description: "Low = shallow encoding, High = deep encoding",
     color: "#14b8a6",
   },
   {
     key: "retrievalCue" as keyof PipelineParams,
     label: "Retrieval Cue",
-    description: "How good the recall hints are. High = perfect match, Low = no hints.",
+    description: "Low = weak cue match, High = strong cue match",
     color: "#06b6d4",
   },
 ];
@@ -111,28 +115,28 @@ const PRESETS: Preset[] = [
     id: "noisy-room",
     emoji: "🔊",
     name: "The Noisy Room",
-    description: "Cranks up environmental static. The brain struggles to detect the signal at all — like trying to hear someone at a loud concert.",
+    description: "High perceptual noise degrades the incoming signal, illustrating signal-detection theory: the brain must separate meaningful information from environmental interference.",
     params: { perceptualNoise: 85, attentionalFocus: 50, priorExpectation: 40, encodingStrength: 30, retrievalCue: 35 },
   },
   {
     id: "biased-observer",
     emoji: "🕶️",
     name: "The Biased Observer",
-    description: "Strong expectations fill in the blanks. The brain sees what it expects, not what’s actually there. This is how false memories form.",
+    description: "Strong prior expectations dominate perception, demonstrating top-down processing. Useful for understanding how preconceptions shape interpretation and produce reconstructive memory errors.",
     params: { perceptualNoise: 15, attentionalFocus: 80, priorExpectation: 90, encodingStrength: 60, retrievalCue: 55 },
   },
   {
     id: "inattentional-blindness",
     emoji: "👁️",
     name: "Inattentional Blindness",
-    description: "Attention is almost off. The brain misses things hiding in plain sight — the gorilla-in-the-room effect.",
+    description: "Attention is minimal, so salient but unattended stimuli fail to reach awareness. Reproduces the Simons & Chabris (1999) gorilla paradigm.",
     params: { perceptualNoise: 20, attentionalFocus: 15, priorExpectation: 25, encodingStrength: 50, retrievalCue: 50 },
   },
   {
     id: "deep-vs-shallow",
     emoji: "📚",
     name: "Deep vs. Shallow",
-    description: "Compare two study strategies side by side. Deep encoding connects to meaning; shallow encoding just skims the surface.",
+    description: "Side-by-side comparison of deep (semantic) vs. shallow (structural) encoding, illustrating Craik & Lockhart's levels-of-processing framework and its effect on long-term retention.",
     params: { perceptualNoise: 20, attentionalFocus: 65, priorExpectation: 40, encodingStrength: 90, retrievalCue: 60 },
     variantB: { perceptualNoise: 20, attentionalFocus: 65, priorExpectation: 40, encodingStrength: 15, retrievalCue: 60 },
     variantALabel: "Deep (enc=90)",
@@ -142,7 +146,7 @@ const PRESETS: Preset[] = [
     id: "tip-of-tongue",
     emoji: "💭",
     name: "Tip of the Tongue",
-    description: "The memory is stored well, but the retrieval cues are wrong. You know that you know it — you just can’t reach it.",
+    description: "Memory is encoded strongly but retrieval cues are poorly matched, producing recall failure despite high metacognitive confidence. Demonstrates Tulving's encoding specificity principle.",
     params: { perceptualNoise: 15, attentionalFocus: 75, priorExpectation: 45, encodingStrength: 85, retrievalCue: 15 },
   },
 ];
@@ -1621,6 +1625,195 @@ const STIMULUS_ICONS: Record<string, React.ReactNode> = {
 };
 
 // ── Info tooltip ──────────────────────────────────────────────────────────────
+// ── Stimulus info tooltip ─────────────────────────────────────────────────────
+// Richer variant that shows the stimulus name, full scene description, and the
+// individual feature chips. Lives in the top-right corner of each stimulus card.
+function StimulusInfoTooltip({
+  title,
+  description,
+  features,
+  modality,
+  inverted,
+}: {
+  title: string;
+  description: string;
+  features: readonly string[] | string[];
+  modality: string;
+  inverted?: boolean;
+}) {
+  const [show, setShow] = useState(false);
+  // When the card is in its dark/selected state, invert the button colors so
+  // it stays legible against the near-black background.
+  const bg = inverted ? "rgba(255,255,255,0.1)" : "#F0F2F5";
+  const border = inverted ? "rgba(255,255,255,0.22)" : "#CDD2DB";
+  const fg = inverted ? "rgba(255,255,255,0.85)" : "#8B93A0";
+  return (
+    <span className="relative inline-flex" style={{ verticalAlign: "middle" }}>
+      <button
+        type="button"
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        onFocus={() => setShow(true)}
+        onBlur={() => setShow(false)}
+        onClick={(e) => { e.stopPropagation(); setShow(s => !s); }}
+        style={{
+          width: 22, height: 22,
+          borderRadius: "50%",
+          border: `1.5px solid ${border}`,
+          background: bg,
+          color: fg,
+          fontSize: 11,
+          fontWeight: 700,
+          fontStyle: "italic",
+          cursor: "pointer",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          lineHeight: 1,
+          fontFamily: "Georgia, serif",
+          transition: "background 0.15s ease, border-color 0.15s ease",
+        }}
+        aria-label={`More info about ${title}`}
+      >
+        i
+      </button>
+      <AnimatePresence>
+        {show && (
+          <motion.div
+            initial={{ opacity: 0, y: 4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: "absolute",
+              top: "calc(100% + 8px)",
+              right: 0,
+              background: "#0B0D10",
+              color: "#fff",
+              padding: "14px 16px",
+              borderRadius: 10,
+              width: 260,
+              zIndex: 100,
+              pointerEvents: "auto",
+              boxShadow: "0 8px 28px rgba(0,0,0,0.22)",
+              textAlign: "left",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>{title}</span>
+              <span style={{
+                fontSize: 9, fontWeight: 600, padding: "2px 7px", borderRadius: 999,
+                background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.75)",
+                textTransform: "uppercase", letterSpacing: "0.1em",
+              }}>
+                {modality}
+              </span>
+            </div>
+            <p style={{ fontSize: 12.5, lineHeight: 1.5, color: "rgba(255,255,255,0.8)", marginBottom: features.length ? 10 : 0 }}>
+              {description}
+            </p>
+            {features.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                {features.map(f => (
+                  <span
+                    key={f}
+                    style={{
+                      fontSize: 10.5,
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      background: "rgba(255,255,255,0.08)",
+                      color: "rgba(255,255,255,0.75)",
+                    }}
+                  >
+                    {f}
+                  </span>
+                ))}
+              </div>
+            )}
+            {/* Caret pointing up to the button */}
+            <div style={{
+              position: "absolute", bottom: "100%", right: 8,
+              borderLeft: "6px solid transparent",
+              borderRight: "6px solid transparent",
+              borderBottom: "6px solid #0B0D10",
+            }} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </span>
+  );
+}
+
+// ── HoverTooltip: wraps any trigger element and reveals rich content on hover
+// Used for the Quick Experiments preset chips so the full scholarly
+// description appears without forcing it into the tight pill UI.
+function HoverTooltip({
+  title,
+  body,
+  children,
+}: {
+  title?: string;
+  body: string;
+  children: React.ReactNode;
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <span
+      className="relative inline-flex"
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+      onFocus={() => setShow(true)}
+      onBlur={() => setShow(false)}
+    >
+      {children}
+      <AnimatePresence>
+        {show && (
+          <motion.div
+            role="tooltip"
+            initial={{ opacity: 0, y: 4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+            style={{
+              position: "absolute",
+              bottom: "calc(100% + 8px)",
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: "#0B0D10",
+              color: "#fff",
+              padding: "10px 14px",
+              borderRadius: 10,
+              width: 260,
+              zIndex: 100,
+              pointerEvents: "none",
+              boxShadow: "0 8px 28px rgba(0,0,0,0.22)",
+              textAlign: "left",
+            }}
+          >
+            {title && (
+              <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: "-0.005em", marginBottom: 4 }}>
+                {title}
+              </p>
+            )}
+            <p style={{ fontSize: 12, lineHeight: 1.5, color: "rgba(255,255,255,0.82)" }}>
+              {body}
+            </p>
+            <div style={{
+              position: "absolute", top: "100%", left: "50%",
+              transform: "translateX(-50%)",
+              borderLeft: "5px solid transparent",
+              borderRight: "5px solid transparent",
+              borderTop: "5px solid #0B0D10",
+            }} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </span>
+  );
+}
+
 function InfoTooltip({ text }: { text: string }) {
   const [show, setShow] = useState(false);
   return (
@@ -1927,11 +2120,16 @@ function ResultSummary({ stimulus, params, stages, onContinue }: ResultSummaryPr
 
 // ── Param tooltip descriptions (richer than PARAM_META.description) ──────────
 const PARAM_TOOLTIP: Record<string, string> = {
-  attentionalFocus: "Controls how tightly the brain zeroes in. Turn it up and the brain catches fine details but misses the big picture. Turn it down and everything gets a quick glance but nothing sticks. This is Broadbent's bottleneck in action — you can't attend to everything at once.",
-  perceptualNoise: "Adds static to the incoming signal, like fog on a highway or chatter in a café. The noisier the environment, the harder the brain has to work just to detect what's there. In signal-detection theory this is the noise that competes with the true signal.",
-  priorExpectation: "Sets how much the brain relies on what it already believes. High expectations mean the brain fills in gaps with past experience — helpful when it's right, dangerous when it's wrong. This is top-down processing: your beliefs literally change what you perceive.",
-  encodingStrength: "Determines how deeply the brain processes what it perceives. High means connecting to meaning (semantic encoding); low means just skimming the surface (structural encoding). Craik & Lockhart showed that depth matters more than time spent studying.",
-  retrievalCue: "How well the recall context matches the original experience. Strong cues act like a key that fits the lock perfectly. Weak cues leave you with that tip-of-the-tongue feeling — the memory is in there, you just can't reach it. This is Tulving's encoding specificity principle.",
+  attentionalFocus:
+    "Controls the selectivity of attention. Higher values narrow the attentional spotlight, deepening processing of fewer stimuli; lower values distribute attention broadly at the cost of depth. Reflects Broadbent's filter theory.",
+  perceptualNoise:
+    "Represents interference that degrades the sensory signal before interpretation. Higher values reduce the signal-to-noise ratio, making detection harder — the core variable in signal-detection theory.",
+  priorExpectation:
+    "Weights the influence of top-down predictions on perception. Higher values let prior beliefs fill ambiguous input, increasing speed but also susceptibility to error. Central to constructivist theories of perception.",
+  encodingStrength:
+    "Controls depth of processing at encoding. Higher values reflect semantic elaboration that links new information to existing knowledge; lower values reflect shallow, structural processing (Craik & Lockhart, 1972).",
+  retrievalCue:
+    "Quantifies the overlap between retrieval context and the context present at encoding. Higher values denote closely matching cues, maximizing recall probability — Tulving's encoding specificity principle.",
 };
 
 // ── ActiveSetPill: small "A" / "B" indicator shown in compare mode ───────────
@@ -2256,10 +2454,20 @@ function PipelineTab() {
               const isSelected = selectedStimulus.id === s.id;
               return (
                 <ScrollFade key={s.id} delay={i * 0.08} stretch>
-                  <button
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={isSelected}
                     onClick={() => handleStimulusSelect(s)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleStimulusSelect(s);
+                      }
+                    }}
                     className={isSelected ? undefined : "card-hover"}
                     style={{
+                      position: "relative",
                       width: "100%",
                       padding: "22px 22px",
                       borderRadius: 12,
@@ -2271,8 +2479,24 @@ function PipelineTab() {
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "flex-start",
+                      outline: "none",
                     }}
                   >
+                    {/* Info (i) button — sits in the top-right, shows full description on hover */}
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      style={{ position: "absolute", top: 14, right: 14, zIndex: 2 }}
+                    >
+                      <StimulusInfoTooltip
+                        title={s.name}
+                        description={s.sceneDescription}
+                        features={s.features}
+                        modality={s.modality}
+                        inverted={isSelected}
+                      />
+                    </div>
+
                     <div style={{
                       color: isSelected ? "#FFFFFF" : "#4A5058",
                       marginBottom: 10,
@@ -2286,6 +2510,7 @@ function PipelineTab() {
                       color: isSelected ? "#FFFFFF" : "#0B0D10",
                       marginBottom: 4,
                       letterSpacing: "-0.01em",
+                      paddingRight: 24,
                     }}>
                       {s.name}
                     </p>
@@ -2315,7 +2540,7 @@ function PipelineTab() {
                         {s.modality}
                       </span>
                     </span>
-                  </button>
+                  </div>
                 </ScrollFade>
               );
             })}
@@ -2425,35 +2650,36 @@ function PipelineTab() {
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {PRESETS.map(p => (
-                  <button
-                    key={p.id}
-                    onClick={() => handleApplyPreset(p)}
-                    style={{
-                      padding: "6px 14px",
-                      borderRadius: 999,
-                      border: "1.5px solid #E4E7EC",
-                      background: "#FFFFFF",
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: "#4A5058",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 5,
-                      transition: "all 0.15s ease",
-                    }}
-                    onMouseEnter={e => {
-                      (e.currentTarget as HTMLButtonElement).style.borderColor = "#0B0D10";
-                      (e.currentTarget as HTMLButtonElement).style.color = "#0B0D10";
-                    }}
-                    onMouseLeave={e => {
-                      (e.currentTarget as HTMLButtonElement).style.borderColor = "#E4E7EC";
-                      (e.currentTarget as HTMLButtonElement).style.color = "#4A5058";
-                    }}
-                  >
-                    <span style={{ fontSize: 13 }}>{p.emoji}</span>
-                    {p.name}
-                  </button>
+                  <HoverTooltip key={p.id} title={p.name} body={p.description}>
+                    <button
+                      onClick={() => handleApplyPreset(p)}
+                      style={{
+                        padding: "6px 14px",
+                        borderRadius: 999,
+                        border: "1.5px solid #E4E7EC",
+                        background: "#FFFFFF",
+                        fontSize: 12,
+                        fontWeight: 500,
+                        color: "#4A5058",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 5,
+                        transition: "all 0.15s ease",
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = "#0B0D10";
+                        (e.currentTarget as HTMLButtonElement).style.color = "#0B0D10";
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = "#E4E7EC";
+                        (e.currentTarget as HTMLButtonElement).style.color = "#4A5058";
+                      }}
+                    >
+                      <span style={{ fontSize: 13 }}>{p.emoji}</span>
+                      {p.name}
+                    </button>
+                  </HoverTooltip>
                 ))}
               </div>
             </div>
