@@ -3590,7 +3590,7 @@ function AboutTab() {
       </div>
 
       <p className="text-[11px] text-center pb-4" style={{ color: "var(--color-text-muted)" }}>
-        Built for PSYC 203 · Cognitive Psychology · Interactive Simulator v3.0
+        Built by Steve Zhang for PSYC 203 · Cognitive Psychology · Interactive Simulator v3.0
       </p>
     </div>
   );
@@ -3684,7 +3684,22 @@ function NavBar({ activeTab, onTabChange }: NavBarProps) {
         })}
       </nav>
 
-      <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+      <div className="ml-auto flex items-center gap-3 flex-shrink-0">
+        <span
+          className="hidden sm:inline text-[11px] font-medium tracking-tight"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          by <span style={{ color: "var(--color-text-dim)" }}>Steve Zhang</span>
+        </span>
+        <span
+          aria-hidden
+          className="hidden sm:inline-block"
+          style={{
+            width: 1,
+            height: 14,
+            background: "var(--color-border)",
+          }}
+        />
         <span
           className="text-[10px] font-semibold uppercase tracking-[0.14em]"
           style={{
@@ -3758,10 +3773,16 @@ function HeroSection() {
           Build-A-Brain
         </h1>
         <p
-          className="text-base sm:text-lg mb-10"
+          className="text-base sm:text-lg mb-2"
           style={{ color: "var(--color-text-dim)", letterSpacing: "-0.005em", lineHeight: 1.5 }}
         >
           An interactive simulator for the stages of cognitive processing.
+        </p>
+        <p
+          className="text-[12px] uppercase tracking-[0.18em] mb-10"
+          style={{ color: "var(--color-text-muted)", fontFamily: "var(--font-mono)" }}
+        >
+          by Steve Zhang
         </p>
 
         {/* CTA */}
